@@ -1,9 +1,36 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Award, BookOpen, Target } from "lucide-react";
+import { TrendingUp, Award, BookOpen, Target, Clock } from "lucide-react";
+import { DomainRadarChart, DomainBarChart } from "@/components/progress/DomainChart";
+import { WeakAreasList } from "@/components/progress/WeakAreasList";
+import { StudyStreak } from "@/components/progress/StudyStreak";
+import { getProgressSummary } from "@/lib/progress/calculator";
 
 export default function ProgressPage() {
+  const progress = getProgressSummary();
+
+  const formatStudyTime = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  const getReadinessBadge = () => {
+    const { confidence, score } = progress.readinessEstimate;
+
+    if (confidence === 'high') {
+      return <Badge className="bg-green-500">Ready ({score})</Badge>;
+    } else if (confidence === 'medium') {
+      return <Badge className="bg-amber-500">Preparing ({score})</Badge>;
+    } else {
+      return <Badge variant="outline">Not Ready</Badge>;
+    }
+  };
+
   return (
     <div className="container py-8">
       <div className="mb-8">
@@ -21,8 +48,10 @@ export default function ProgressPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0%</div>
-            <Progress value={0} className="mt-2 h-2" />
+            <div className="text-2xl font-bold">
+              {Math.round(progress.overall.masteryScore)}%
+            </div>
+            <Progress value={progress.overall.masteryScore} className="mt-2 h-2" />
             <p className="text-xs text-muted-foreground mt-2">
               Target: 85%+
             </p>
@@ -35,9 +64,13 @@ export default function ProgressPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{progress.overall.questionsAttempted}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              0 correct
+              {progress.overall.questionsCorrect} correct (
+              {progress.overall.questionsAttempted > 0
+                ? Math.round((progress.overall.questionsCorrect / progress.overall.questionsAttempted) * 100)
+                : 0}
+              %)
             </p>
           </CardContent>
         </Card>
@@ -45,12 +78,14 @@ export default function ProgressPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Study Time</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0h</div>
+            <div className="text-2xl font-bold">
+              {formatStudyTime(progress.overall.studyTimeMinutes)}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              This week
+              Total study time
             </p>
           </CardContent>
         </Card>
@@ -61,14 +96,39 @@ export default function ProgressPage() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">-</div>
-            <Badge variant="outline" className="mt-2">Not Ready</Badge>
+            <div className="text-2xl font-bold">
+              {progress.readinessEstimate.score > 0 ? progress.readinessEstimate.score : '-'}
+            </div>
+            <div className="mt-2">
+              {getReadinessBadge()}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Domain Progress */}
-      <Card>
+      {/* Readiness Recommendation */}
+      {progress.readinessEstimate.score > 0 && (
+        <Card className="mb-8 border-primary/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Exam Readiness Assessment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{progress.readinessEstimate.recommendation}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Charts */}
+      <div className="grid gap-6 lg:grid-cols-2 mb-8">
+        <DomainRadarChart domains={progress.domains} />
+        <DomainBarChart domains={progress.domains} />
+      </div>
+
+      {/* Domain Progress Details */}
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle>Progress by Domain</CardTitle>
           <CardDescription>
@@ -76,28 +136,38 @@ export default function ProgressPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {[
-            { name: 'Design Solutions for Organizational Complexity', weight: 26, color: 'blue' },
-            { name: 'Design for New Solutions', weight: 29, color: 'green' },
-            { name: 'Continuous Improvement for Existing Solutions', weight: 25, color: 'amber' },
-            { name: 'Accelerate Workload Migration and Modernization', weight: 20, color: 'purple' },
-          ].map((domain, i) => (
-            <div key={i} className="space-y-2">
+          {progress.domains.map((domain) => (
+            <div key={domain.domainId} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{domain.name}</span>
+                <span className="font-medium">{domain.domainName}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">0%</span>
+                  <span className="text-muted-foreground">
+                    {Math.round(domain.masteryScore)}%
+                  </span>
                   <Badge variant="outline">{domain.weight}%</Badge>
                 </div>
               </div>
-              <Progress value={0} className="h-2" />
+              <Progress value={domain.masteryScore} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                0 topics completed • 0 questions attempted
+                {domain.topicsCompleted}/{domain.totalTopics} topics completed •
+                {' '}{domain.questionsAttempted} questions attempted
+                {domain.questionsAttempted > 0 && (
+                  <> • {Math.round((domain.questionsCorrect / domain.questionsAttempted) * 100)}% accuracy</>
+                )}
               </p>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {/* Weak Areas and Recent Activity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WeakAreasList domains={progress.domains} />
+        <StudyStreak
+          recentActivity={progress.recentActivity}
+          studyTimeMinutes={progress.overall.studyTimeMinutes}
+        />
+      </div>
     </div>
   );
 }
