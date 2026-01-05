@@ -56,3 +56,4 @@ Thumbs.db
 .eslintcache
 tsconfig.tsbuildinfo
 next-env.d.ts
+.pnpm-approvals.json

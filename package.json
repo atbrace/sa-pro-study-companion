@@ -1,0 +1,47 @@
+{
+  "name": "sa-pro-study-companion",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed-content.ts",
+    "db:reset": "tsx scripts/reset-progress.ts",
+    "content:validate": "tsx scripts/validate-content.ts",
+    "content:stats": "tsx scripts/content-stats.ts",
+    "cdk:deploy": "cd cdk && cdk deploy",
+    "cdk:destroy": "cd cdk && cdk destroy",
+    "cdk:cleanup": "tsx scripts/cleanup-aws.ts"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "@anthropic-ai/sdk": "^0.32.0",
+    "better-sqlite3": "^11.0.0",
+    "js-yaml": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "clsx": "^2.1.0",
+    "class-variance-authority": "^0.7.0",
+    "tailwind-merge": "^2.5.0",
+    "lucide-react": "^0.460.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/js-yaml": "^4.0.9",
+    "typescript": "^5.6.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "tsx": "^4.19.0"
+  },
+  "packageManager": "pnpm@10.27.0"
+}
