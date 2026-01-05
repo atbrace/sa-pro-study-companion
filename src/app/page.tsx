@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 lg:p-24">
-      <div className="max-w-5xl w-full space-y-8">
+    <div className="container py-8 lg:py-12">
+      <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
@@ -131,6 +131,6 @@ export default function Home() {
           <Button size="lg" variant="outline">View Documentation</Button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
