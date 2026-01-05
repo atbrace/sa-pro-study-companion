@@ -1,0 +1,179 @@
+questions:
+  - id: net-001
+    type: single
+    text: >
+      A company has 40 VPCs across 3 AWS regions and needs to establish connectivity
+      between all VPCs with centralized routing control. The solution must support
+      transitive routing and allow traffic inspection at a central point. Which
+      solution provides the MOST scalable and manageable architecture?
+    options:
+      - id: A
+        text: Create VPC peering connections between all VPCs and use route tables for traffic control
+      - id: B
+        text: Deploy AWS Transit Gateway in each region with inter-region peering and centralized route tables
+      - id: C
+        text: Use AWS PrivateLink to connect all VPCs through a central shared services VPC
+      - id: D
+        text: Establish VPN connections from each VPC to a central VPN hub for routing
+    correctAnswer: B
+    explanation: >
+      Transit Gateway provides the most scalable solution for connecting multiple VPCs.
+      It supports transitive routing, centralized route tables, and can be peered across
+      regions. VPC peering (A) doesn't support transitive routing and becomes unmanageable
+      at scale. PrivateLink (C) is for service connectivity, not general VPC routing.
+      VPN (D) adds unnecessary complexity and doesn't provide the routing control needed.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/tgw/
+    services:
+      - AWS Transit Gateway
+      - Amazon VPC
+    concepts:
+      - Transitive routing
+      - Network architecture
+      - Multi-region connectivity
+
+  - id: net-002
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is designing a hybrid cloud architecture that requires
+      on-premises applications to access both private VPC resources and AWS public
+      services (like S3 and DynamoDB) over a dedicated connection. Which TWO
+      approaches would meet this requirement?
+    options:
+      - id: A
+        text: Create a private Virtual Interface (VIF) to access VPC resources and a public VIF to access AWS public services
+      - id: B
+        text: Use a single transit Virtual Interface (VIF) connected to Transit Gateway with VPC and public service endpoints
+      - id: C
+        text: Create a private VIF for VPC access and use VPC endpoints (gateway and interface) for public service access
+      - id: D
+        text: Use AWS VPN over Direct Connect for private resources and internet gateway for public service access
+      - id: E
+        text: Create a public VIF only and route all traffic through it using NAT Gateway
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Option A is correct - you can create separate VIFs for different traffic types.
+      A private VIF accesses VPCs, while a public VIF accesses AWS public services
+      over the Direct Connect connection. Option C is also correct - using a private
+      VIF with VPC endpoints allows access to public services without leaving the
+      AWS network. Option B is incorrect because transit VIFs don't directly support
+      public service access. Option D unnecessarily uses internet gateway. Option E
+      is incorrect because NAT Gateway is not needed with public VIF.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/WorkingWithVirtualInterfaces.html
+    services:
+      - AWS Direct Connect
+      - Amazon VPC
+      - VPC Endpoints
+    concepts:
+      - Virtual interfaces
+      - Hybrid connectivity
+      - Private vs public access
+
+  - id: net-003
+    type: single
+    text: >
+      A company's on-premises DNS servers need to resolve queries for resources
+      in multiple AWS VPCs, and AWS resources need to resolve queries for
+      on-premises domain names. What is the MOST efficient solution?
+    options:
+      - id: A
+        text: Configure Route 53 Resolver with inbound and outbound endpoints, and create forwarding rules
+      - id: B
+        text: Deploy DNS proxy servers in each VPC to forward queries between on-premises and AWS
+      - id: C
+        text: Use conditional forwarding rules in on-premises DNS to forward AWS queries to VPC DNS servers
+      - id: D
+        text: Create a VPN connection and route all DNS traffic through the VPN tunnel
+    correctAnswer: A
+    explanation: >
+      Route 53 Resolver with inbound and outbound endpoints is the AWS-native
+      solution for hybrid DNS resolution. Inbound endpoints allow on-premises to
+      query Route 53 private hosted zones, while outbound endpoints with forwarding
+      rules allow AWS resources to query on-premises DNS. This is more efficient
+      and scalable than proxy servers (B), provides better integration than
+      conditional forwarding alone (C), and doesn't require VPN overhead (D).
+    awsDocLink: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+    services:
+      - Amazon Route 53
+      - Route 53 Resolver
+    concepts:
+      - Hybrid DNS resolution
+      - Resolver endpoints
+      - DNS forwarding
+
+  - id: net-004
+    type: single
+    text: >
+      An organization has a Transit Gateway with 30 VPC attachments. They need to
+      ensure that VPCs in the production environment can only communicate with each
+      other and shared services, while development VPCs can communicate with all
+      other VPCs. How should the solutions architect configure this?
+    options:
+      - id: A
+        text: Create a single Transit Gateway route table and use security groups to control traffic
+      - id: B
+        text: Create separate Transit Gateway route tables for production and development with appropriate associations and propagations
+      - id: C
+        text: Use VPC Network ACLs to block traffic between production and development VPCs
+      - id: D
+        text: Deploy separate Transit Gateways for production and development environments
+    correctAnswer: B
+    explanation: >
+      The correct solution is to use separate Transit Gateway route tables with
+      different association and propagation rules. Production VPCs would be associated
+      with a route table that only has propagations from other production VPCs and
+      shared services. Development VPCs would be associated with a route table that
+      has propagations from all VPCs. Security groups (A) and NACLs (C) operate at
+      the VPC level, not between VPCs through Transit Gateway. Separate Transit
+      Gateways (D) adds unnecessary complexity and cost.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/tgw/how-transit-gateways-work.html
+    services:
+      - AWS Transit Gateway
+    concepts:
+      - Transit Gateway route tables
+      - Network segmentation
+      - Route table associations
+
+  - id: net-005
+    type: multi
+    correctCount: 3
+    text: >
+      A company is designing high availability for their AWS Direct Connect
+      connectivity. Which THREE components should be included in a resilient
+      Direct Connect architecture?
+    options:
+      - id: A
+        text: Multiple Direct Connect connections at different Direct Connect locations
+      - id: B
+        text: VPN connection as backup connectivity in case of Direct Connect failure
+      - id: C
+        text: BGP for automatic failover between connections
+      - id: D
+        text: Use of Direct Connect Gateway to connect to multiple VPCs
+      - id: E
+        text: Multiple virtual interfaces on a single Direct Connect connection
+      - id: F
+        text: Active-active routing with equal cost multi-path (ECMP)
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: >
+      For maximum resiliency: Option A provides physical redundancy by using
+      connections at different locations. Option B provides backup connectivity
+      via VPN if all Direct Connect connections fail. Option C enables automatic
+      failover using BGP routing. Option D (Direct Connect Gateway) is useful for
+      multi-VPC access but doesn't provide high availability. Option E (multiple
+      VIFs on one connection) doesn't protect against connection failure. Option F
+      (ECMP) is a routing technique but not a core HA component.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/resilency_toolkit.html
+    services:
+      - AWS Direct Connect
+      - AWS VPN
+    concepts:
+      - High availability
+      - Disaster recovery
+      - BGP routing
+      - Failover

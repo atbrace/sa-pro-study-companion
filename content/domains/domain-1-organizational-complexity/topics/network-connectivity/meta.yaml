@@ -1,0 +1,41 @@
+id: network-connectivity
+name: Network Connectivity Strategies
+shortName: Network Connectivity
+examTask: task-1-1
+description: >
+  Design and implement hybrid and multi-cloud network architectures using
+  AWS Transit Gateway, Direct Connect, VPN, and advanced VPC configurations.
+
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - AWS Transit Gateway
+  - AWS Direct Connect
+  - Amazon VPC
+  - AWS VPN
+  - AWS Route 53
+  - AWS PrivateLink
+
+keyConcepts:
+  - Transit Gateway routing and attachments
+  - Direct Connect virtual interfaces (VIF)
+  - VPN connectivity options
+  - Hybrid DNS resolution
+  - Network segmentation strategies
+  - PrivateLink for service connectivity
+
+awsDocLinks:
+  - title: AWS Transit Gateway Documentation
+    url: https://docs.aws.amazon.com/vpc/latest/tgw/
+    type: doc
+  - title: AWS Direct Connect Documentation
+    url: https://docs.aws.amazon.com/directconnect/latest/UserGuide/
+    type: doc
+  - title: Building a Scalable and Secure Multi-VPC Network Infrastructure
+    url: https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/welcome.html
+    type: whitepaper
+
+relatedExperiments:
+  - lab-transit-gateway
+  - lab-direct-connect

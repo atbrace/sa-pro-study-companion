@@ -1,0 +1,63 @@
+id: domain-1-organizational-complexity
+name: Design Solutions for Organizational Complexity
+shortName: Organizational Complexity
+weight: 26
+description: >
+  Design and implement AWS solutions that address organizational complexity, including
+  multi-account strategies, network connectivity, security controls, and cost optimization
+  for complex enterprise environments.
+color: blue
+icon: building-2
+
+examTasks:
+  - id: task-1-1
+    name: Architect network connectivity strategies
+    description: >
+      Design and implement hybrid and multi-cloud network architectures using
+      AWS networking services.
+  - id: task-1-2
+    name: Prescribe security controls
+    description: >
+      Design and implement comprehensive security controls for multi-account
+      AWS environments.
+  - id: task-1-3
+    name: Design reliable and resilient architectures
+    description: >
+      Implement disaster recovery, backup, and high availability strategies
+      across multiple regions and accounts.
+  - id: task-1-4
+    name: Design a multi-account AWS environment
+    description: >
+      Architect and implement multi-account strategies using AWS Organizations,
+      Control Tower, and related services.
+  - id: task-1-5
+    name: Determine cost optimization and visibility strategies
+    description: >
+      Implement cost management, optimization, and visibility strategies for
+      complex AWS environments.
+
+topics:
+  - network-connectivity
+
+keyServices:
+  - AWS Transit Gateway
+  - AWS Direct Connect
+  - Amazon VPC
+  - AWS Organizations
+  - AWS Control Tower
+  - AWS IAM
+  - AWS KMS
+  - AWS CloudTrail
+  - AWS Config
+  - AWS Cost Explorer
+
+awsDocLinks:
+  - title: AWS Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
+    type: doc
+  - title: AWS Multi-Account Strategy Best Practices
+    url: https://aws.amazon.com/organizations/getting-started/best-practices/
+    type: doc
+  - title: Organizing Your AWS Environment Using Multiple Accounts
+    url: https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/organizing-your-aws-environment.html
+    type: whitepaper
