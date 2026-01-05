@@ -1,9 +1,26 @@
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardCheck, Clock, Target } from "lucide-react";
+import { ClipboardCheck, Clock, Target, ArrowRight } from "lucide-react";
+import { getAllDomains } from "@/lib/content/loader";
+import { db } from "@/lib/db/client";
 
 export default function AssessPage() {
+  const domains = getAllDomains();
+
+  // Get stats from database
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) as total_attempts,
+      AVG(score_percentage) as avg_score
+    FROM assessment_sessions
+  `).get() as { total_attempts: number; avg_score: number | null };
+
+  const questionAttempts = db.prepare(`
+    SELECT COUNT(*) as count FROM question_attempts
+  `).get() as { count: number };
+
   return (
     <div className="container py-8">
       <div className="mb-8">
@@ -20,7 +37,7 @@ export default function AssessPage() {
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{questionAttempts.count}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Across all domains
             </p>
@@ -33,7 +50,9 @@ export default function AssessPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">-</div>
+            <div className="text-2xl font-bold">
+              {stats.avg_score ? `${Math.round(stats.avg_score)}%` : '-'}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
               Target: 85%+
             </p>
@@ -42,42 +61,68 @@ export default function AssessPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Study Time</CardTitle>
+            <CardTitle className="text-sm font-medium">Assessments Taken</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0h</div>
+            <div className="text-2xl font-bold">{stats.total_attempts}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              This week
+              Total sessions
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Start an Assessment</CardTitle>
+          <CardTitle>Domain Assessments</CardTitle>
           <CardDescription>
-            Choose a domain or take a full practice exam
+            Test your knowledge for each SAP-C02 domain
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Full Practice Exam</p>
-                <p className="text-sm text-muted-foreground">75 questions • ~150 min</p>
-              </div>
-              <Badge variant="secondary">Coming Soon</Badge>
-            </div>
+            {domains.map((domain) => {
+              const questionCount = domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
 
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Domain Quick Check</p>
-                <p className="text-sm text-muted-foreground">15 questions • ~30 min</p>
-              </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              return (
+                <div
+                  key={domain.meta.id}
+                  className={`flex items-center justify-between p-4 border-l-4 border-l-${domain.meta.color}-500 rounded-lg hover:bg-muted/50 transition-colors`}
+                >
+                  <div>
+                    <p className="font-medium">{domain.meta.shortName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {questionCount} question{questionCount !== 1 ? 's' : ''} • {domain.meta.weight}% exam weight
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/assess/${domain.meta.id}`}>
+                      Start
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Full Practice Exam</CardTitle>
+          <CardDescription>
+            Take a complete practice exam with questions from all domains
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <p className="font-medium">SAP-C02 Practice Exam</p>
+              <p className="text-sm text-muted-foreground">75 questions • ~150 min • Timed</p>
             </div>
+            <Badge variant="secondary">Coming in Phase 3</Badge>
           </div>
         </CardContent>
       </Card>
