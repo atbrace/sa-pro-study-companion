@@ -34,10 +34,14 @@ export function QuestionCard({
   );
 
   useEffect(() => {
+    // Reset state when question changes or userAnswer changes
     if (userAnswer !== undefined) {
       setSelected(userAnswer);
+    } else {
+      // Clear selection for new question
+      setSelected(question.type === 'multi' ? [] : '');
     }
-  }, [userAnswer]);
+  }, [userAnswer, question.id, question.type]);
 
   const handleSingleSelect = (value: string) => {
     if (disabled) return;

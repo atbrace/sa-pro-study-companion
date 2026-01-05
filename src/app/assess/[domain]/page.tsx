@@ -160,6 +160,72 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
           </CardContent>
         </Card>
 
+        {/* Question Review */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Question Review</CardTitle>
+            <CardDescription>
+              Review your answers and explanations
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {result.results.map((questionResult, idx) => (
+                <div key={questionResult.questionId} className="border rounded-lg p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    {questionResult.isCorrect ? (
+                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">Question {idx + 1}</Badge>
+                        {questionResult.isCorrect ? (
+                          <Badge className="bg-green-600">Correct</Badge>
+                        ) : (
+                          <Badge variant="destructive">Incorrect</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm mb-2">{questionResult.question.text}</p>
+                      {!questionResult.isCorrect && (
+                        <div className="text-sm space-y-1 mb-2">
+                          <p className="text-muted-foreground">
+                            <span className="font-medium">Your answer:</span>{' '}
+                            {Array.isArray(questionResult.selectedAnswer)
+                              ? questionResult.selectedAnswer.join(', ')
+                              : questionResult.selectedAnswer}
+                          </p>
+                          <p className="text-green-700 dark:text-green-400">
+                            <span className="font-medium">Correct answer:</span>{' '}
+                            {Array.isArray(questionResult.correctAnswer)
+                              ? questionResult.correctAnswer.join(', ')
+                              : questionResult.correctAnswer}
+                          </p>
+                        </div>
+                      )}
+                      <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                        <p className="text-sm font-medium mb-1">Explanation:</p>
+                        <p className="text-sm text-muted-foreground">{questionResult.explanation}</p>
+                        {questionResult.awsDocLink && (
+                          <a
+                            href={questionResult.awsDocLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-2"
+                          >
+                            Learn more in AWS documentation →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {result.weakAreas.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
