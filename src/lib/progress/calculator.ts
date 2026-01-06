@@ -136,18 +136,15 @@ export function getOverallProgress(): OverallProgress {
     FROM study_sessions
   `).get() as { total_seconds: number };
 
-  const experiments = db.prepare(`
-    SELECT COUNT(DISTINCT lab_id) as count
-    FROM experiment_deployments
-    WHERE status = 'destroyed'
-  `).get() as { count: number };
+  // Experiments are now managed manually (no longer tracked in database)
+  const experimentsCompleted = 0;
 
   return {
     masteryScore: calculateOverallMastery(),
     questionsAttempted: questionStats.attempted || 0,
     questionsCorrect: questionStats.correct || 0,
     studyTimeMinutes: Math.round((studyTime.total_seconds || 0) / 60),
-    experimentsCompleted: experiments.count || 0,
+    experimentsCompleted,
   };
 }
 
