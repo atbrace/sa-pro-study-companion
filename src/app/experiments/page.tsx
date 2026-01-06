@@ -33,8 +33,8 @@ export default function ExperimentsPage() {
       <div className="mb-6 p-4 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950 rounded-r-lg">
         <p className="text-sm font-medium mb-1">💰 Important: Real AWS Costs</p>
         <p className="text-sm text-muted-foreground">
-          Labs deploy real AWS resources that incur charges. Each lab shows estimated cost per hour.
-          <strong className="block mt-1">Always destroy resources when finished to avoid ongoing charges!</strong>
+          These labs use AWS CDK to deploy real infrastructure to your AWS account. Each lab includes setup commands and estimated costs.
+          <strong className="block mt-1">Always run <code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded text-xs">cdk destroy</code> when finished to avoid ongoing charges!</strong>
         </p>
       </div>
 
@@ -79,7 +79,7 @@ export default function ExperimentsPage() {
                 </div>
                 <Button asChild>
                   <Link href={`/experiments/${lab.id}`}>
-                    Start Lab
+                    View Lab
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

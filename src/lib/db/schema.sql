@@ -67,22 +67,6 @@ CREATE TABLE IF NOT EXISTS question_attempts (
   FOREIGN KEY (topic_id) REFERENCES topics(id)
 );
 
--- Experiment deployments
-CREATE TABLE IF NOT EXISTS experiment_deployments (
-  id TEXT PRIMARY KEY,
-  lab_id TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status IN ('deploying', 'deployed', 'destroying', 'destroyed', 'failed')),
-  stack_name TEXT NOT NULL,
-  region TEXT NOT NULL DEFAULT 'us-east-1',
-  resource_arns TEXT,
-  console_urls TEXT,
-  error_message TEXT,
-  deployed_at DATETIME,
-  destroyed_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Tutor conversations
 CREATE TABLE IF NOT EXISTS tutor_conversations (
   id TEXT PRIMARY KEY,
@@ -134,8 +118,6 @@ CREATE INDEX IF NOT EXISTS idx_topic_progress_topic ON topic_progress(topic_id);
 CREATE INDEX IF NOT EXISTS idx_assessment_sessions_domain ON assessment_sessions(domain_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_session ON question_attempts(session_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_topic ON question_attempts(topic_id);
-CREATE INDEX IF NOT EXISTS idx_experiment_deployments_lab ON experiment_deployments(lab_id);
-CREATE INDEX IF NOT EXISTS idx_experiment_deployments_status ON experiment_deployments(status);
 CREATE INDEX IF NOT EXISTS idx_tutor_conversations_domain ON tutor_conversations(domain_id);
 CREATE INDEX IF NOT EXISTS idx_tutor_conversations_topic ON tutor_conversations(topic_id);
 CREATE INDEX IF NOT EXISTS idx_weak_areas_domain ON weak_areas(domain_id);
