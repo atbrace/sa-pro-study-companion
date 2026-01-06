@@ -10,24 +10,36 @@ export function useSidebarState(pathname: string) {
   // Study root expansion state
   const [isStudyExpanded, setIsStudyExpanded] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem(STORAGE_KEY_STUDY);
-    // Default to expanded if on study page, otherwise use stored value or collapsed
-    if (pathname?.startsWith('/study')) return true;
-    return stored ? JSON.parse(stored) : false;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_STUDY);
+      // Default to expanded if on study page, otherwise use stored value or collapsed
+      if (pathname?.startsWith('/study')) return true;
+      return stored ? JSON.parse(stored) : false;
+    } catch {
+      return false;
+    }
   });
 
   // Expanded domains
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set();
-    const stored = localStorage.getItem(STORAGE_KEY_DOMAINS);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_DOMAINS);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
   });
 
   // Expanded topics (stored as "domainId/topicId")
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set();
-    const stored = localStorage.getItem(STORAGE_KEY_TOPICS);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_TOPICS);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
   });
 
   // Auto-expand based on current pathname
@@ -35,43 +47,59 @@ export function useSidebarState(pathname: string) {
     // Parse pathname: /study/domain-1/topic-2/section-3
     const match = pathname?.match(/^\/study\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
 
-    if (match) {
-      const [_, domainId, topicId] = match;
+    if (!match) return;
 
-      // Auto-expand Study root
-      if (!isStudyExpanded) {
-        setIsStudyExpanded(true);
-      }
+    const domainId = match[1];
+    const topicId = match[2];
 
-      // Auto-expand domain
-      if (domainId && !expandedDomains.has(domainId)) {
-        setExpandedDomains(prev => new Set([...prev, domainId]));
-      }
-
-      // Auto-expand topic
-      if (topicId) {
-        const topicKey = `${domainId}/${topicId}`;
-        if (!expandedTopics.has(topicKey)) {
-          setExpandedTopics(prev => new Set([...prev, topicKey]));
-        }
-      }
+    // Batch state updates to prevent cascading re-renders
+    // Only update if the value actually needs to change
+    if (!isStudyExpanded) {
+      setIsStudyExpanded(true);
     }
-  }, [pathname]);
+
+    if (domainId) {
+      setExpandedDomains(prev => {
+        if (prev.has(domainId)) return prev;
+        return new Set([...prev, domainId]);
+      });
+    }
+
+    if (topicId && domainId) {
+      const topicKey = `${domainId}/${topicId}`;
+      setExpandedTopics(prev => {
+        if (prev.has(topicKey)) return prev;
+        return new Set([...prev, topicKey]);
+      });
+    }
+  }, [pathname, isStudyExpanded, expandedDomains, expandedTopics]);
 
   // Persist to localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_STUDY, JSON.stringify(isStudyExpanded));
+    try {
+      localStorage.setItem(STORAGE_KEY_STUDY, JSON.stringify(isStudyExpanded));
+    } catch {
+      // Fail silently if localStorage is unavailable (e.g., private browsing)
+    }
   }, [isStudyExpanded]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_DOMAINS, JSON.stringify([...expandedDomains]));
+    try {
+      localStorage.setItem(STORAGE_KEY_DOMAINS, JSON.stringify([...expandedDomains]));
+    } catch {
+      // Fail silently if localStorage is unavailable (e.g., private browsing)
+    }
   }, [expandedDomains]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify([...expandedTopics]));
+    try {
+      localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify([...expandedTopics]));
+    } catch {
+      // Fail silently if localStorage is unavailable (e.g., private browsing)
+    }
   }, [expandedTopics]);
 
   // Toggle functions

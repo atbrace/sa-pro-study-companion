@@ -15,14 +15,23 @@ export type {
   SidebarHierarchy,
 };
 
+// Cache for sidebar hierarchy to avoid repeated filesystem reads
+let cachedHierarchy: SidebarHierarchy | null = null;
+
 /**
  * Load the full content hierarchy for sidebar navigation
  * Returns domains, topics, and sections in a lightweight format
+ * Results are cached to avoid repeated filesystem operations
  */
 export function getSidebarHierarchy(): SidebarHierarchy {
+  // Return cached result if available
+  if (cachedHierarchy) {
+    return cachedHierarchy;
+  }
+
   const domains = getAllDomains();
 
-  return {
+  const hierarchy: SidebarHierarchy = {
     domains: domains.map(domain => ({
       id: domain.meta.id,
       name: domain.meta.name,
@@ -63,4 +72,8 @@ export function getSidebarHierarchy(): SidebarHierarchy {
       }),
     })),
   };
+
+  // Cache the result for future calls
+  cachedHierarchy = hierarchy;
+  return hierarchy;
 }

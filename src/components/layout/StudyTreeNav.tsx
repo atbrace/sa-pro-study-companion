@@ -20,7 +20,10 @@ export function StudyTreeNav({ hierarchy, onNavigate }: StudyTreeNavProps) {
 
   return (
     <Collapsible open={isStudyExpanded} onOpenChange={toggleStudy}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-base font-medium hover:bg-muted transition-colors">
+      <CollapsibleTrigger
+        className="flex w-full items-center gap-2 rounded-lg p-2 text-base font-medium hover:bg-muted transition-colors"
+        aria-label={isStudyExpanded ? "Collapse study content" : "Expand study content"}
+      >
         {isStudyExpanded ? (
           <ChevronDown className="h-4 w-4" />
         ) : (
@@ -77,6 +80,7 @@ function DomainTreeItem({
             isOnDomain && 'text-foreground',
             !isOnDomain && 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
+          aria-label={isExpanded ? `Collapse ${domain.shortName}` : `Expand ${domain.shortName}`}
         >
           {isExpanded ? (
             <ChevronDown className="h-4 w-4 flex-shrink-0" />
@@ -131,6 +135,7 @@ function TopicTreeItem({
             isOnTopic && 'text-foreground',
             !isOnTopic && 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
+          aria-label={isExpanded ? `Collapse ${topic.shortName}` : `Expand ${topic.shortName}`}
         >
           {isExpanded ? (
             <ChevronDown className="h-3 w-3 flex-shrink-0" />
