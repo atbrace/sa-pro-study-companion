@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { TutorPanel } from '@/components/tutor/TutorPanel';
+import { useTutor } from '@/hooks/useTutor';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
@@ -9,12 +10,14 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const [tutorOpen, setTutorOpen] = useState(false);
+  const { isOpen, context, openTutor, closeTutor } = useTutor();
 
   const handleTutorToggle = () => {
-    setTutorOpen(!tutorOpen);
-    // TODO: Implement tutor panel in Phase 3
-    console.log('Tutor panel toggle:', !tutorOpen);
+    if (isOpen) {
+      closeTutor();
+    } else {
+      openTutor();
+    }
   };
 
   return (
@@ -33,14 +36,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         </main>
       </div>
 
-      {/* AI Tutor Panel - Will be implemented in Phase 3 */}
-      {tutorOpen && (
-        <div className="fixed bottom-4 right-4 rounded-lg border bg-card p-4 shadow-lg">
-          <p className="text-sm text-muted-foreground">
-            AI Tutor panel coming in Phase 3
-          </p>
-        </div>
-      )}
+      {/* AI Tutor Panel */}
+      <TutorPanel
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) closeTutor();
+        }}
+        context={context}
+      />
     </div>
   );
 }
