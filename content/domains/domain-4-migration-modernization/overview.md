@@ -1,125 +1,104 @@
 ---
-title: Accelerate Workload Migration and Modernization
-lastUpdated: 2026-01-05
+title: Domain 4 - Accelerate Workload Migration and Modernization
+lastUpdated: 2026-01-06
 ---
 
 # Accelerate Workload Migration and Modernization
 
-Domain 4 represents **20% of the SAP-C02 exam** and focuses on migrating existing workloads to AWS and modernizing applications for cloud-native architectures.
+This domain focuses on migrating existing workloads to AWS and modernizing applications for cloud-native architectures. You'll need to demonstrate expertise in migration strategies, database migration, application modernization, and hybrid architectures.
 
-## Domain Overview
+## Exam Weight
+
+This domain represents **20% of the SAP-C02 exam**. This domain requires understanding of migration strategies, tools, and patterns for moving workloads to AWS and transforming them for the cloud.
+
+## What You'll Learn
 
 This domain tests your ability to:
 
-1. **Select migration strategies** - Choose appropriate approach from the 6 R's
-2. **Plan and execute migrations** - Use AWS tools for discovery, planning, and execution
-3. **Minimize downtime** - Implement near-zero downtime migration strategies
-4. **Modernize applications** - Transform legacy apps to cloud-native architectures
-5. **Design hybrid solutions** - Connect on-premises with AWS seamlessly
+1. **Select migration strategies** - Choose the appropriate approach from the 6 R's based on business and technical requirements
+2. **Plan and execute migrations** - Use AWS migration tools for discovery, planning, and execution
+3. **Minimize downtime** - Implement near-zero downtime migration strategies using appropriate tools and patterns
+4. **Migrate databases** - Move databases to AWS with minimal downtime using DMS and SCT
+5. **Modernize applications** - Transform legacy applications to cloud-native architectures
+6. **Design hybrid solutions** - Connect on-premises environments with AWS seamlessly
 
 ## The 6 R's of Migration
 
+Understanding when to use each migration strategy is critical:
+
 ### 1. Rehost (Lift and Shift)
-- Move applications as-is to AWS
-- Minimal changes to application
-- Fastest migration approach
-- Use: Application Migration Service (MGN)
+- Move applications as-is to AWS with minimal changes
+- Fastest migration approach, lowest risk
+- Use AWS Application Migration Service (MGN)
+- Best for: Time-sensitive migrations, applications with limited documentation
 
 ### 2. Replatform (Lift, Tinker, and Shift)
-- Minor optimizations during migration
-- Example: Move database to RDS instead of EC2
-- Some cloud benefits without code changes
+- Minor optimizations during migration without changing core architecture
+- Example: Move database to RDS instead of running on EC2
+- Some cloud benefits without significant code changes
+- Best for: Getting quick cloud benefits while minimizing risk
 
 ### 3. Repurchase (Drop and Shop)
-- Move to SaaS solution
-- Example: Migrate CRM to Salesforce
+- Move to a different product, typically SaaS
+- Example: Migrate on-premises CRM to Salesforce
 - Replace custom software with commercial products
+- Best for: Legacy software with modern SaaS alternatives
 
 ### 4. Refactor (Re-architect)
-- Redesign application for cloud-native
-- Microservices, serverless, containers
-- Maximum cloud benefits
-- Highest effort and risk
+- Redesign application for cloud-native architecture
+- Use microservices, serverless, containers
+- Maximum cloud benefits but highest effort and risk
+- Best for: Applications needing significant improvements, competitive advantage
 
 ### 5. Retire
-- Decommission applications no longer needed
-- Reduce costs and complexity
-- Often 10-20% of IT portfolio
+- Decommission applications that are no longer needed
+- Reduces costs and complexity
+- Often 10-20% of enterprise IT portfolio can be retired
+- Best for: Redundant systems, unused applications
 
 ### 6. Retain (Revisit)
-- Keep on-premises for now
+- Keep on-premises for now, revisit later
 - Regulatory, latency, or business reasons
-- Revisit later
-
-## Key Exam Tasks
-
-### Task 4.1: Select Migration Strategies
-
-Evaluate workloads considering:
-- **Business requirements** - Timeline, budget, risk tolerance
-- **Technical feasibility** - Dependencies, complexity
-- **Cloud benefits** - What benefits to achieve (cost, agility, performance)
-- **Skills and resources** - Available expertise
-
-### Task 4.2: Database Migration
-
-Migrate databases using:
-- **AWS DMS** - Replicate databases with minimal downtime
-- **Schema Conversion Tool (SCT)** - Convert schema for heterogeneous migrations
-- **Native tools** - Backup/restore, read replicas
-- **Snowball Edge** - Large database transfers
-
-### Task 4.3: Application Modernization
-
-Transform applications with:
-- **Containers** - ECS, EKS for microservices
-- **Serverless** - Lambda, API Gateway, Step Functions
-- **Managed services** - RDS, ElastiCache, SQS instead of self-managed
-- **Strangler fig pattern** - Incrementally replace components
-
-### Task 4.4: Hybrid Architectures
-
-Connect on-premises with AWS:
-- **Networking** - Direct Connect, VPN
-- **Storage** - Storage Gateway, DataSync
-- **Compute** - Outposts, VMware Cloud on AWS
-- **Data** - DMS, Snowball, Transfer Family
+- Plan to migrate in future phases
+- Best for: Recently upgraded systems, applications not ready for migration
 
 ## Study Approach
 
-1. **Know the 6 R's** - When to use each strategy
-2. **Learn migration tools** - MGN, DMS, SCT, DataSync, Snow Family
-3. **Understand hybrid** - Direct Connect, Storage Gateway, Outposts
-4. **Minimize downtime** - CDC, blue/green, pilot light patterns
-5. **Modernization patterns** - Strangler fig, decomposition strategies
+Follow this recommended approach to master this domain:
 
-## Topics Covered
-
-1. **Migration Strategies** - 6 R's, assessment, planning, execution
-2. **Database Migration** - DMS, SCT, heterogeneous and homogeneous migrations
-3. **Application Modernization** - Containers, serverless, microservices
-4. **Hybrid Architectures** - Direct Connect, VPN, Storage Gateway, Outposts
+1. **Master the 6 R's** - Understand when to use each migration strategy
+2. **Learn migration tools** - MGN, DMS, SCT, DataSync, Snow Family, Transfer Family
+3. **Understand hybrid connectivity** - Direct Connect, VPN, Storage Gateway
+4. **Minimize downtime patterns** - CDC, blue/green deployments, pilot light
+5. **Modernization patterns** - Strangler fig, decomposition strategies, microservices
+6. **Database migrations** - Homogeneous vs heterogeneous, cutover strategies
 
 ## Exam Tips
 
-- **DMS** - Supports homogeneous and heterogeneous migrations with CDC
-- **SCT** - Required for heterogeneous migrations (Oracle → PostgreSQL)
-- **MGN (Application Migration Service)** - Replaced Server Migration Service (SMS)
-- **Direct Connect** - Dedicated network connection, not encrypted by default
-- **Storage Gateway** - File, Volume, and Tape Gateway modes
-- **DataSync** - Fast data transfer, can schedule recurring transfers
-- **Snowball Edge** - 80 TB storage, can run EC2/Lambda at edge
-- **Outposts** - AWS infrastructure on-premises
-- **Strangler fig** - Incrementally replace monolith components
+Key areas that frequently appear on the exam:
+
+- **AWS DMS** - Supports homogeneous and heterogeneous migrations with continuous data replication (CDC)
+- **Schema Conversion Tool (SCT)** - Required for heterogeneous migrations (Oracle to PostgreSQL, SQL Server to MySQL)
+- **Application Migration Service (MGN)** - Replaced Server Migration Service (SMS), lift-and-shift at scale
+- **Direct Connect** - Dedicated network connection, NOT encrypted by default (use VPN over DX for encryption)
+- **Storage Gateway** - File Gateway, Volume Gateway, and Tape Gateway modes
+- **DataSync** - Fast automated data transfer, can schedule recurring transfers
+- **Snowball Edge** - 80 TB storage, can run EC2 and Lambda at edge locations
+- **Snowmobile** - Exabyte-scale data transfer (up to 100 PB per Snowmobile)
+- **AWS Outposts** - AWS infrastructure on-premises for low-latency or data residency requirements
+- **Strangler fig pattern** - Incrementally replace monolith components with microservices
 
 ## Common Scenarios
 
-The exam will test scenarios like:
-- "Migrate 500 servers to AWS with minimal downtime"
-- "Migrate Oracle database to Aurora PostgreSQL"
-- "Modernize monolithic application to microservices"
-- "Design hybrid solution for on-premises data center"
-- "Transfer 500 TB of data to AWS"
-- "Connect on-premises network to AWS with guaranteed bandwidth"
+The exam will test scenarios such as:
 
-Focus on **selecting the right tools** for each migration scenario and **minimizing downtime** during transitions.
+- "Migrate 500 servers to AWS with minimal downtime in 6 months"
+- "Migrate an Oracle database to Aurora PostgreSQL with less than 1 hour downtime"
+- "Modernize a monolithic Java application to microservices architecture"
+- "Design hybrid solution connecting multiple on-premises data centers to AWS"
+- "Transfer 500 TB of data to AWS for initial migration"
+- "Connect on-premises network to AWS with guaranteed bandwidth and low latency"
+- "Migrate SQL Server databases to RDS while maintaining transactional consistency"
+- "Design a phased migration approach for a complex application with many dependencies"
+
+Focus on **selecting the right migration strategy and tools** for each scenario and **minimizing downtime** during transitions.

@@ -1,109 +1,73 @@
 ---
-title: Design Solutions for New Workloads
-lastUpdated: 2026-01-05
+title: Domain 2 - Design Solutions for New Workloads
+lastUpdated: 2026-01-06
 ---
 
 # Design Solutions for New Workloads
 
-Domain 2 represents **29% of the SAP-C02 exam** and focuses on designing solutions for new workloads on AWS. This domain tests your ability to select appropriate services, design deployment strategies, ensure business continuity, implement security controls, meet reliability requirements, optimize performance, and manage costs.
+This domain focuses on designing solutions for new workloads on AWS. You'll need to demonstrate expertise in selecting appropriate services, designing deployment strategies, ensuring business continuity, implementing security controls, meeting reliability requirements, optimizing performance, and managing costs.
 
-## Domain Overview
+## Exam Weight
 
-When designing solutions for new workloads, you must consider:
+This domain represents **29% of the SAP-C02 exam**, making it the highest weighted area. This domain requires deep knowledge of AWS services and when to use each one based on specific requirements.
 
-1. **Compute Options** - EC2, Lambda, containers (ECS/EKS), Batch
-2. **Storage Solutions** - S3, EBS, EFS, FSx, Storage Gateway
-3. **Database Services** - RDS, Aurora, DynamoDB, ElastiCache, specialized databases
-4. **Networking Architecture** - VPC design, load balancing, DNS, CDN
-5. **Application Integration** - Messaging, event-driven architectures, orchestration
-6. **Serverless Patterns** - Lambda, API Gateway, event sources, DynamoDB
+## What You'll Learn
 
-## Key Exam Tasks
+This domain tests your ability to:
 
-### Task 2.1: Design Deployment Strategies
+1. **Design deployment strategies** - Select appropriate compute, container, and serverless services based on workload characteristics and business requirements
+2. **Ensure business continuity** - Implement backup, disaster recovery, and high availability solutions across AWS services
+3. **Determine security controls** - Design encryption, access management, network security, and secrets management for new workloads
+4. **Meet reliability requirements** - Implement fault tolerance, auto-scaling, monitoring, and health checks
+5. **Meet performance objectives** - Optimize compute, storage, database, and network performance to meet SLAs
+6. **Optimize costs** - Select appropriate pricing models, right-size resources, and design cost-effective architectures
 
-Design deployment strategies using:
-- **Compute services** based on workload characteristics
-- **Container orchestration** for microservices
-- **Serverless architectures** for event-driven workloads
-- **Batch processing** for large-scale data processing
+## Key Service Categories
 
-### Task 2.2: Ensure Business Continuity
+When designing new workloads, you must consider:
 
-Implement:
-- **Backup strategies** across services
-- **Disaster recovery** with appropriate RTO/RPO
-- **High availability** with multi-AZ and cross-region deployments
-- **Data replication** and failover mechanisms
-
-### Task 2.3: Determine Security Controls
-
-Design security with:
-- **Encryption at rest and in transit**
-- **IAM policies and roles** for least privilege
-- **Network security** with VPCs, security groups, NACLs
-- **Secrets management** with Secrets Manager/Parameter Store
-
-### Task 2.4: Meet Reliability Requirements
-
-Ensure reliability through:
-- **Fault tolerance** with multi-AZ deployments
-- **Auto Scaling** based on metrics
-- **Monitoring and alerting** with CloudWatch
-- **Health checks** and automatic recovery
-
-### Task 2.5: Meet Performance Objectives
-
-Optimize performance with:
-- **Right-sized compute resources**
-- **Caching strategies** (CloudFront, ElastiCache, DAX)
-- **Database optimization** (read replicas, indexing, query optimization)
-- **Network performance** (placement groups, enhanced networking, accelerated networking)
-
-### Task 2.6: Cost Optimization
-
-Manage costs through:
-- **Appropriate pricing models** (On-Demand, Reserved, Spot, Savings Plans)
-- **Right-sizing** resources
-- **Storage class optimization**
-- **Serverless for variable workloads**
+- **Compute Options** - EC2, Lambda, containers (ECS/EKS), Batch
+- **Storage Solutions** - S3, EBS, EFS, FSx, Storage Gateway
+- **Database Services** - RDS, Aurora, DynamoDB, ElastiCache, specialized databases
+- **Networking Architecture** - VPC design, load balancing, DNS, CDN
+- **Application Integration** - Messaging, event-driven architectures, orchestration
+- **Serverless Patterns** - Lambda, API Gateway, event sources, state management
 
 ## Study Approach
 
-1. **Understand service capabilities** - Know when to use each service
-2. **Compare alternatives** - EC2 vs Lambda, RDS vs DynamoDB, etc.
-3. **Design patterns** - Learn common architectural patterns
+Follow this recommended approach to master this domain:
+
+1. **Understand service capabilities** - Know when to use each service and its limitations
+2. **Compare alternatives** - EC2 vs Lambda, RDS vs DynamoDB, ECS vs EKS
+3. **Learn design patterns** - Common architectural patterns for different workload types
 4. **Hands-on practice** - Deploy actual workloads to understand trade-offs
-5. **Cost awareness** - Always consider cost implications
-
-## Topics Covered
-
-This domain includes the following topics:
-
-1. **Compute Solutions** - EC2, Lambda, containers, batch processing
-2. **Storage Solutions** - Object, block, file, and hybrid storage
-3. **Database Solutions** - Relational, NoSQL, caching, and specialized databases
-4. **Networking Solutions** - VPC architecture, load balancing, content delivery
-5. **Application Integration** - Messaging, events, orchestration
-6. **Serverless Architectures** - Event-driven patterns, API design, state management
+5. **Cost awareness** - Always consider cost implications of architectural decisions
+6. **Security by design** - Incorporate security controls from the beginning
 
 ## Exam Tips
 
-- **Know service limits** and how to request increases
-- **Understand trade-offs** between different service options
-- **Security is not optional** - always implement encryption and least privilege
-- **Cost optimization** should be considered from the start
-- **Multi-AZ vs Multi-Region** - know when each is appropriate
-- **Managed services** are generally preferred for operational excellence
+Key areas that frequently appear on the exam:
+
+- **Know service limits** - Understand default limits and how to request increases
+- **Understand trade-offs** - Security vs performance, cost vs reliability, managed vs self-managed
+- **Encryption everywhere** - Data at rest and in transit must be encrypted
+- **Multi-AZ vs Multi-Region** - Know when each is appropriate for HA and DR
+- **Managed services preference** - AWS prefers managed services for operational excellence
+- **Database selection** - OLTP vs OLAP, relational vs NoSQL, caching strategies
+- **Lambda limitations** - Execution time, memory, concurrent executions, VPC cold starts
+- **Container orchestration** - ECS vs EKS trade-offs, Fargate vs EC2 launch types
 
 ## Common Scenarios
 
-The exam will test scenarios like:
+The exam will test scenarios such as:
+
 - "Design a highly available web application with database backend"
-- "Choose the right database for a specific use case"
-- "Optimize costs for a batch processing workload"
-- "Design a serverless API with authentication"
-- "Implement disaster recovery with 1-hour RTO"
-- "Select storage solutions for different access patterns"
+- "Choose the right database for a specific use case (high read, low latency, etc.)"
+- "Optimize costs for a batch processing workload that runs nightly"
+- "Design a serverless API with authentication and rate limiting"
+- "Implement disaster recovery with 1-hour RTO and 15-minute RPO"
+- "Select storage solutions for different access patterns (frequent, infrequent, archival)"
+- "Design a microservices architecture with service discovery and load balancing"
+- "Optimize performance for a global application with users worldwide"
 
 Focus on understanding **why** certain services are chosen for specific scenarios, not just **what** services exist.

@@ -1,6 +1,6 @@
 ---
 title: Domain 1 - Design Solutions for Organizational Complexity
-lastUpdated: 2026-01-05
+lastUpdated: 2026-01-06
 ---
 
 # Design Solutions for Organizational Complexity
@@ -9,35 +9,48 @@ This domain focuses on designing and implementing AWS solutions for complex ente
 
 ## Exam Weight
 
-This domain represents **26%** of the SAP-C02 exam, making it one of the most heavily weighted areas.
+This domain represents **26%** of the SAP-C02 exam, making it one of the most heavily weighted areas. You should allocate significant study time to master the concepts and services in this domain.
 
-## Key Topics
+## What You'll Learn
 
-### Task 1.1: Network Connectivity Strategies
-Design hybrid and multi-cloud network architectures using AWS Transit Gateway, Direct Connect, VPN, and advanced VPC configurations.
+This domain tests your ability to:
 
-### Task 1.2: Security Controls
-Implement comprehensive security using IAM, Organizations, SCPs, KMS, CloudTrail, Config, and Security Hub across multiple accounts.
-
-### Task 1.3: Reliable and Resilient Architectures
-Design disaster recovery, backup strategies, and high availability solutions across regions and accounts.
-
-### Task 1.4: Multi-Account AWS Environment
-Architect solutions using AWS Organizations, Control Tower, Service Catalog, and account management best practices.
-
-### Task 1.5: Cost Optimization and Visibility
-Implement cost management using Cost Explorer, Budgets, Compute Optimizer, and tagging strategies for complex environments.
+1. **Design network connectivity** - Architect hybrid and multi-cloud network solutions using Transit Gateway, Direct Connect, VPN, and advanced VPC configurations
+2. **Implement security controls** - Design comprehensive security strategies using IAM, Organizations, SCPs, KMS, CloudTrail, and Config across multiple accounts
+3. **Build resilient architectures** - Create disaster recovery, backup strategies, and high availability solutions across regions and accounts
+4. **Manage multi-account environments** - Architect solutions using AWS Organizations, Control Tower, Service Catalog, and account management best practices
+5. **Optimize costs** - Implement cost management using Cost Explorer, Budgets, Compute Optimizer, and tagging strategies for complex environments
 
 ## Study Approach
 
-1. **Start with assessments** - Identify your weak areas in this domain
-2. **Focus on multi-account patterns** - Most questions involve Organizations and Control Tower
-3. **Understand network architectures** - Transit Gateway and hybrid connectivity are critical
-4. **Master security controls** - SCPs, permission boundaries, and cross-account access
-5. **Practice cost optimization** - Know the tools and strategies for large-scale environments
+Follow this recommended approach to master this domain:
 
-## Recommended Resources
+1. **Start with assessments** - Use the practice questions to identify your weak areas
+2. **Focus on multi-account patterns** - Most exam questions involve Organizations and Control Tower
+3. **Understand network architectures** - Transit Gateway and hybrid connectivity scenarios are critical
+4. **Master security controls** - Know SCPs, permission boundaries, and cross-account access patterns
+5. **Practice cost optimization** - Learn the tools and strategies for large-scale environments
+6. **Hands-on labs** - Deploy actual multi-account setups to understand practical implementation
 
-- [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)
-- [AWS Multi-Account Strategy Best Practices](https://aws.amazon.com/organizations/getting-started/best-practices/)
-- [Organizing Your AWS Environment (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/organizing-your-aws-environment.html)
+## Exam Tips
+
+Key areas that frequently appear on the exam:
+
+- **AWS Organizations** - Organization structure, SCPs, account management, consolidated billing
+- **Transit Gateway** - Hub-and-spoke architecture, route tables, peering
+- **Direct Connect** - Dedicated connections, VIFs, hybrid connectivity
+- **Security Hub** - Centralized security findings across accounts and regions
+- **Control Tower** - Landing zones, guardrails, account factory
+- **Cost allocation tags** - Tagging strategies for cost visibility and chargeback
+- **Well-Architected Framework** - Understand all five pillars in depth
+
+## Common Scenarios
+
+The exam will test scenarios such as:
+
+- "Design a multi-account structure for a global enterprise with multiple business units"
+- "Connect 20 VPCs efficiently with centralized egress and shared services"
+- "Implement security controls that prevent developers from disabling CloudTrail"
+- "Design a disaster recovery solution with 1-hour RTO across regions"
+- "Optimize costs for a 500-account organization with mixed workloads"
+- "Migrate from on-premises to AWS while maintaining hybrid connectivity"
