@@ -1,0 +1,397 @@
+questions:
+  - id: sec-001
+    type: single
+    text: >
+      A company has 50 AWS accounts organized using AWS Organizations. The security team needs to prevent
+      any account from launching EC2 instances in regions outside of us-east-1 and us-west-2, while still
+      allowing the root user to perform account management tasks. What is the MOST effective solution?
+    options:
+      - id: A
+        text: Create an IAM policy denying ec2:RunInstances outside specified regions and attach to all users and roles
+      - id: B
+        text: Create an SCP denying ec2:RunInstances for all regions except us-east-1 and us-west-2 and attach to the root OU
+      - id: C
+        text: Use AWS Config rules to detect and terminate instances in non-compliant regions
+      - id: D
+        text: Configure VPC endpoints in us-east-1 and us-west-2 only, blocking API access to other regions
+    correctAnswer: B
+    explanation: >
+      SCPs are the correct choice for organization-wide preventive controls. An SCP with a Deny statement for
+      ec2:RunInstances in unauthorized regions will affect all principals (including root) except for the
+      management account itself. Option A is insufficient because IAM policies must be attached to every principal
+      and can be modified by administrators. Option C is detective, not preventive. Option D doesn't block API access.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+    services: [AWS Organizations, IAM]
+    concepts: [service-control-policies, preventive-controls]
+
+  - id: sec-002
+    type: single
+    text: >
+      An enterprise needs to encrypt data in an S3 bucket using KMS, with the following requirements:
+      (1) The security team in Account A must be able to audit all encryption/decryption operations,
+      (2) Applications in Account B must be able to encrypt and decrypt objects,
+      (3) The application team should NOT be able to disable or delete the key.
+      What configuration satisfies these requirements?
+    options:
+      - id: A
+        text: Create a customer-managed KMS key in Account A, add Account B root to the key policy, create IAM roles in Account B with kms:Encrypt and kms:Decrypt permissions
+      - id: B
+        text: Create an AWS-managed key in Account A and share it with Account B using AWS Resource Access Manager
+      - id: C
+        text: Create customer-managed KMS keys in both accounts and configure S3 bucket replication with encryption
+      - id: D
+        text: Use SSE-S3 encryption and enable CloudTrail in Account A with cross-account log delivery
+    correctAnswer: A
+    explanation: >
+      A customer-managed KMS key in Account A with a key policy allowing Account B principals meets all requirements.
+      The key policy grants kms:Encrypt and kms:Decrypt but not kms:ScheduleKeyDeletion or kms:DisableKey to Account B.
+      CloudTrail in Account A captures all KMS API calls for auditing. Option B is wrong because AWS-managed keys cannot
+      be shared cross-account. Option C creates unnecessary complexity. Option D doesn't provide cross-account access control.
+    awsDocLink: https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html
+    services: [AWS KMS, Amazon S3, CloudTrail]
+    concepts: [cross-account-encryption, key-policies, least-privilege]
+
+  - id: sec-003
+    type: multi
+    correctCount: 2
+    text: >
+      A company uses AWS Organizations with multiple OUs for different business units. The security team needs to
+      enforce that all EC2 instances and EBS volumes are encrypted, but some development teams need the ability to
+      create unencrypted resources for testing. Which TWO actions should be taken? (Select TWO)
+    options:
+      - id: A
+        text: Enable EBS encryption by default at the organization level using an SCP
+      - id: B
+        text: Create an SCP requiring encryption and attach it to production OUs, exclude development OUs
+      - id: C
+        text: Use AWS Config rules with auto-remediation to encrypt non-compliant resources
+      - id: D
+        text: Create a separate development OU and apply a different SCP that allows unencrypted resources
+      - id: E
+        text: Use IAM permission boundaries to restrict encryption settings for development accounts
+    correctAnswer: [B, D]
+    explanation: >
+      The correct approach is to use OU-based SCP inheritance. Create an SCP requiring encryption (Option B) and
+      attach it to production OUs. For development, create a separate OU (Option D) with a different SCP or no
+      encryption requirement. This provides flexibility while maintaining security boundaries. Option A would affect
+      all accounts. Option C is detective/reactive, not preventive. Option E doesn't provide the OU-level segregation needed.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_inheritance.html
+    services: [AWS Organizations, Amazon EC2, Amazon EBS]
+    concepts: [organizational-units, scp-inheritance, encryption-requirements]
+
+  - id: sec-004
+    type: single
+    text: >
+      A financial services company requires all database credentials to be automatically rotated every 30 days.
+      The solution must provide an audit trail of when credentials were accessed and support cross-account access
+      for a centralized secrets management approach. Which solution meets these requirements with the LEAST operational overhead?
+    options:
+      - id: A
+        text: Use AWS Systems Manager Parameter Store with a Lambda function for rotation and cross-account IAM roles
+      - id: B
+        text: Use AWS Secrets Manager with automatic rotation and resource-based policies for cross-account access
+      - id: C
+        text: Store credentials in S3 with KMS encryption, use Lambda for rotation, and S3 bucket policies for cross-account access
+      - id: D
+        text: Use HashiCorp Vault on EC2 with auto-rotation configured and VPC peering for cross-account access
+    correctAnswer: B
+    explanation: >
+      AWS Secrets Manager is purpose-built for this use case. It provides native automatic rotation using Lambda
+      (with pre-built rotation functions for RDS, Redshift, etc.), resource-based policies for cross-account access,
+      and CloudTrail integration for audit trails. Parameter Store (Option A) doesn't support automatic rotation.
+      Options C and D introduce unnecessary operational complexity.
+    awsDocLink: https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html
+    services: [AWS Secrets Manager, AWS Lambda, CloudTrail]
+    concepts: [secrets-rotation, cross-account-access, audit-trails]
+
+  - id: sec-005
+    type: single
+    text: >
+      A company's security team must aggregate security findings from GuardDuty, Inspector, and Macie across 30 AWS accounts
+      in multiple regions. They need automated compliance checking against CIS AWS Foundations Benchmark and the ability to
+      create custom insights. What is the MOST efficient solution?
+    options:
+      - id: A
+        text: Configure GuardDuty, Inspector, and Macie masters in the security account and use Lambda to aggregate findings
+      - id: B
+        text: Enable AWS Security Hub in all accounts and regions, designate a master account, and enable CIS standard
+      - id: C
+        text: Use AWS Config aggregator to collect findings and create custom Config rules for CIS compliance
+      - id: D
+        text: Deploy a third-party SIEM solution and configure each service to send findings to it
+    correctAnswer: B
+    explanation: >
+      AWS Security Hub is designed specifically for this use case. It automatically aggregates findings from GuardDuty,
+      Inspector, Macie, IAM Access Analyzer, and other services across accounts and regions. It has built-in CIS AWS
+      Foundations Benchmark checks and supports custom insights. Option A doesn't provide compliance checking. Option C
+      is focused on configuration compliance, not security findings. Option D introduces unnecessary complexity and cost.
+    awsDocLink: https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html
+    services: [AWS Security Hub, Amazon GuardDuty, Amazon Inspector, Amazon Macie]
+    concepts: [security-findings-aggregation, compliance-frameworks, multi-account-security]
+
+  - id: sec-006
+    type: single
+    text: >
+      An organization needs to delegate permission management to development team leads while preventing them from
+      granting permissions that exceed a specific set of allowed actions. Team leads should be able to create IAM
+      roles for their team members but not escalate their own privileges. What is the BEST approach?
+    options:
+      - id: A
+        text: Create an IAM group with full IAM permissions and add team leads to the group
+      - id: B
+        text: Use IAM permission boundaries that define maximum permissions, allow team leads to create roles with the boundary attached
+      - id: C
+        text: Use SCPs to limit the permissions that can be granted by team leads
+      - id: D
+        text: Create a Lambda function that validates IAM policy changes and rejects privilege escalation attempts
+    correctAnswer: B
+    explanation: >
+      IAM permission boundaries are the correct solution for delegated administration. They set the maximum permissions
+      an entity can have, preventing privilege escalation. You can allow team leads to create IAM roles (iam:CreateRole)
+      but require they attach a specific permission boundary (iam:PutRolePermissionsBoundary). This prevents them from
+      creating roles with permissions exceeding the boundary. Option A doesn't prevent escalation. Option C affects all
+      principals. Option D is reactive and overly complex.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
+    services: [AWS IAM]
+    concepts: [permission-boundaries, delegated-administration, privilege-escalation-prevention]
+
+  - id: sec-007
+    type: multi
+    correctCount: 3
+    text: >
+      A company requires all API calls across their AWS Organization to be logged for compliance and security analysis.
+      The solution must be immutable, cost-effective, and support long-term retention. Which THREE actions should be implemented?
+    options:
+      - id: A
+        text: Enable an organization CloudTrail in the management account
+      - id: B
+        text: Store logs in an S3 bucket with versioning and MFA delete enabled
+      - id: C
+        text: Enable CloudTrail log file integrity validation
+      - id: D
+        text: Configure CloudTrail to send logs to CloudWatch Logs for real-time analysis
+      - id: E
+        text: Use S3 Glacier for log archival with a vault lock policy
+      - id: F
+        text: Replicate logs to multiple regions using S3 cross-region replication
+    correctAnswer: [A, C, E]
+    explanation: >
+      An organization trail (A) creates a single trail for all accounts. CloudTrail log file integrity validation (C)
+      ensures logs haven't been modified after delivery, providing immutability. S3 Glacier with vault lock (E) provides
+      cost-effective long-term storage with WORM (write once, read many) compliance. Option B provides versioning but
+      not regulatory compliance. Option D is useful but not required for the stated requirements. Option F adds cost
+      without adding compliance value.
+    awsDocLink: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html
+    services: [AWS CloudTrail, Amazon S3, S3 Glacier]
+    concepts: [immutable-logging, compliance, organization-trail]
+
+  - id: sec-008
+    type: single
+    text: >
+      A healthcare company must ensure that all Amazon RDS databases are encrypted and configured with automated backups.
+      When non-compliant resources are detected, they should be automatically remediated. The solution must work across
+      50 AWS accounts. What is the MOST automated solution?
+    options:
+      - id: A
+        text: Use AWS Config aggregator with custom Lambda functions to detect and remediate non-compliant RDS instances
+      - id: B
+        text: Deploy AWS Config rules (rds-encryption-enabled, db-backup-enabled) across all accounts using StackSets with auto-remediation via Systems Manager Automation
+      - id: C
+        text: Create an EventBridge rule to monitor RDS creation events and use Lambda to check compliance
+      - id: D
+        text: Use Service Catalog to enforce compliant RDS configurations through approved templates
+    correctAnswer: B
+    explanation: >
+      AWS Config with automatic remediation using Systems Manager Automation documents is the correct approach. Deploy
+      managed Config rules (rds-encryption-enabled and rds-automatic-backup-enabled) using StackSets to all accounts.
+      Configure auto-remediation actions that modify non-compliant resources. This is fully automated and scalable.
+      Option A requires custom code. Option C is preventive but doesn't remediate existing resources. Option D is
+      preventive only and doesn't remediate non-compliant resources.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/remediation.html
+    services: [AWS Config, AWS Systems Manager, AWS CloudFormation]
+    concepts: [automatic-remediation, compliance-as-code, multi-account-governance]
+
+  - id: sec-009
+    type: single
+    text: >
+      A company wants to analyze network traffic patterns to detect potential security threats, including unusual
+      data transfers, cryptocurrency mining, and command-and-control communication. The solution should use machine
+      learning and require minimal configuration. What service should they use?
+    options:
+      - id: A
+        text: Enable VPC Flow Logs and use Amazon Athena with custom queries to detect anomalies
+      - id: B
+        text: Deploy a third-party intrusion detection system on EC2 instances
+      - id: C
+        text: Enable Amazon GuardDuty which analyzes VPC Flow Logs, CloudTrail logs, and DNS logs using ML
+      - id: D
+        text: Use AWS Network Firewall with custom rules to detect malicious patterns
+    correctAnswer: C
+    explanation: >
+      Amazon GuardDuty is a threat detection service that uses machine learning to analyze VPC Flow Logs, CloudTrail
+      logs, and DNS logs. It automatically detects cryptocurrency mining, command-and-control communication, unusual
+      API activity, and compromised instances with minimal configuration (just enable it). Option A requires manual
+      analysis. Option B requires management overhead. Option D (Network Firewall) is for prevention, not intelligent
+      threat detection.
+    awsDocLink: https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html
+    services: [Amazon GuardDuty, Amazon VPC]
+    concepts: [threat-detection, machine-learning, security-monitoring]
+
+  - id: sec-010
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is designing a multi-account security architecture. The security team needs centralized
+      visibility and control. Which TWO design patterns should be implemented?
+    options:
+      - id: A
+        text: Create a dedicated Security account as GuardDuty master, Security Hub master, and Config aggregator
+      - id: B
+        text: Store all CloudTrail logs in the management account for centralized access
+      - id: C
+        text: Create a dedicated Logging account with restricted access for immutable log storage
+      - id: D
+        text: Enable all security services in every account individually without delegation
+      - id: E
+        text: Use the management account as the Security Hub master for simplified access
+    correctAnswer: [A, C]
+    explanation: >
+      The AWS recommended pattern is to create separate Security (A) and Logging (C) accounts. The Security account
+      hosts security tooling (GuardDuty master, Security Hub master, Config aggregator) with delegated administration.
+      The Logging account stores CloudTrail logs, Config snapshots, and other logs with strict access controls. Option B
+      is incorrect because logs should not be in the management account (which should be locked down). Option D creates
+      management overhead. Option E violates the principle of separating the management account from operational workloads.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/security-ou-and-accounts.html
+    services: [AWS Organizations, AWS Security Hub, Amazon GuardDuty]
+    concepts: [security-architecture, multi-account-strategy, separation-of-duties]
+
+  - id: sec-011
+    type: single
+    text: >
+      A company needs to rotate KMS customer-managed keys (CMKs) for compliance requirements. After rotation, older
+      versions of the key must still be able to decrypt previously encrypted data. What is the correct statement about
+      KMS automatic key rotation?
+    options:
+      - id: A
+        text: Automatic rotation creates a new CMK with a new key ID, and the old key is scheduled for deletion
+      - id: B
+        text: Automatic rotation creates new cryptographic material but keeps the same key ID, old material is retained for decryption
+      - id: C
+        text: Automatic rotation requires re-encrypting all data with the new key material
+      - id: D
+        text: Automatic rotation is not supported for customer-managed keys, only AWS-managed keys
+    correctAnswer: B
+    explanation: >
+      When you enable automatic key rotation for a customer-managed CMK, KMS generates new cryptographic material
+      every year but retains the same key ID and ARN. All previous backing keys are retained indefinitely and used
+      automatically to decrypt data that was encrypted under an old backing key. No re-encryption is required. Option A
+      is incorrect because the key ID stays the same. Option C is wrong because KMS handles this automatically. Option D
+      is incorrect because automatic rotation is available for customer-managed keys (must be enabled manually).
+    awsDocLink: https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html
+    services: [AWS KMS]
+    concepts: [key-rotation, encryption, cryptographic-material]
+
+  - id: sec-012
+    type: single
+    text: >
+      An organization has an SCP that denies all actions in all regions except us-east-1. A developer in a member account
+      has an IAM policy with full EC2 permissions. What will happen when the developer tries to launch an EC2 instance
+      in us-west-2?
+    options:
+      - id: A
+        text: The instance will launch successfully because IAM policies take precedence over SCPs
+      - id: B
+        text: The instance will not launch because explicit deny in the SCP overrides the IAM policy allow
+      - id: C
+        text: The instance will launch but will be automatically terminated by AWS Config
+      - id: D
+        text: The request will be queued pending approval from the organization administrator
+    correctAnswer: B
+    explanation: >
+      SCPs set the maximum permissions for all principals in an account (except the management account). An explicit
+      deny in an SCP cannot be overridden by any IAM policy. Even if the IAM policy grants full EC2 permissions, the
+      SCP deny for us-west-2 prevents the action. This is the fundamental principle of SCPs - they define the guardrails
+      within which IAM policies can grant permissions. The evaluation logic is: explicit deny always wins, regardless of source.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+    services: [AWS Organizations, IAM]
+    concepts: [scp-evaluation, policy-evaluation-logic, explicit-deny]
+
+  - id: sec-013
+    type: single
+    text: >
+      A company needs to ensure developers can access production RDS databases using temporary credentials that expire
+      after 1 hour. The solution should integrate with the existing Active Directory and provide detailed audit logs
+      of database access. What is the BEST solution?
+    options:
+      - id: A
+        text: Use AWS IAM database authentication with AD federation via SAML and CloudTrail logging
+      - id: B
+        text: Store database credentials in Secrets Manager and rotate them every hour
+      - id: C
+        text: Use AWS Directory Service with AD Connector and store passwords in Parameter Store
+      - id: D
+        text: Create temporary IAM users with database access, delete after 1 hour
+    correctAnswer: A
+    explanation: >
+      IAM database authentication allows users to authenticate to RDS MySQL and PostgreSQL using IAM credentials instead
+      of database passwords. Authentication tokens are valid for 15 minutes. When combined with AD federation via SAML,
+      developers can use their AD credentials to assume IAM roles that have database access. CloudTrail logs all
+      authentication attempts. This provides temporary access, AD integration, and audit trails. Option B doesn't provide
+      AD integration. Option C doesn't provide temporary credentials. Option D is operationally impractical.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+    services: [Amazon RDS, AWS IAM, AWS CloudTrail]
+    concepts: [iam-database-authentication, temporary-credentials, federation]
+
+  - id: sec-014
+    type: multi
+    correctCount: 2
+    text: >
+      A financial services company must implement detective controls to identify when S3 buckets contain sensitive
+      customer data (PII) and ensure buckets are not publicly accessible. Which TWO services should be used together?
+    options:
+      - id: A
+        text: Amazon Macie to discover and classify PII in S3 buckets
+      - id: B
+        text: AWS Shield to protect S3 buckets from DDoS attacks
+      - id: C
+        text: AWS IAM Access Analyzer to identify S3 buckets accessible to external accounts
+      - id: D
+        text: AWS WAF to filter requests to S3 buckets
+      - id: E
+        text: Amazon Inspector to scan S3 buckets for vulnerabilities
+    correctAnswer: [A, C]
+    explanation: >
+      Amazon Macie (A) uses machine learning to automatically discover, classify, and protect sensitive data in S3,
+      including PII, PHI, and financial data. IAM Access Analyzer (C) analyzes resource policies to identify resources
+      shared with external entities. Together, they provide comprehensive detective controls for data discovery and
+      access visibility. Option B (Shield) is for DDoS protection. Option D (WAF) is for application layer filtering.
+      Option E (Inspector) is for EC2 vulnerability scanning, not S3.
+    awsDocLink: https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html
+    services: [Amazon Macie, IAM Access Analyzer, Amazon S3]
+    concepts: [data-discovery, sensitive-data-protection, access-analysis]
+
+  - id: sec-015
+    type: single
+    text: >
+      A company's security policy requires that all data at rest be encrypted with keys that can be immediately disabled
+      in case of a security incident, with full audit trails of all encryption and decryption operations. Which encryption
+      method for S3 should they use?
+    options:
+      - id: A
+        text: SSE-S3 (Amazon S3-Managed Keys) with bucket policies
+      - id: B
+        text: SSE-KMS (AWS KMS-Managed Keys) with customer-managed CMK
+      - id: C
+        text: SSE-C (Customer-Provided Keys) with client-side key management
+      - id: D
+        text: Client-side encryption using the AWS Encryption SDK
+    correctAnswer: B
+    explanation: >
+      SSE-KMS with a customer-managed CMK meets all requirements. You can immediately disable the CMK (kms:DisableKey)
+      to prevent all new encryption/decryption operations. CloudTrail automatically logs all KMS API calls including
+      Encrypt and Decrypt operations, providing a complete audit trail. SSE-S3 (A) doesn't provide immediate disable
+      capability or detailed audit logs. SSE-C (C) requires you to manage keys and doesn't provide AWS-integrated
+      audit trails. Option D adds client-side complexity without additional benefit.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
+    services: [Amazon S3, AWS KMS, CloudTrail]
+    concepts: [encryption-at-rest, key-management, audit-trails]

@@ -1,0 +1,51 @@
+id: security-controls
+name: Security Controls and Compliance
+shortName: Security Controls
+examTask: task-1-2
+description: >
+  Design and implement comprehensive security controls for enterprise AWS environments,
+  including identity management, encryption, compliance, and security monitoring.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - AWS IAM
+  - AWS Organizations
+  - AWS KMS
+  - AWS CloudTrail
+  - AWS Config
+  - AWS Security Hub
+  - AWS GuardDuty
+  - AWS Secrets Manager
+  - AWS Certificate Manager
+
+keyConcepts:
+  - Service Control Policies (SCPs)
+  - IAM permission boundaries
+  - Cross-account access patterns
+  - KMS key policies and grants
+  - CloudTrail log aggregation
+  - Config rules and remediation
+  - Security Hub integration
+  - GuardDuty threat detection
+  - Secrets rotation strategies
+
+awsDocLinks:
+  - title: AWS IAM Best Practices
+    url: https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html
+    type: doc
+  - title: AWS Key Management Service Documentation
+    url: https://docs.aws.amazon.com/kms/latest/developerguide/
+    type: doc
+  - title: AWS Security Best Practices Whitepaper
+    url: https://docs.aws.amazon.com/whitepapers/latest/aws-security-best-practices/
+    type: whitepaper
+  - title: AWS Well-Architected Framework - Security Pillar
+    url: https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/
+    type: whitepaper
+
+relatedExperiments:
+  - lab-organizations-scp
+  - lab-kms-encryption
+  - lab-security-hub
