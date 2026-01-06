@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomDomainQuestions, getTopicQuestions } from '@/lib/content/loader';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/questions - Get questions for assessment
  */
