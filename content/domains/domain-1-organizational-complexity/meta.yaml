@@ -40,6 +40,7 @@ topics:
   - network-connectivity
   - security-controls
   - resilient-architectures
+  - multi-account-environment
 
 keyServices:
   - AWS Transit Gateway

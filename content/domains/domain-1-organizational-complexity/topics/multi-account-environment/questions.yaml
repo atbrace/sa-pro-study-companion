@@ -1,0 +1,387 @@
+questions:
+  - id: multi-001
+    type: single
+    text: >
+      A company has 100 AWS accounts organized using AWS Organizations. They need to enforce that all EC2 instances
+      must have specific tags (CostCenter and Environment) at launch time across all accounts. The solution should
+      prevent instance launch if tags are missing. What is the MOST effective approach?
+    options:
+      - id: A
+        text: Create an SCP that denies ec2:RunInstances without required tags, attach to root OU
+      - id: B
+        text: Use AWS Config rules to detect instances without tags and terminate them
+      - id: C
+        text: Create a tag policy with enforced_for directive for ec2:instance
+      - id: D
+        text: Use Service Catalog to provide pre-tagged AMIs and prevent direct EC2 access
+    correctAnswer: A
+    explanation: >
+      An SCP with a Deny statement conditional on missing tags is preventive and enforces the policy organization-wide.
+      Example: Deny ec2:RunInstances unless aws:RequestTag/CostCenter and aws:RequestTag/Environment exist. Tag policies
+      (C) provide guidance but don't prevent non-compliant launches. Config rules (B) are detective, not preventive.
+      Service Catalog (D) can help but doesn't prevent direct EC2 access without additional controls.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples_tagging.html
+    services: [AWS Organizations, Amazon EC2]
+    concepts: [service-control-policies, tag-enforcement, preventive-controls]
+
+  - id: multi-002
+    type: multi
+    correctCount: 3
+    text: >
+      A company is setting up a new multi-account environment using AWS Control Tower. Which THREE accounts are
+      automatically created and should NOT run production workloads?
+    options:
+      - id: A
+        text: Management account (organization root)
+      - id: B
+        text: Audit account (security and compliance)
+      - id: C
+        text: Log Archive account (centralized logging)
+      - id: D
+        text: Network account (centralized networking)
+      - id: E
+        text: Shared Services account (common resources)
+      - id: F
+        text: Security Tooling account (security tools)
+    correctAnswer: [A, B, C]
+    explanation: >
+      Control Tower automatically creates three core accounts: (A) Management account for billing and organization
+      administration, (B) Audit account for security and compliance tools, and (C) Log Archive account for centralized
+      logging. These should never run workloads. Network (D), Shared Services (E), and Security Tooling (F) accounts
+      are optional and created by you, not automatically by Control Tower.
+    awsDocLink: https://docs.aws.amazon.com/controltower/latest/userguide/how-control-tower-works.html
+    services: [AWS Control Tower, AWS Organizations]
+    concepts: [landing-zone, core-accounts, account-structure]
+
+  - id: multi-003
+    type: single
+    text: >
+      An organization uses AWS IAM Identity Center (SSO) to manage access to 50 AWS accounts. Developers need access
+      to development accounts with PowerUserAccess but should NOT be able to modify IAM policies or create new IAM
+      users. How should this be configured?
+    options:
+      - id: A
+        text: Create a permission set with PowerUserAccess managed policy and an inline policy denying IAM modifications
+      - id: B
+        text: Assign developers to the PowerUserAccess permission set and use SCPs to deny IAM actions
+      - id: C
+        text: Create IAM users in each account with PowerUserAccess and enable MFA
+      - id: D
+        text: Use AWS Organizations to restrict IAM actions at the account level
+    correctAnswer: A
+    explanation: >
+      Permission sets in IAM Identity Center support both managed policies and inline policies. Attach the AWS managed
+      PowerUserAccess policy and add an inline policy explicitly denying iam:* actions. This gives broad permissions
+      while restricting IAM modifications. Option B (SCPs) would affect all principals, not just developers. Option C
+      defeats the purpose of SSO. Option D doesn't provide the granular control needed.
+    awsDocLink: https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html
+    services: [AWS IAM Identity Center, AWS IAM]
+    concepts: [permission-sets, sso, least-privilege]
+
+  - id: multi-004
+    type: single
+    text: >
+      A company has a centralized Network account with a Transit Gateway. They want to share the Transit Gateway with
+      30 workload accounts so those accounts can create attachments and route traffic through the TGW. What is the
+      MOST operationally efficient solution?
+    options:
+      - id: A
+        text: Manually add each account ID to the Transit Gateway sharing configuration
+      - id: B
+        text: Use AWS Resource Access Manager (RAM) to share the Transit Gateway with the organization or specific OUs
+      - id: C
+        text: Use VPC peering between the Network account and each workload account
+      - id: D
+        text: Create a Transit Gateway in each workload account and interconnect them
+    correctAnswer: B
+    explanation: >
+      AWS RAM allows sharing Transit Gateways with organizations or OUs, making it operationally efficient for large
+      numbers of accounts. Member accounts can create attachments and route traffic. Option A doesn't scale well.
+      Option C (VPC peering) doesn't use the Transit Gateway and creates a mesh topology. Option D defeats the purpose
+      of centralized networking and is expensive.
+    awsDocLink: https://docs.aws.amazon.com/ram/latest/userguide/working-with-transit-gateway.html
+    services: [AWS Resource Access Manager, AWS Transit Gateway]
+    concepts: [resource-sharing, centralized-networking, multi-account-networking]
+
+  - id: multi-005
+    type: multi
+    correctCount: 2
+    text: >
+      A security team needs to aggregate security findings from multiple services across 40 AWS accounts. The
+      solution should provide a single pane of glass and support automated compliance checks. Which TWO services
+      should be configured?
+    options:
+      - id: A
+        text: Enable AWS Security Hub and designate the security account as the master
+      - id: B
+        text: Enable AWS Config aggregator in the security account
+      - id: C
+        text: Create a GuardDuty master account with member accounts
+      - id: D
+        text: Use CloudWatch cross-account observability
+      - id: E
+        text: Deploy a third-party SIEM across all accounts
+    correctAnswer: [A, C]
+    explanation: >
+      AWS Security Hub (A) aggregates findings from GuardDuty, Config, Macie, Inspector, and more, with automated
+      compliance checks (CIS, PCI-DSS). GuardDuty (C) should be configured with a master-member relationship so
+      findings appear in Security Hub. Config aggregator (B) is for configuration compliance, not security findings.
+      CloudWatch (D) is for metrics/logs. Option E adds unnecessary cost and complexity.
+    awsDocLink: https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-accounts.html
+    services: [AWS Security Hub, Amazon GuardDuty]
+    concepts: [security-findings-aggregation, delegated-administration, multi-account-security]
+
+  - id: multi-006
+    type: single
+    text: >
+      A company wants to prevent all accounts in their organization from leaving specific AWS regions. An SCP is
+      attached to the root OU that denies all actions outside of us-east-1 and us-west-2. However, global services
+      like IAM, Route 53, and CloudFront are failing. How should this be fixed?
+    options:
+      - id: A
+        text: Remove the SCP and use AWS Control Tower guardrails instead
+      - id: B
+        text: Modify the SCP to exclude global services from the region restriction using NotAction
+      - id: C
+        text: Add a condition to the SCP to allow aws:RequestedRegion of empty string or us-east-1 for global services
+      - id: D
+        text: Create a separate SCP for global services and attach to specific accounts
+    correctAnswer: C
+    explanation: >
+      Global services (IAM, CloudFront, Route 53, etc.) report as us-east-1 or have an empty RequestedRegion. The SCP
+      must allow these by checking if aws:RequestedRegion is empty or equals us-east-1. Correct condition:
+      StringNotEquals aws:RequestedRegion [us-east-1, us-west-2] with NotAction for global services, OR allow
+      empty/us-east-1 explicitly. Option B (NotAction) is complex. Option D creates management overhead.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples_general.html
+    services: [AWS Organizations, IAM]
+    concepts: [service-control-policies, region-restrictions, global-services]
+
+  - id: multi-007
+    type: single
+    text: >
+      A company uses AWS Control Tower and needs to automatically deploy custom security configurations (CloudWatch
+      alarms, Config rules, S3 buckets) to every new account created through Account Factory. What is the BEST approach?
+    options:
+      - id: A
+        text: Manually deploy resources to each account after creation
+      - id: B
+        text: Use Customizations for Control Tower (CfCT) with CloudFormation templates
+      - id: C
+        text: Create a Lambda function triggered by account creation events
+      - id: D
+        text: Use AWS Config remediation to deploy missing resources
+    correctAnswer: B
+    explanation: >
+      Customizations for Control Tower (CfCT) is designed specifically for this use case. It allows you to define
+      CloudFormation templates and SCPs that are automatically deployed to accounts created by Account Factory. It
+      integrates natively with Control Tower and maintains consistency. Option A doesn't scale. Option C requires
+      custom code. Option D is for remediation, not initial deployment.
+    awsDocLink: https://docs.aws.amazon.com/controltower/latest/userguide/cfct-overview.html
+    services: [AWS Control Tower, AWS CloudFormation]
+    concepts: [account-baselining, automation, customizations]
+
+  - id: multi-008
+    type: single
+    text: >
+      An organization has deployed VPCs in a Network account and shared subnets with workload accounts using AWS RAM.
+      A workload account launches EC2 instances in the shared subnet but cannot modify the subnet's route table or
+      security groups. What is the explanation?
+    options:
+      - id: A
+        text: The Network account hasn't granted sufficient RAM permissions
+      - id: B
+        text: This is expected behavior - participant accounts cannot modify shared resources, only use them
+      - id: C
+        text: The workload account needs explicit IAM permissions to modify shared resources
+      - id: D
+        text: VPC sharing doesn't support route table or security group delegation
+    correctAnswer: B
+    explanation: >
+      This is the correct and expected behavior of VPC sharing via RAM. Participant accounts can launch resources
+      (EC2, RDS, Lambda) in shared subnets and assign security groups created in their own account, but they cannot
+      modify the shared VPC resources (subnets, route tables, NACLs). Only the owner account can modify shared
+      resources. This provides centralized network management with delegated compute.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html
+    services: [Amazon VPC, AWS Resource Access Manager]
+    concepts: [vpc-sharing, resource-ownership, shared-resources]
+
+  - id: multi-009
+    type: multi
+    correctCount: 3
+    text: >
+      A company is implementing AWS Service Catalog to provide self-service cloud resources to development teams.
+      The catalog should enforce tagging, restrict regions, and ensure cost visibility. Which THREE configurations
+      should be implemented?
+    options:
+      - id: A
+        text: Create launch constraints with IAM roles that have restricted permissions
+      - id: B
+        text: Add template constraints to enforce specific parameter values (tags, regions)
+      - id: C
+        text: Enable TagOptions to automatically apply required tags
+      - id: D
+        text: Use CloudFormation StackSets to distribute products
+      - id: E
+        text: Configure budget alerts at the portfolio level
+      - id: F
+        text: Use SCPs to restrict Service Catalog usage
+    correctAnswer: [A, B, C]
+    explanation: >
+      Launch constraints (A) specify the IAM role used to provision products, enforcing least privilege. Template
+      constraints (B) restrict allowable parameter values (e.g., only specific regions or instance types). TagOptions
+      (C) automatically apply required tags to provisioned resources. StackSets (D) are for multi-account deployment,
+      not catalog distribution. Portfolio budgets (E) don't exist. SCPs (F) would restrict Service Catalog entirely.
+    awsDocLink: https://docs.aws.amazon.com/servicecatalog/latest/adminguide/constraints.html
+    services: [AWS Service Catalog]
+    concepts: [self-service, governance, constraints]
+
+  - id: multi-010
+    type: single
+    text: >
+      An organization uses AWS Organizations with consolidated billing. They want to share Reserved Instances and
+      Savings Plans across all accounts, but ensure that each business unit (mapped to OUs) is billed separately.
+      How should this be configured?
+    options:
+      - id: A
+        text: Enable RI and Savings Plans sharing at the organization level, use cost allocation tags to track business units
+      - id: B
+        text: Disable RI and Savings Plans sharing, purchase separately in each account
+      - id: C
+        text: Create separate organizations for each business unit
+      - id: D
+        text: Use AWS Budgets to allocate shared savings to business units
+    correctAnswer: A
+    explanation: >
+      By default, RIs and Savings Plans are shared across all accounts in an organization (consolidated billing
+      benefit). Use cost allocation tags to track which business unit consumed the resources, allowing accurate
+      chargeback. Cost Explorer can filter by tags to show per-business-unit costs. Option B loses the sharing benefit
+      and increases costs. Option C creates unnecessary complexity. Option D doesn't enable cost allocation.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/con-bill-blended-rates.html
+    services: [AWS Organizations, AWS Cost Explorer]
+    concepts: [consolidated-billing, ri-sharing, cost-allocation]
+
+  - id: multi-011
+    type: single
+    text: >
+      A security architect needs to analyze CloudTrail logs from all 50 accounts in the organization. Logs are stored
+      in a central S3 bucket in the Logging account. The security team's IAM role is in the Security account. How
+      should cross-account access be configured?
+    options:
+      - id: A
+        text: Create an IAM role in the Logging account with S3 read permissions, configure cross-account assume role trust to Security account
+      - id: B
+        text: Add a bucket policy to the S3 bucket allowing the Security account's IAM role to read objects
+      - id: C
+        text: Replicate logs to a bucket in the Security account using S3 CRR
+      - id: D
+        text: Use AWS Resource Access Manager to share the S3 bucket
+    correctAnswer: B
+    explanation: >
+      S3 bucket policies support cross-account access and are simpler than cross-account IAM roles for this use case.
+      The bucket policy in the Logging account grants s3:GetObject permission to the Security account's IAM role ARN.
+      Option A (cross-account role) works but is more complex. Option C duplicates logs unnecessarily. Option D - RAM
+      doesn't support S3 bucket sharing.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-walkthroughs-managing-access-example2.html
+    services: [Amazon S3, AWS IAM]
+    concepts: [cross-account-access, bucket-policies, centralized-logging]
+
+  - id: multi-012
+    type: single
+    text: >
+      A company creates 5-10 new AWS accounts per month using Account Factory in Control Tower. Each account needs
+      the same baseline: VPC with specific CIDR, VPN connection to on-premises, CloudWatch dashboards, and custom
+      Config rules. What is the MOST automated solution?
+    options:
+      - id: A
+        text: Create a CloudFormation template and manually deploy to each account after creation
+      - id: B
+        text: Use CloudFormation StackSets targeting the organization or specific OUs
+      - id: C
+        text: Use Customizations for Control Tower (CfCT) to automatically deploy baseline resources
+      - id: D
+        text: Create a Lambda function that deploys resources when accounts are created
+    correctAnswer: C
+    explanation: >
+      Customizations for Control Tower (CfCT) is designed specifically to extend Account Factory with custom baselines.
+      Define CloudFormation templates in the CfCT configuration, and they are automatically deployed to new accounts
+      created by Account Factory. StackSets (B) work but don't integrate with Account Factory automation. Options A
+      and D require manual intervention or custom code.
+    awsDocLink: https://docs.aws.amazon.com/controltower/latest/userguide/cfct-overview.html
+    services: [AWS Control Tower, AWS CloudFormation]
+    concepts: [account-factory, automation, account-baselining]
+
+  - id: multi-013
+    type: multi
+    correctCount: 2
+    text: >
+      An organization wants to delegate administrative permissions for specific AWS services to the Security account
+      without granting access to the management account. Which TWO services should use delegated administration?
+    options:
+      - id: A
+        text: AWS Security Hub
+      - id: B
+        text: AWS IAM
+      - id: C
+        text: AWS GuardDuty
+      - id: D
+        text: AWS Organizations
+      - id: E
+        text: AWS Billing
+    correctAnswer: [A, C]
+    explanation: >
+      AWS Security Hub (A) and GuardDuty (C) both support delegated administration, allowing the Security account to
+      manage these services organization-wide without accessing the management account. This follows the best practice
+      of minimizing management account usage. IAM (B), Organizations (D), and Billing (E) cannot be delegated - they
+      must be managed from the management account.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_delegate_policies.html
+    services: [AWS Security Hub, Amazon GuardDuty, AWS Organizations]
+    concepts: [delegated-administration, separation-of-duties, least-privilege]
+
+  - id: multi-014
+    type: single
+    text: >
+      A company has an SCP attached to the Production OU that denies all s3:DeleteBucket actions to prevent accidental
+      bucket deletion. A CloudFormation stack in a Production account is failing to delete because it cannot delete
+      an S3 bucket. How should this be resolved WITHOUT removing the SCP?
+    options:
+      - id: A
+        text: Add an IAM policy to the CloudFormation execution role allowing s3:DeleteBucket
+      - id: B
+        text: Manually delete the bucket, then delete the stack
+      - id: C
+        text: Modify the SCP to allow deletion for CloudFormation service principal
+      - id: D
+        text: Move the account to a different OU temporarily, delete stack, move back
+    correctAnswer: B
+    explanation: >
+      SCPs cannot be overridden by IAM policies - an explicit SCP Deny always wins. Since the SCP denies s3:DeleteBucket
+      for all principals in the OU, the only option is to manually delete the bucket (after emptying it), then delete
+      the stack. Option A won't work because SCPs override IAM policies. Option C is possible but requires modifying
+      the SCP which may violate the intent of the policy. Option D is operationally complex.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+    services: [AWS Organizations, AWS CloudFormation]
+    concepts: [scp-evaluation, policy-precedence, explicit-deny]
+
+  - id: multi-015
+    type: single
+    text: >
+      An enterprise has 200+ AWS accounts and needs to ensure that all EBS volumes and RDS instances are encrypted
+      across the organization. The solution should be preventive, not detective. What is the BEST approach?
+    options:
+      - id: A
+        text: Use AWS Config rules to detect unencrypted resources and terminate them
+      - id: B
+        text: Create an SCP that denies creation of unencrypted EBS volumes and RDS instances
+      - id: C
+        text: Enable EBS encryption by default in each account manually
+      - id: D
+        text: Use AWS Systems Manager Automation to encrypt existing resources
+    correctAnswer: B
+    explanation: >
+      An SCP with Deny statements for creating unencrypted resources is the only preventive control that works
+      organization-wide. Example: Deny ec2:RunInstances if encrypted=false. Deny rds:CreateDBInstance if
+      StorageEncrypted=false. Option A is detective, not preventive. Option C doesn't prevent unencrypted creation
+      and doesn't scale. Option D is remediation for existing resources, not prevention for new ones.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples.html
+    services: [AWS Organizations, Amazon EBS, Amazon RDS]
+    concepts: [encryption-enforcement, preventive-controls, service-control-policies]

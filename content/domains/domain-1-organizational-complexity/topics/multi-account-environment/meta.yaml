@@ -1,0 +1,53 @@
+id: multi-account-environment
+name: Multi-Account AWS Environment Design
+shortName: Multi-Account Environment
+examTask: task-1-4
+description: >
+  Design and implement multi-account strategies using AWS Organizations, Control Tower,
+  and related services to manage complex enterprise AWS environments.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - AWS Organizations
+  - AWS Control Tower
+  - AWS Service Catalog
+  - AWS Resource Access Manager (RAM)
+  - AWS Single Sign-On (SSO)
+  - AWS Identity Center
+  - AWS CloudFormation StackSets
+  - AWS Config
+  - AWS Security Hub
+  - AWS IAM Identity Center
+
+keyConcepts:
+  - Organizational Units (OUs) structure
+  - Service Control Policies (SCPs)
+  - Account vending and provisioning
+  - Centralized logging and security
+  - Resource sharing across accounts
+  - Identity federation and SSO
+  - Delegated administration
+  - Account baselining
+  - Multi-account governance
+  - Landing Zone design
+
+awsDocLinks:
+  - title: AWS Organizations Documentation
+    url: https://docs.aws.amazon.com/organizations/latest/userguide/
+    type: doc
+  - title: AWS Control Tower Documentation
+    url: https://docs.aws.amazon.com/controltower/latest/userguide/
+    type: doc
+  - title: Organizing Your AWS Environment Whitepaper
+    url: https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/
+    type: whitepaper
+  - title: AWS Multi-Account Strategy Best Practices
+    url: https://aws.amazon.com/organizations/getting-started/best-practices/
+    type: doc
+
+relatedExperiments:
+  - lab-organizations-setup
+  - lab-control-tower
+  - lab-account-vending
