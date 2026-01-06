@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Copy, Check, Terminal, Code2, Info, ExternalLink } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { notFound } from 'next/navigation';
+import { StudyContent } from '@/components/study/StudyContent';
 
 interface LabPageProps {
   params: { lab: string };
@@ -28,6 +28,48 @@ const labsMetadata: Record<string, {
     stackClass: 'VpcNetworkingLabStack',
     estimatedCost: '~$0.10/hour',
     estimatedTime: 45,
+  },
+  'lab-rds-multi-az': {
+    name: 'RDS Multi-AZ with Read Replicas',
+    stackFile: 'lab-rds-multi-az.ts',
+    stackClass: 'RdsMultiAzLabStack',
+    estimatedCost: '~$0.15/hour',
+    estimatedTime: 60,
+  },
+  'lab-lambda-api-gateway': {
+    name: 'Lambda + API Gateway + DynamoDB',
+    stackFile: 'lab-lambda-api-gateway.ts',
+    stackClass: 'LambdaApiGatewayLabStack',
+    estimatedCost: '~$0.01/hour',
+    estimatedTime: 60,
+  },
+  'lab-s3-cloudfront': {
+    name: 'S3 + CloudFront Distribution',
+    stackFile: 'lab-s3-cloudfront.ts',
+    stackClass: 'S3CloudFrontLabStack',
+    estimatedCost: '~$0.05/hour',
+    estimatedTime: 60,
+  },
+  'lab-ecs-fargate': {
+    name: 'ECS Fargate with ALB',
+    stackFile: 'lab-ecs-fargate.ts',
+    stackClass: 'EcsFargateLabStack',
+    estimatedCost: '~$0.20/hour',
+    estimatedTime: 75,
+  },
+  'lab-dynamodb-dax': {
+    name: 'DynamoDB + DAX Caching',
+    stackFile: 'lab-dynamodb-dax.ts',
+    stackClass: 'DynamoDbDaxLabStack',
+    estimatedCost: '~$0.30/hour',
+    estimatedTime: 75,
+  },
+  'lab-step-functions': {
+    name: 'Step Functions Workflow Orchestration',
+    stackFile: 'lab-step-functions.ts',
+    stackClass: 'StepFunctionsLabStack',
+    estimatedCost: '~$0.05/hour',
+    estimatedTime: 90,
   },
 };
 
@@ -230,8 +272,8 @@ pnpm cdk destroy -c labId=${labId} --force`;
       <Separator className="my-8" />
 
       {/* Lab Guide */}
-      <div className="prose prose-sm lg:prose-base dark:prose-invert max-w-none">
-        <ReactMarkdown>{labGuide}</ReactMarkdown>
+      <div className="max-w-none">
+        <StudyContent content={labGuide} />
       </div>
     </div>
   );

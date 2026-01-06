@@ -51,7 +51,7 @@ export function getDatabaseStats() {
 
   for (const table of tables) {
     if (table.name.startsWith('sqlite_')) continue;
-    const count = db.prepare(\`SELECT COUNT(*) as count FROM \${table.name}\`).get() as { count: number };
+    const count = db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as { count: number };
     stats[table.name] = count.count;
   }
 

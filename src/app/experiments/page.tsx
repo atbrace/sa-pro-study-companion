@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FlaskConical, Server, DollarSign, ArrowRight, Network } from "lucide-react";
+import { FlaskConical, Server, DollarSign, ArrowRight, Network, Database, Zap, Cloud, Container, Workflow } from "lucide-react";
 
 const labs = [
   {
@@ -17,7 +17,78 @@ const labs = [
     estimatedTime: 45,
     icon: Network,
   },
-  // Future labs will be added here
+  {
+    id: 'lab-rds-multi-az',
+    title: 'RDS Multi-AZ with Read Replicas',
+    domain: 'Domain 2',
+    topic: 'Database Solutions',
+    difficulty: 'intermediate' as const,
+    description: 'Deploy a PostgreSQL database with Multi-AZ for high availability, read replicas for read scaling, and automated backups.',
+    resources: 'RDS Multi-AZ, Read Replica, VPC',
+    costPerHour: 0.15,
+    estimatedTime: 60,
+    icon: Database,
+  },
+  {
+    id: 'lab-lambda-api-gateway',
+    title: 'Lambda + API Gateway + DynamoDB',
+    domain: 'Domain 2',
+    topic: 'Serverless Architectures',
+    difficulty: 'intermediate' as const,
+    description: 'Build a serverless REST API with Lambda functions, API Gateway, and DynamoDB for a scalable task management system.',
+    resources: 'Lambda, API Gateway, DynamoDB',
+    costPerHour: 0.01,
+    estimatedTime: 60,
+    icon: Zap,
+  },
+  {
+    id: 'lab-s3-cloudfront',
+    title: 'S3 + CloudFront Distribution',
+    domain: 'Domain 2',
+    topic: 'Storage Solutions',
+    difficulty: 'beginner' as const,
+    description: 'Deploy a static website with S3 and CloudFront for global content delivery with caching and HTTPS.',
+    resources: 'S3, CloudFront, OAI',
+    costPerHour: 0.05,
+    estimatedTime: 60,
+    icon: Cloud,
+  },
+  {
+    id: 'lab-ecs-fargate',
+    title: 'ECS Fargate with ALB',
+    domain: 'Domain 2',
+    topic: 'Container Architectures',
+    difficulty: 'advanced' as const,
+    description: 'Deploy a containerized web application using ECS Fargate with Application Load Balancer for high availability.',
+    resources: 'ECS Fargate, ALB, VPC',
+    costPerHour: 0.20,
+    estimatedTime: 75,
+    icon: Container,
+  },
+  {
+    id: 'lab-dynamodb-dax',
+    title: 'DynamoDB + DAX Caching',
+    domain: 'Domain 3',
+    topic: 'Performance Optimization',
+    difficulty: 'advanced' as const,
+    description: 'Implement DynamoDB with DAX cluster for microsecond read latency, including GSI and auto-scaling configuration.',
+    resources: 'DynamoDB, DAX Cluster, VPC',
+    costPerHour: 0.30,
+    estimatedTime: 75,
+    icon: Database,
+  },
+  {
+    id: 'lab-step-functions',
+    title: 'Step Functions Workflow Orchestration',
+    domain: 'Domain 2',
+    topic: 'Application Integration',
+    difficulty: 'advanced' as const,
+    description: 'Build a serverless order processing workflow with Step Functions, Lambda, DynamoDB, SNS, and error handling.',
+    resources: 'Step Functions, Lambda, DynamoDB, SNS',
+    costPerHour: 0.05,
+    estimatedTime: 90,
+    icon: Workflow,
+  },
 ];
 
 export default function ExperimentsPage() {
@@ -87,28 +158,6 @@ export default function ExperimentsPage() {
             </CardContent>
           </Card>
         ))}
-
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="text-lg">More Labs Coming Soon</CardTitle>
-            <CardDescription>
-              Additional labs are being developed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              Planned labs include:
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• RDS Multi-AZ with Read Replicas</li>
-              <li>• Lambda with API Gateway and DynamoDB</li>
-              <li>• ECS Fargate with ALB</li>
-              <li>• S3 with CloudFront Distribution</li>
-              <li>• Step Functions Workflow Orchestration</li>
-              <li>• EventBridge Event-Driven Architecture</li>
-            </ul>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
