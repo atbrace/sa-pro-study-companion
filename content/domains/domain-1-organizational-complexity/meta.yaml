@@ -39,6 +39,7 @@ examTasks:
 topics:
   - network-connectivity
   - security-controls
+  - resilient-architectures
 
 keyServices:
   - AWS Transit Gateway

@@ -1,0 +1,389 @@
+questions:
+  - id: res-001
+    type: single
+    text: >
+      A financial services company requires a disaster recovery solution with an RPO of 1 second and RTO of less than
+      1 minute for their PostgreSQL database. The solution must support read scaling in the DR region during normal
+      operations. What is the MOST appropriate solution?
+    options:
+      - id: A
+        text: Use RDS PostgreSQL Multi-AZ with cross-region read replicas and promote replica during disaster
+      - id: B
+        text: Use Aurora PostgreSQL Global Database with automated failover
+      - id: C
+        text: Use DMS for continuous replication to RDS in DR region
+      - id: D
+        text: Use RDS PostgreSQL with automated snapshots copied to DR region
+    correctAnswer: B
+    explanation: >
+      Aurora Global Database provides sub-second replication lag (typically <1 second RPO) and automated failover
+      with RTO of <1 minute. Secondary regions support up to 16 read replicas for read scaling. Option A has manual
+      promotion with higher RTO. Option C (DMS) has higher lag and complexity. Option D (snapshots) has RPO of
+      hours, not seconds.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
+    services: [Amazon Aurora, Amazon RDS]
+    concepts: [rpo-rto, disaster-recovery, multi-region]
+
+  - id: res-002
+    type: multi
+    correctCount: 3
+    text: >
+      A company is implementing a multi-region active-active architecture for their web application. The application
+      requires bidirectional database replication with automatic conflict resolution. Which THREE services should be used?
+    options:
+      - id: A
+        text: DynamoDB Global Tables for multi-master database replication
+      - id: B
+        text: Route 53 with latency-based routing to direct users to nearest region
+      - id: C
+        text: Aurora Global Database for bidirectional replication
+      - id: D
+        text: S3 Cross-Region Replication for static assets
+      - id: E
+        text: RDS Multi-AZ for high availability in each region
+      - id: F
+        text: Lambda@Edge for request routing
+    correctAnswer: [A, B, D]
+    explanation: >
+      DynamoDB Global Tables (A) provides multi-master, bidirectional replication with last-writer-wins conflict
+      resolution - essential for active-active. Route 53 latency routing (B) directs users to the nearest region.
+      S3 CRR (D) replicates static assets. Aurora Global Database (C) is NOT bidirectional - it's primary/secondary
+      only. RDS Multi-AZ (E) is for AZ-level HA, not multi-region. Lambda@Edge (F) runs code but doesn't handle routing.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GlobalTables.html
+    services: [Amazon DynamoDB, Amazon Route 53, Amazon S3]
+    concepts: [active-active, multi-region, conflict-resolution]
+
+  - id: res-003
+    type: single
+    text: >
+      A company's DR strategy requires backup data to be immutable and retained for 7 years to meet regulatory compliance.
+      Backups must be stored in a separate region and account. The solution should be cost-optimized for long-term storage.
+      What is the BEST solution?
+    options:
+      - id: A
+        text: Use AWS Backup with cross-account and cross-region backup to S3, then use S3 Object Lock with Governance mode
+      - id: B
+        text: Use AWS Backup with cross-account and cross-region backup, transition to Glacier Deep Archive, and enable Backup Vault Lock
+      - id: C
+        text: Use EBS snapshots copied to another region and account with lifecycle policies to Glacier
+      - id: D
+        text: Use S3 Cross-Region Replication with versioning and MFA Delete enabled
+    correctAnswer: B
+    explanation: >
+      AWS Backup with Backup Vault Lock provides WORM (write once, read many) compliance for immutability. Cross-account
+      and cross-region backup meets isolation requirements. Lifecycle transition to Glacier Deep Archive provides the
+      lowest cost for 7-year retention. Option A's Governance mode can be overridden. Option C doesn't centralize all
+      workloads. Option D doesn't prevent deletion with sufficient permissions.
+    awsDocLink: https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html
+    services: [AWS Backup, Amazon S3, S3 Glacier]
+    concepts: [immutable-backups, compliance, worm-storage]
+
+  - id: res-004
+    type: single
+    text: >
+      An application uses Route 53 for DNS failover between two regions. Health checks against the primary region's
+      ALB are failing intermittently due to transient network issues, causing unnecessary failovers. How can this be
+      improved while maintaining fast failover for real outages?
+    options:
+      - id: A
+        text: Increase the health check interval from 30 seconds to 60 seconds
+      - id: B
+        text: Use calculated health checks combining multiple endpoint checks with majority voting
+      - id: C
+        text: Decrease the failure threshold from 3 to 1 for faster detection
+      - id: D
+        text: Change to weighted routing instead of failover routing
+    correctAnswer: B
+    explanation: >
+      Calculated health checks allow you to combine multiple endpoint health checks (e.g., check multiple ALB nodes
+      or multiple pages) with AND/OR/NOT logic. This prevents false positives from transient issues while maintaining
+      fast failover for real problems. Option A delays failure detection. Option C makes it more sensitive to
+      transient issues. Option D doesn't provide failover capability.
+    awsDocLink: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-types.html
+    services: [Amazon Route 53]
+    concepts: [health-checks, failover-routing, false-positives]
+
+  - id: res-005
+    type: single
+    text: >
+      A company needs to deploy identical infrastructure across 5 AWS regions for a disaster recovery solution. The
+      infrastructure includes VPCs, security groups, EC2 Auto Scaling groups, and RDS databases. Changes should be
+      synchronized across all regions. What is the MOST operationally efficient solution?
+    options:
+      - id: A
+        text: Use Terraform with workspaces for each region
+      - id: B
+        text: Use CloudFormation StackSets with automatic deployments
+      - id: C
+        text: Create a master CloudFormation template and manually deploy to each region
+      - id: D
+        text: Use AWS Config remediation to enforce infrastructure consistency
+    correctAnswer: B
+    explanation: >
+      CloudFormation StackSets is designed specifically for deploying identical stacks across multiple regions and
+      accounts from a single operation. It supports automatic deployment, drift detection, and can update all regions
+      simultaneously. Option A (Terraform) works but requires external state management and isn't native AWS. Option C
+      requires manual deployment to each region. Option D (Config) is for compliance, not infrastructure deployment.
+    awsDocLink: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html
+    services: [AWS CloudFormation, AWS StackSets]
+    concepts: [multi-region-deployment, infrastructure-as-code, automation]
+
+  - id: res-006
+    type: single
+    text: >
+      An e-commerce application requires zero data loss (RPO = 0) and near-zero downtime (RTO < 1 minute) in case of
+      regional failure. The application uses a relational database with complex transactions. What DR strategy should
+      be implemented?
+    options:
+      - id: A
+        text: Pilot light with Aurora cross-region read replica
+      - id: B
+        text: Warm standby with Aurora Global Database and Route 53 failover
+      - id: C
+        text: Multi-site active-active with Aurora Global Database
+      - id: D
+        text: Backup and restore with automated snapshots every 5 minutes
+    correctAnswer: C
+    explanation: >
+      Multi-site active-active with Aurora Global Database is the only option that can meet RPO near-zero and RTO <1
+      minute while handling complex transactions. Active-active means both regions serve traffic, and Aurora Global
+      Database provides sub-second replication. Option A (pilot light) requires scaling up. Option B (warm standby)
+      has some data loss risk during failover. Option D has 5-minute RPO at best.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html
+    services: [Amazon Aurora, Amazon Route 53]
+    concepts: [rpo-zero, active-active, multi-site]
+
+  - id: res-007
+    type: multi
+    correctCount: 2
+    text: >
+      A company uses AWS Backup to protect EC2, RDS, and EFS resources. They need to ensure backups can be restored
+      even if the AWS account is compromised. Which TWO actions should be taken?
+    options:
+      - id: A
+        text: Copy backups to a separate AWS account using cross-account backup
+      - id: B
+        text: Enable MFA delete on the S3 bucket storing backup metadata
+      - id: C
+        text: Use Backup Vault Lock to prevent backup deletion for a retention period
+      - id: D
+        text: Encrypt all backups with a KMS key in a different account
+      - id: E
+        text: Store backup recovery points in multiple regions
+    correctAnswer: [A, C]
+    explanation: >
+      Cross-account backup (A) ensures backups exist in a separate account with different credentials, protecting
+      against account compromise. Backup Vault Lock (C) prevents deletion even by the root user for the specified
+      retention period. Option B doesn't apply to AWS Backup. Option D provides encryption but doesn't prevent
+      deletion. Option E provides regional protection but not account-level protection.
+    awsDocLink: https://docs.aws.amazon.com/aws-backup/latest/devguide/cross-account-backup.html
+    services: [AWS Backup]
+    concepts: [cross-account-protection, immutable-backups, account-compromise]
+
+  - id: res-008
+    type: single
+    text: >
+      A media company stores petabytes of video content in S3. They require that any object uploaded to the primary
+      bucket in us-east-1 is replicated to us-west-2 within 15 minutes with an SLA. Existing objects should also be
+      replicated. What configuration meets these requirements?
+    options:
+      - id: A
+        text: Enable S3 Cross-Region Replication (CRR) with S3 Replication Time Control (RTC)
+      - id: B
+        text: Enable S3 Cross-Region Replication (CRR) with standard configuration
+      - id: C
+        text: Use AWS DataSync to sync buckets every 15 minutes
+      - id: D
+        text: Use S3 Batch Operations to copy objects to the destination region
+    correctAnswer: A
+    explanation: >
+      S3 Replication Time Control (RTC) provides a 15-minute replication SLA and replicates 99.99% of objects within
+      15 minutes. Standard CRR (Option B) doesn't provide an SLA. To replicate existing objects, you must also enable
+      "Replicate existing objects" when setting up CRR. DataSync (C) requires manual scheduling. Batch Operations (D)
+      is one-time, not continuous replication.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-time-control.html
+    services: [Amazon S3]
+    concepts: [cross-region-replication, replication-sla, s3-rtc]
+
+  - id: res-009
+    type: single
+    text: >
+      An application uses RDS MySQL Multi-AZ in us-east-1. During a simulated disaster recovery drill, the team needs
+      to failover to a read replica in us-west-2. However, they need to ensure minimal downtime and no data loss.
+      What is the correct failover procedure?
+    options:
+      - id: A
+        text: Immediately promote the read replica to standalone instance and update application endpoints
+      - id: B
+        text: Stop replication, wait for replica to catch up, verify data consistency, then promote
+      - id: C
+        text: Create a snapshot of the read replica, restore to new instance, then promote
+      - id: D
+        text: Enable Multi-AZ on the read replica before promoting
+    correctAnswer: B
+    explanation: >
+      For zero data loss during cross-region failover, you must first stop replication to the read replica, wait for
+      it to process all remaining replication events (catch up), verify data consistency, and then promote to standalone.
+      Immediately promoting (A) risks data loss if replication lag exists. Option C adds unnecessary downtime. Option D
+      doesn't help with the promotion process.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html
+    services: [Amazon RDS]
+    concepts: [read-replica-promotion, cross-region-failover, data-consistency]
+
+  - id: res-010
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing a disaster recovery solution for on-premises VMware workloads to AWS. The
+      requirements are: RPO of 5 minutes, RTO of 1 hour, minimal impact on production, and ability to perform DR
+      testing without affecting production. Which THREE components should be included?
+    options:
+      - id: A
+        text: AWS Elastic Disaster Recovery (DRS) for continuous replication
+      - id: B
+        text: AWS Application Migration Service for one-time migration
+      - id: C
+        text: Point-in-time recovery capability for testing
+      - id: D
+        text: Dedicated VPC in DR region with networking configured
+      - id: E
+        text: AWS Storage Gateway in cached mode
+      - id: F
+        text: VMware Cloud on AWS for lift-and-shift migration
+    correctAnswer: [A, C, D]
+    explanation: >
+      AWS Elastic Disaster Recovery (A) provides continuous block-level replication with RPO of seconds, meeting the
+      5-minute requirement. Point-in-time recovery (C) allows DR testing without affecting production replication.
+      Dedicated VPC (D) is required for recovered instances. Application Migration Service (B) is for one-time
+      migration, not continuous DR. Storage Gateway (E) is for hybrid storage, not DR. VMware Cloud (F) is for running
+      VMware on AWS, not DR replication.
+    awsDocLink: https://docs.aws.amazon.com/drs/latest/userguide/what-is-drs.html
+    services: [AWS Elastic Disaster Recovery, Amazon VPC]
+    concepts: [disaster-recovery, continuous-replication, point-in-time-recovery]
+
+  - id: res-011
+    type: single
+    text: >
+      A company has an Aurora PostgreSQL database cluster in us-east-1. They want to add a secondary region (us-west-2)
+      for disaster recovery with the ability to serve read traffic in both regions during normal operations. During a
+      regional outage, they need to promote the secondary region to accept writes with minimal data loss. What should
+      they implement?
+    options:
+      - id: A
+        text: Create cross-region read replicas and manually promote during failover
+      - id: B
+        text: Implement Aurora Global Database with managed recovery
+      - id: C
+        text: Use DMS for continuous replication to a separate Aurora cluster
+      - id: D
+        text: Take hourly snapshots and copy to us-west-2
+    correctAnswer: B
+    explanation: >
+      Aurora Global Database is purpose-built for this use case. It provides low-latency cross-region replication
+      (typically <1 second), supports up to 16 read replicas in secondary regions for read scaling, and offers managed
+      failover to promote secondary to primary. Option A requires manual promotion and lacks automation. Option C adds
+      complexity and lag. Option D has RPO of hours.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
+    services: [Amazon Aurora]
+    concepts: [global-database, read-scaling, managed-failover]
+
+  - id: res-012
+    type: single
+    text: >
+      An application uses DynamoDB Global Tables across three regions. After a network partition, writes occurred
+      simultaneously in two regions for the same item. How does DynamoDB resolve the conflict?
+    options:
+      - id: A
+        text: The write from the region with the lowest latency wins
+      - id: B
+        text: The write with the largest timestamp wins (last writer wins)
+      - id: C
+        text: Both writes are preserved as separate versions
+      - id: D
+        text: The write is rejected and the application must retry
+    correctAnswer: B
+    explanation: >
+      DynamoDB Global Tables uses last writer wins (LWW) conflict resolution based on timestamps. The write with the
+      highest timestamp is preserved across all regions. This is deterministic and automatic. Option A is incorrect -
+      it's not about latency. Option C is incorrect - DynamoDB doesn't maintain multiple versions for conflicts.
+      Option D is incorrect - the write is not rejected.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html
+    services: [Amazon DynamoDB]
+    concepts: [global-tables, conflict-resolution, last-writer-wins]
+
+  - id: res-013
+    type: multi
+    correctCount: 2
+    text: >
+      A company is implementing automated DR testing using AWS Fault Injection Simulator (FIS). They want to test
+      application resilience to regional failures. Which TWO actions should they include in their FIS experiment?
+    options:
+      - id: A
+        text: Simulate EC2 instance failures by stopping instances
+      - id: B
+        text: Inject network latency between regions to test timeout handling
+      - id: C
+        text: Simulate AZ failure by blocking network access to all resources in an AZ
+      - id: D
+        text: Delete all Route 53 health checks to test DNS failover
+      - id: E
+        text: Terminate all RDS instances to test backup restore procedures
+    correctAnswer: [B, C]
+    explanation: >
+      For regional failure testing, injecting inter-region network latency (B) tests application timeout and retry
+      logic. Simulating AZ failure (C) validates multi-AZ resilience and failover procedures. Option A tests individual
+      instance failure, not regional. Option D would break production DNS. Option E would cause data loss - use read
+      replicas or snapshots instead.
+    awsDocLink: https://docs.aws.amazon.com/fis/latest/userguide/what-is.html
+    services: [AWS Fault Injection Simulator]
+    concepts: [chaos-engineering, dr-testing, resilience-testing]
+
+  - id: res-014
+    type: single
+    text: >
+      A media streaming application requires that video files uploaded to S3 are immediately available in all regions
+      globally. The solution must have the lowest possible latency for uploads and downloads. What is the BEST
+      architecture?
+    options:
+      - id: A
+        text: Use S3 Cross-Region Replication to replicate to all regions, with Route 53 latency routing
+      - id: B
+        text: Use S3 Transfer Acceleration for uploads and CloudFront for downloads with regional edge caches
+      - id: C
+        text: Use S3 Multi-Region Access Points with S3 Transfer Acceleration
+      - id: D
+        text: Deploy separate S3 buckets in each region and use application-level replication
+    correctAnswer: C
+    explanation: >
+      S3 Multi-Region Access Points provide a single global endpoint that automatically routes requests to the lowest
+      latency S3 bucket. Combined with S3 Transfer Acceleration, uploads are optimized via AWS edge locations. S3
+      automatically manages replication between regions. Option A requires managing multiple buckets and DNS. Option B
+      doesn't handle uploads optimally. Option D requires custom replication logic.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/MultiRegionAccessPoints.html
+    services: [Amazon S3, Amazon CloudFront]
+    concepts: [multi-region-access-points, transfer-acceleration, global-distribution]
+
+  - id: res-015
+    type: single
+    text: >
+      A company has a pilot light DR strategy with a promoted RDS read replica in the DR region. After failover, they
+      need to re-establish replication from the promoted instance back to the primary region for failback. What is
+      the correct approach?
+    options:
+      - id: A
+        text: Convert the promoted instance to Multi-AZ, then create a read replica in the original region
+      - id: B
+        text: Take a snapshot of the promoted instance, restore in original region, and set up replication
+      - id: C
+        text: Use DMS to replicate from the promoted instance back to a new instance in the original region
+      - id: D
+        text: Re-promote the original primary which will automatically re-sync
+    correctAnswer: A
+    explanation: >
+      After promoting a read replica to standalone, you should first convert it to Multi-AZ for high availability,
+      then create a new read replica in the original region to prepare for failback. This maintains the replication
+      relationship. Option B requires downtime and doesn't maintain continuous replication. Option C adds unnecessary
+      complexity. Option D is incorrect - you cannot re-promote a failed primary automatically.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html
+    services: [Amazon RDS]
+    concepts: [failback, read-replica, disaster-recovery-procedures]

@@ -1,0 +1,51 @@
+id: resilient-architectures
+name: Reliable and Resilient Architectures
+shortName: Resilient Architectures
+examTask: task-1-3
+description: >
+  Design and implement disaster recovery, backup, high availability, and multi-region
+  architectures to ensure business continuity and data durability.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - AWS Elastic Disaster Recovery
+  - AWS Backup
+  - Amazon Route 53
+  - Amazon RDS
+  - Amazon Aurora Global Database
+  - Amazon S3
+  - AWS CloudFormation
+  - AWS Systems Manager
+  - Amazon DynamoDB Global Tables
+  - AWS Lambda
+
+keyConcepts:
+  - Recovery Time Objective (RTO) and Recovery Point Objective (RPO)
+  - Multi-Region architectures
+  - Disaster recovery strategies (backup/restore, pilot light, warm standby, multi-site)
+  - Database replication and failover
+  - Cross-region replication
+  - Health checks and failover routing
+  - Automated backup and restore
+  - Data durability and availability
+
+awsDocLinks:
+  - title: AWS Elastic Disaster Recovery Documentation
+    url: https://docs.aws.amazon.com/drs/latest/userguide/
+    type: doc
+  - title: AWS Backup Documentation
+    url: https://docs.aws.amazon.com/aws-backup/latest/devguide/
+    type: doc
+  - title: Disaster Recovery Whitepaper
+    url: https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/
+    type: whitepaper
+  - title: AWS Well-Architected - Reliability Pillar
+    url: https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/
+    type: whitepaper
+
+relatedExperiments:
+  - lab-multi-region-failover
+  - lab-disaster-recovery
+  - lab-backup-automation
