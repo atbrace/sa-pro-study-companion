@@ -48,6 +48,19 @@ export interface TopicContent {
   content: string;
 }
 
+export interface ContentSection {
+  id: string;        // Slug: "aws-organizations"
+  title: string;     // Display title: "AWS Organizations"
+  content: string;   // Markdown content for this section
+  order: number;     // 0, 1, 2...
+}
+
+export interface ParsedTopicContent {
+  overview: ContentSection;       // Content before first H2
+  sections: ContentSection[];     // Each H2 section
+  allSections: ContentSection[];  // [overview, ...sections] for iteration
+}
+
 export interface QuestionOption {
   id: string;
   text: string;
