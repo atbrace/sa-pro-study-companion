@@ -7,6 +7,7 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  serverComponentsExternalPackages: ['js-yaml'],
 }
 
 module.exports = nextConfig
