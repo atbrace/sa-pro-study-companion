@@ -1,0 +1,390 @@
+questions:
+  - id: cost-001
+    type: single
+    text: >
+      A company has a web application with predictable baseline traffic of 50 EC2 instances running 24/7, with spikes
+      to 150 instances during business hours. The application can run on any instance type in the compute-optimized
+      family. What is the MOST cost-effective purchasing strategy?
+    options:
+      - id: A
+        text: Purchase 50 Standard Reserved Instances and use On-Demand for spikes
+      - id: B
+        text: Purchase 150 Standard Reserved Instances to cover peak capacity
+      - id: C
+        text: Purchase Compute Savings Plans for $X/hour to cover baseline, use Spot Instances for spikes
+      - id: D
+        text: Use 100% Spot Instances with Auto Scaling
+    correctAnswer: C
+    explanation: >
+      Compute Savings Plans provide up to 66% discount and are flexible across instance families, making them ideal
+      for the baseline. Spot Instances provide up to 90% discount and are perfect for the spike capacity since the
+      application can handle interruptions with Auto Scaling. Option A uses more expensive On-Demand for spikes.
+      Option B wastes money on unused RIs during non-peak hours. Option D risks interruptions for baseline traffic.
+    awsDocLink: https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html
+    services: [Amazon EC2, AWS Savings Plans]
+    concepts: [cost-optimization, purchasing-options, savings-plans]
+
+  - id: cost-002
+    type: multi
+    correctCount: 3
+    text: >
+      A company wants to reduce S3 storage costs for their data lake containing 500 TB of data. Access patterns vary
+      by dataset: some are accessed daily, some monthly, and some never after 90 days. Which THREE strategies should
+      be implemented?
+    options:
+      - id: A
+        text: Enable S3 Intelligent-Tiering for objects with unknown or changing access patterns
+      - id: B
+        text: Create lifecycle policies to transition to Glacier after 90 days for archival data
+      - id: C
+        text: Enable S3 Transfer Acceleration to reduce data transfer costs
+      - id: D
+        text: Use S3 Standard-IA for objects accessed monthly
+      - id: E
+        text: Enable S3 Versioning to prevent accidental deletions
+      - id: F
+        text: Use S3 Requester Pays to offload costs to data consumers
+    correctAnswer: [A, B, D]
+    explanation: >
+      S3 Intelligent-Tiering (A) automatically optimizes costs for unknown access patterns. Lifecycle policies (B)
+      transition infrequently accessed data to cheaper storage classes. S3 Standard-IA (D) is cost-effective for
+      monthly access (infrequent but immediate retrieval needed). Transfer Acceleration (C) improves upload speed
+      but doesn't reduce costs. Versioning (E) increases costs. Requester Pays (F) doesn't reduce total costs.
+    awsDocLink: https://aws.amazon.com/s3/storage-classes/
+    services: [Amazon S3]
+    concepts: [storage-optimization, lifecycle-policies, intelligent-tiering]
+
+  - id: cost-003
+    type: single
+    text: >
+      An organization with 100 AWS accounts wants to track EC2 costs by department (Engineering, Sales, Finance) and
+      environment (prod, dev, test). They need to generate monthly cost reports showing spending breakdown. What is
+      the BEST approach?
+    options:
+      - id: A
+        text: Create separate AWS accounts for each department and environment combination
+      - id: B
+        text: Apply cost allocation tags (Department and Environment) to all EC2 resources and activate tags in Billing
+      - id: C
+        text: Use AWS Budgets to track spending by account
+      - id: D
+        text: Export billing data to S3 and manually categorize costs in Excel
+    correctAnswer: B
+    explanation: >
+      Cost allocation tags allow you to organize resources and track costs in Cost Explorer by any tag dimension.
+      Apply Department and Environment tags to resources, activate the tags in the Billing console, and use Cost
+      Explorer to query costs by tag. Option A creates too many accounts (9+ accounts per department/environment).
+      Option C (Budgets) tracks spending but doesn't provide the tag-based breakdown needed. Option D is manual and
+      error-prone.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html
+    services: [AWS Cost Explorer, AWS Organizations]
+    concepts: [cost-allocation-tags, chargeback, cost-visibility]
+
+  - id: cost-004
+    type: single
+    text: >
+      A data analytics team runs batch processing jobs that take 6-8 hours to complete and can tolerate interruptions
+      by checkpointing progress. The workload runs on 20 c5.4xlarge instances. Currently using On-Demand, costing
+      $2,100/day. What is the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Purchase 20 Standard Reserved Instances for 1 year, All Upfront payment
+      - id: B
+        text: Use Spot Instances with capacity-optimized allocation strategy
+      - id: C
+        text: Use Spot Instances with lowest-price allocation strategy
+      - id: D
+        text: Purchase EC2 Instance Savings Plan for c5 family
+    correctAnswer: B
+    explanation: >
+      Spot Instances can provide up to 90% discount and are perfect for fault-tolerant batch processing. The
+      capacity-optimized allocation strategy launches instances in Spot pools with the lowest risk of interruption,
+      maximizing job completion. Option A (RIs) provides ~75% discount but lacks the 90% Spot discount. Option C
+      (lowest-price) increases interruption risk. Option D (Savings Plan) provides good discount but not as high as Spot.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-best-practices.html
+    services: [Amazon EC2]
+    concepts: [spot-instances, batch-processing, cost-optimization]
+
+  - id: cost-005
+    type: single
+    text: >
+      A company has 100 TB of data in S3 Standard that is accessed frequently for the first 30 days, occasionally
+      (once per month) for the next 60 days, and rarely after 90 days (once per year for compliance). What lifecycle
+      policy provides the lowest cost?
+    options:
+      - id: A
+        text: Transition to S3 Standard-IA after 30 days, then to S3 Glacier after 90 days
+      - id: B
+        text: Transition to S3 Intelligent-Tiering after 30 days
+      - id: C
+        text: Transition to S3 One Zone-IA after 30 days, then to S3 Glacier Deep Archive after 90 days
+      - id: D
+        text: Keep in S3 Standard for 90 days, then transition directly to S3 Glacier Deep Archive
+    correctAnswer: A
+    explanation: >
+      S3 Standard-IA is optimal for infrequent access (monthly) with immediate retrieval. After 90 days, S3 Glacier
+      provides low-cost archival with retrieval times of minutes-hours (acceptable for yearly access). Option B
+      (Intelligent-Tiering) works but has monitoring fees and may not be as cost-effective. Option C (One Zone-IA)
+      lacks redundancy. Option D keeps data in expensive Standard storage longer than needed.
+    awsDocLink: https://aws.amazon.com/s3/storage-classes/
+    services: [Amazon S3]
+    concepts: [lifecycle-policies, storage-classes, cost-optimization]
+
+  - id: cost-006
+    type: multi
+    correctCount: 2
+    text: >
+      An organization wants to reduce data transfer costs for their global web application. The application serves
+      static content (images, videos) and dynamic API responses. Which TWO strategies provide the greatest cost reduction?
+    options:
+      - id: A
+        text: Use CloudFront to cache static content at edge locations globally
+      - id: B
+        text: Enable S3 Transfer Acceleration for faster uploads
+      - id: C
+        text: Deploy EC2 instances in multiple regions and use Route 53 geoproximity routing
+      - id: D
+        text: Use VPC endpoints for S3 access from EC2 instances
+      - id: E
+        text: Enable S3 Cross-Region Replication to cache content in all regions
+    correctAnswer: [A, D]
+    explanation: >
+      CloudFront (A) significantly reduces data transfer costs by caching at edge locations - you pay CloudFront rates
+      instead of S3 data transfer rates (cheaper for high-volume distribution). VPC endpoints (D) eliminate data
+      transfer charges for S3 access from EC2 in the same region. Option B increases upload speed but costs more.
+      Option C duplicates compute costs. Option E (CRR) incurs replication and storage costs.
+    awsDocLink: https://aws.amazon.com/cloudfront/pricing/
+    services: [Amazon CloudFront, Amazon S3, Amazon VPC]
+    concepts: [data-transfer-costs, cdn, vpc-endpoints]
+
+  - id: cost-007
+    type: single
+    text: >
+      A company has purchased 100 EC2 Reserved Instances for t3.large in us-east-1. After 6 months, they realize
+      t3.xlarge would better suit their needs. They want to exchange the RIs without losing their discount. What
+      should they do?
+    options:
+      - id: A
+        text: Sell the Standard RIs on the Reserved Instance Marketplace and purchase new t3.xlarge RIs
+      - id: B
+        text: Modify the Standard RIs to t3.xlarge instances (not possible - must be Convertible)
+      - id: C
+        text: This is not possible with Standard RIs - they should have purchased Convertible RIs
+      - id: D
+        text: Use the AWS Console to convert Standard RIs to Convertible RIs, then exchange
+    correctAnswer: C
+    explanation: >
+      Standard RIs cannot be exchanged for different instance types (only modified within the same family for size/AZ).
+      Convertible RIs allow exchanges for different instance families, but you cannot convert Standard to Convertible.
+      Option A (selling on marketplace) is possible but involves friction and may not sell immediately. Option D is not
+      possible - you cannot convert RI types. The lesson: use Convertible RIs when you might need flexibility.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modifying.html
+    services: [Amazon EC2]
+    concepts: [reserved-instances, ri-flexibility, convertible-vs-standard]
+
+  - id: cost-008
+    type: single
+    text: >
+      A company wants to automatically receive alerts when their monthly AWS bill is forecasted to exceed $10,000
+      and take action to stop non-production EC2 instances when the threshold is reached. What is the MOST automated
+      solution?
+    options:
+      - id: A
+        text: Create a Cost Explorer report with forecasting and manually check daily
+      - id: B
+        text: Create an AWS Budget with a $10,000 monthly limit, configure an alert at 100% forecasted, and trigger a Lambda function via SNS
+      - id: C
+        text: Use CloudWatch billing alarms to trigger when actual spend exceeds $10,000
+      - id: D
+        text: Export Cost and Usage Reports to S3 and run daily queries with Athena
+    correctAnswer: B
+    explanation: >
+      AWS Budgets supports forecasted alerts (not just actual spend) and can trigger actions including SNS notifications
+      to Lambda functions. Lambda can then use EC2 APIs to stop instances tagged as non-production. Option A is manual.
+      Option C (CloudWatch billing) only alerts on actual spend, not forecasted, and requires CloudWatch Events
+      integration. Option D is manual analysis.
+    awsDocLink: https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html
+    services: [AWS Budgets, AWS Lambda]
+    concepts: [budget-alerts, cost-controls, automation]
+
+  - id: cost-009
+    type: single
+    text: >
+      A company has optimized their EC2 costs with Reserved Instances, but they're still seeing high costs for RDS
+      PostgreSQL databases that run 24/7 in production. Currently using On-Demand pricing. What is the MOST cost-
+      effective solution for predictable production databases?
+    options:
+      - id: A
+        text: Use RDS Reserved Instances with All Upfront payment for maximum discount
+      - id: B
+        text: Switch to Aurora Serverless which automatically scales to zero when not in use
+      - id: C
+        text: Use Multi-AZ deployment to reduce costs through resource sharing
+      - id: D
+        text: Create read replicas and load balance traffic across them
+    correctAnswer: A
+    explanation: >
+      RDS Reserved Instances provide up to 69% discount for committed usage and are ideal for 24/7 production databases.
+      All Upfront payment provides the highest discount. Option B (Aurora Serverless) doesn't scale to zero for
+      production databases (has minimum capacity). Option C (Multi-AZ) increases costs for HA but doesn't reduce
+      baseline costs. Option D (read replicas) adds cost and doesn't replace the primary instance.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithReservedDBInstances.html
+    services: [Amazon RDS]
+    concepts: [rds-reserved-instances, database-cost-optimization, committed-usage]
+
+  - id: cost-010
+    type: multi
+    correctCount: 2
+    text: >
+      A company wants to implement cost anomaly detection to identify unusual spending patterns across 50 AWS accounts.
+      They need alerts sent to Slack when spending increases by more than $1,000 from the baseline. Which TWO steps
+      are required?
+    options:
+      - id: A
+        text: Enable AWS Cost Anomaly Detection service
+      - id: B
+        text: Create a custom CloudWatch alarm on billing metrics
+      - id: C
+        text: Configure an anomaly monitor with SNS subscription for alerts
+      - id: D
+        text: Enable AWS Budgets with anomaly detection feature
+      - id: E
+        text: Create an EventBridge rule to monitor Cost Explorer API calls
+    correctAnswer: [A, C]
+    explanation: >
+      AWS Cost Anomaly Detection (A) uses machine learning to automatically detect unusual spending. You create an
+      anomaly monitor (C) that defines what to monitor (accounts, services, tags) and configure SNS notifications
+      (which can integrate with Slack via AWS Chatbot). Option B (CloudWatch alarms) requires manual threshold
+      configuration, not ML-based anomaly detection. Option D is incorrect - Budgets don't have anomaly detection.
+      Option E monitors API calls, not cost anomalies.
+    awsDocLink: https://docs.aws.amazon.com/cost-management/latest/userguide/getting-started-ad.html
+    services: [AWS Cost Anomaly Detection, Amazon SNS]
+    concepts: [anomaly-detection, cost-monitoring, machine-learning]
+
+  - id: cost-011
+    type: single
+    text: >
+      A company uses AWS Organizations with consolidated billing across 30 accounts. They purchased 50 EC2 Reserved
+      Instances in the Production account but only use 30. The Development account is using 25 On-Demand instances
+      of the same instance type. What happens to billing?
+    options:
+      - id: A
+        text: The unused 20 RIs in Production are wasted and billed at full RI cost
+      - id: B
+        text: The 20 unused RIs automatically apply to the 25 On-Demand instances in Development, reducing Dev costs
+      - id: C
+        text: RIs cannot be shared across accounts even with consolidated billing
+      - id: D
+        text: The RIs can be manually transferred to the Development account through the console
+    correctAnswer: B
+    explanation: >
+      With consolidated billing in AWS Organizations, Reserved Instances are automatically shared across all accounts.
+      The 20 unused RIs from Production will automatically apply to the 25 matching On-Demand instances in Development,
+      providing the RI discount rate. This sharing happens automatically without any configuration. The remaining 5
+      Development instances will be billed at On-Demand rates.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/con-bill-blended-rates.html
+    services: [AWS Organizations, Amazon EC2]
+    concepts: [consolidated-billing, ri-sharing, cost-optimization]
+
+  - id: cost-012
+    type: single
+    text: >
+      A company wants to query detailed AWS billing data to analyze costs by hour, resource, and custom tags. They
+      need to run SQL queries to find the top 10 most expensive resources each month. What is the BEST solution?
+    options:
+      - id: A
+        text: Use Cost Explorer API to export data and analyze in Excel
+      - id: B
+        text: Enable Cost and Usage Report (CUR) delivery to S3 and query with Athena
+      - id: C
+        text: Use AWS Budgets to create cost reports by resource
+      - id: D
+        text: Export billing CSV from the billing console monthly
+    correctAnswer: B
+    explanation: >
+      Cost and Usage Report (CUR) provides the most detailed billing data with hourly line items, all tags, and
+      resource-level details delivered to S3. Athena can query this data using SQL, making it perfect for ad-hoc
+      analysis like finding top expensive resources. Option A (Cost Explorer API) doesn't provide resource-level detail.
+      Option C (Budgets) is for alerting, not analysis. Option D is manual and less detailed than CUR.
+    awsDocLink: https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html
+    services: [AWS Cost and Usage Report, Amazon Athena]
+    concepts: [cost-analysis, detailed-billing, cur]
+
+  - id: cost-013
+    type: single
+    text: >
+      A company wants to ensure all EC2 instances launched across 40 AWS accounts are either t3.small, t3.medium,
+      or t3.large to control costs. The solution should prevent launches of other instance types. What is the MOST
+      effective approach?
+    options:
+      - id: A
+        text: Create an AWS Config rule to detect non-compliant instances and terminate them
+      - id: B
+        text: Create an SCP that denies ec2:RunInstances unless the instance type is in the approved list
+      - id: C
+        text: Use Service Catalog to provide pre-approved instance types
+      - id: D
+        text: Create IAM policies in each account restricting ec2:RunInstances
+    correctAnswer: B
+    explanation: >
+      An SCP with a Deny statement conditional on instance type is preventive and enforces the policy organization-wide.
+      Example: Deny ec2:RunInstances unless ec2:InstanceType is in ["t3.small", "t3.medium", "t3.large"]. This prevents
+      non-compliant launches at the organization level. Option A (Config) is detective, not preventive. Option C helps
+      but doesn't prevent direct EC2 access. Option D requires configuration in each account and can be overridden.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples.html
+    services: [AWS Organizations, Amazon EC2]
+    concepts: [service-control-policies, cost-governance, preventive-controls]
+
+  - id: cost-014
+    type: multi
+    correctCount: 3
+    text: >
+      A company wants to reduce EBS costs for their development environments. They have 500 GP2 volumes (100 GB each)
+      and 200 volumes that are unattached. Which THREE actions will reduce costs?
+    options:
+      - id: A
+        text: Migrate from gp2 to gp3 volumes for active volumes
+      - id: B
+        text: Delete unattached volumes that are not needed
+      - id: C
+        text: Enable EBS encryption to reduce storage costs
+      - id: D
+        text: Snapshot volumes and delete the volumes, recreating when needed
+      - id: E
+        text: Use lifecycle policies to automatically delete old snapshots
+      - id: F
+        text: Convert all volumes to Provisioned IOPS (io2) for better performance
+    correctAnswer: [A, B, E]
+    explanation: >
+      Migrating to gp3 (A) provides ~20% cost savings with better performance than gp2. Deleting unattached volumes (B)
+      eliminates wasted spend. Deleting old snapshots (E) reduces snapshot storage costs. Option C (encryption) doesn't
+      reduce costs. Option D adds complexity and snapshot costs exceed volume costs. Option F (io2) increases costs
+      significantly.
+    awsDocLink: https://aws.amazon.com/ebs/pricing/
+    services: [Amazon EBS]
+    concepts: [storage-optimization, ebs-cost-reduction, gp3-migration]
+
+  - id: cost-015
+    type: single
+    text: >
+      A machine learning team uses EC2 instances for training models. Training jobs run for 4-6 hours and can be
+      interrupted and resumed from checkpoints. The workload requires c5.12xlarge instances (48 vCPUs). On-Demand
+      cost is $2.04/hour. What provides the greatest cost savings?
+    options:
+      - id: A
+        text: Purchase a 3-year Convertible Reserved Instance with All Upfront payment
+      - id: B
+        text: Use Spot Instances with capacity-optimized allocation
+      - id: C
+        text: Purchase a Compute Savings Plan for the hourly spend
+      - id: D
+        text: Use Lambda instead of EC2 for the training workload
+    correctAnswer: B
+    explanation: >
+      Spot Instances provide up to 90% discount (saving ~$1.84/hour) and are perfect for interruptible ML training
+      workloads with checkpointing. Capacity-optimized allocation minimizes interruptions. Option A (3-year RI) provides
+      ~70% discount but requires long commitment. Option C (Savings Plan) provides ~66% discount, less than Spot. Option
+      D (Lambda) has a 15-minute timeout, unsuitable for 4-6 hour training jobs.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances.html
+    services: [Amazon EC2]
+    concepts: [spot-instances, machine-learning, cost-optimization]

@@ -1,0 +1,55 @@
+id: cost-optimization
+name: Cost Optimization and Visibility
+shortName: Cost Optimization
+examTask: task-1-5
+description: >
+  Implement cost management, optimization, and visibility strategies for complex AWS
+  environments using cost allocation, budgeting, rightsizing, and purchasing options.
+
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - AWS Cost Explorer
+  - AWS Budgets
+  - AWS Cost and Usage Report (CUR)
+  - AWS Compute Optimizer
+  - AWS Trusted Advisor
+  - Savings Plans
+  - Reserved Instances
+  - AWS Cost Anomaly Detection
+  - AWS Organizations (consolidated billing)
+  - Amazon S3 Intelligent-Tiering
+  - Amazon EBS (gp3, io2)
+  - AWS Graviton processors
+
+keyConcepts:
+  - Cost allocation tags
+  - Reserved Instances vs. Savings Plans
+  - Spot Instances strategies
+  - Rightsizing recommendations
+  - S3 storage class optimization
+  - Data transfer costs
+  - Consolidated billing
+  - Cost allocation and chargeback
+  - Budget alerts and forecasting
+  - Cost anomaly detection
+
+awsDocLinks:
+  - title: AWS Cost Management Documentation
+    url: https://docs.aws.amazon.com/cost-management/
+    type: doc
+  - title: AWS Cost Optimization Pillar
+    url: https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/
+    type: whitepaper
+  - title: AWS Savings Plans User Guide
+    url: https://docs.aws.amazon.com/savingsplans/latest/userguide/
+    type: doc
+  - title: Cost Optimization Best Practices
+    url: https://aws.amazon.com/pricing/cost-optimization/
+    type: doc
+
+relatedExperiments:
+  - lab-cost-optimization
+  - lab-spot-instances
+  - lab-s3-lifecycle

@@ -41,6 +41,7 @@ topics:
   - security-controls
   - resilient-architectures
   - multi-account-environment
+  - cost-optimization
 
 keyServices:
   - AWS Transit Gateway
