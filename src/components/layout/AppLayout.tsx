@@ -4,12 +4,14 @@ import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { useTutor } from '@/hooks/useTutor';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import type { SidebarHierarchy } from '@/types/sidebar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  sidebarHierarchy: SidebarHierarchy;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, sidebarHierarchy }: AppLayoutProps) {
   const { isOpen, context, openTutor, closeTutor } = useTutor();
 
   const handleTutorToggle = () => {
@@ -23,12 +25,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen">
       {/* Sidebar - Desktop only */}
-      <Sidebar />
+      <Sidebar sidebarHierarchy={sidebarHierarchy} />
 
       {/* Main content area */}
       <div className="lg:pl-64">
         {/* Header */}
-        <Header onTutorToggle={handleTutorToggle} />
+        <Header
+          onTutorToggle={handleTutorToggle}
+          sidebarHierarchy={sidebarHierarchy}
+        />
 
         {/* Page content */}
         <main className="flex-1">
