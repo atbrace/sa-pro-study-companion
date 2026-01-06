@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BookOpen, Clock, Target, ArrowRight, ExternalLink } from "lucide-react";
 import { getDomainById } from "@/lib/content/loader";
-import ReactMarkdown from "react-markdown";
+import { StudyContent } from "@/components/study/StudyContent";
 
 interface PageProps {
   params: Promise<{ domain: string }>;
@@ -71,9 +71,7 @@ export default async function DomainPage({ params }: PageProps) {
               <CardTitle>Domain Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <ReactMarkdown>{domain.overview.content}</ReactMarkdown>
-              </div>
+              <StudyContent content={domain.overview.content} />
             </CardContent>
           </Card>
         </>
