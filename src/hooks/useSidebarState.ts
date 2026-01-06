@@ -72,7 +72,7 @@ export function useSidebarState(pathname: string) {
         return new Set([...prev, topicKey]);
       });
     }
-  }, [pathname, isStudyExpanded, expandedDomains, expandedTopics]);
+  }, [pathname]);
 
   // Persist to localStorage
   useEffect(() => {

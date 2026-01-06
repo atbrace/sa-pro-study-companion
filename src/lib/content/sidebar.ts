@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
 import type {
@@ -15,20 +16,12 @@ export type {
   SidebarHierarchy,
 };
 
-// Cache for sidebar hierarchy to avoid repeated filesystem reads
-let cachedHierarchy: SidebarHierarchy | null = null;
-
 /**
  * Load the full content hierarchy for sidebar navigation
  * Returns domains, topics, and sections in a lightweight format
- * Results are cached to avoid repeated filesystem operations
+ * Uses React.cache() to deduplicate requests within the same render pass
  */
-export function getSidebarHierarchy(): SidebarHierarchy {
-  // Return cached result if available
-  if (cachedHierarchy) {
-    return cachedHierarchy;
-  }
-
+export const getSidebarHierarchy = cache((): SidebarHierarchy => {
   const domains = getAllDomains();
 
   const hierarchy: SidebarHierarchy = {
@@ -73,7 +66,5 @@ export function getSidebarHierarchy(): SidebarHierarchy {
     })),
   };
 
-  // Cache the result for future calls
-  cachedHierarchy = hierarchy;
   return hierarchy;
-}
+});
