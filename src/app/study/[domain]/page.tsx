@@ -79,6 +79,27 @@ export default async function DomainPage({ params }: PageProps) {
         </>
       )}
 
+      {/* Key AWS Services */}
+      {domain.meta.keyServices && domain.meta.keyServices.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Key AWS Services</CardTitle>
+            <CardDescription>
+              Primary AWS services you need to master for this domain
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {domain.meta.keyServices.map((service) => (
+                <Badge key={service} variant="secondary" className="px-3 py-1.5 text-sm">
+                  {service}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Exam Tasks */}
       {domain.meta.examTasks && domain.meta.examTasks.length > 0 && (
         <Card className="mb-8">
@@ -89,18 +110,33 @@ export default async function DomainPage({ params }: PageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {domain.meta.examTasks.map((task) => (
-                <div key={task.id} className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                    {task.id.split('-').pop()}
-                  </div>
-                  <div>
-                    <p className="font-medium">{task.name}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-lg border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold w-12">#</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Task</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {domain.meta.examTasks.map((task, index) => (
+                      <tr key={task.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-4 text-sm font-medium text-muted-foreground">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-medium text-sm">{task.name}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="text-sm text-muted-foreground">{task.description}</p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </CardContent>
         </Card>
