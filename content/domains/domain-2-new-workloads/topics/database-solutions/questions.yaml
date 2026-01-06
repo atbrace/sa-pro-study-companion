@@ -1,0 +1,300 @@
+questions:
+  - id: db-sol-001
+    type: single
+    text: |
+      A financial services company is migrating a high-transaction trading platform to AWS. The application requires sub-10ms read latency, supports 500,000 transactions per second at peak, and must maintain ACID compliance across distributed transactions spanning multiple tables. The data model is relational with complex joins. Which database solution best meets these requirements?
+    options:
+      - id: A
+        text: Amazon RDS for PostgreSQL with read replicas and ElastiCache for Redis
+      - id: B
+        text: Amazon Aurora Global Database with cross-region replication
+      - id: C
+        text: Amazon DynamoDB with DynamoDB Accelerator (DAX) and transactions enabled
+      - id: D
+        text: Amazon Aurora with Aurora Serverless v2 and query caching
+    correctAnswer: B
+    explanation: |
+      Aurora Global Database is the best choice because it provides: (1) Single-digit millisecond read latency through up to 15 read replicas per region, (2) Full ACID compliance with distributed SQL transactions across tables, (3) Support for complex joins and relational data models, (4) Ability to handle 500K+ TPS through Aurora's distributed storage architecture that separates compute and storage, (5) Automatic failover and data replication. Option A's ElastiCache adds complexity and doesn't handle ACID transactions. Option C (DynamoDB) doesn't efficiently support complex joins in relational models. Option D's Serverless v2 might not consistently handle peak loads as efficiently as provisioned instances in a Global Database configuration.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
+    services: [Amazon Aurora, Aurora Global Database]
+
+  - id: db-sol-002
+    type: multi
+    correctCount: 2
+    text: |
+      An e-commerce platform uses DynamoDB for its product catalog. During flash sales, read traffic spikes to 10x normal levels for 15-minute periods, occurring unpredictably 2-3 times per week. The rest of the time, traffic is steady and predictable. The table is 500GB with a complex access pattern requiring both primary key lookups and queries on product category and price range. Which strategies will optimize cost while maintaining performance? (Select TWO)
+    options:
+      - id: A
+        text: Use DynamoDB on-demand capacity mode for the main table
+      - id: B
+        text: Create a Global Secondary Index (GSI) with on-demand capacity for category and price queries
+      - id: C
+        text: Use provisioned capacity with DynamoDB auto scaling configured for 70% target utilization
+      - id: D
+        text: Implement DynamoDB Accelerator (DAX) with a cluster sized for peak traffic
+      - id: E
+        text: Create a Local Secondary Index (LSI) for the category and price range queries
+    correctAnswer: [C, D]
+    explanation: |
+      Option C is correct because the traffic pattern is mostly predictable with occasional spikes - provisioned capacity with auto scaling is more cost-effective than on-demand for steady workloads (on-demand costs ~7x more per RCU/WCU). Auto scaling can handle gradual changes and the 15-minute spike duration gives it time to scale. Option D is correct because DAX provides microsecond read latency and can absorb the 10x read spike without requiring base table capacity increases, making it cost-effective for read-heavy spike scenarios. Option A is incorrect because on-demand is expensive for steady baseline traffic. Option B is wrong because GSIs inherit the table's capacity mode and adding separate on-demand isn't supported. Option E is incorrect because LSIs must be created at table creation time and share throughput with the base table, not solving the spike issue.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html
+    services: [Amazon DynamoDB, DynamoDB Auto Scaling, DynamoDB Accelerator (DAX)]
+
+  - id: db-sol-003
+    type: single
+    text: |
+      A social media analytics platform stores user interaction graphs with billions of relationships. Queries need to traverse relationships up to 6 levels deep (e.g., "friends of friends of friends") and identify communities using graph algorithms. The application requires sub-100ms query response times and ACID transactions when updating relationships. Which database solution is most appropriate?
+    options:
+      - id: A
+        text: Amazon DynamoDB with adjacency list pattern and parallel queries
+      - id: B
+        text: Amazon Neptune with Apache TinkerPop Gremlin query language
+      - id: C
+        text: Amazon RDS for PostgreSQL with recursive CTEs and connection pooling
+      - id: D
+        text: Amazon Aurora with parallel query and PostgreSQL foreign data wrappers
+    correctAnswer: B
+    explanation: |
+      Amazon Neptune is purpose-built for graph workloads and is the correct choice because: (1) It's optimized for multi-hop traversals (6 levels deep) with performance that far exceeds relational databases for graph queries, (2) Supports both Gremlin and SPARQL for native graph query patterns and community detection algorithms, (3) Provides ACID transactions for relationship updates, (4) Delivers sub-100ms performance for complex graph traversals through its graph-optimized storage engine, (5) Scales to billions of relationships efficiently. Option A (DynamoDB adjacency lists) requires complex application code for multi-hop traversals and lacks native graph query support. Options C and D using relational databases with recursive queries become exponentially slower with each relationship hop and don't have built-in graph algorithms.
+    awsDocLink: https://docs.aws.amazon.com/neptune/latest/userguide/intro.html
+    services: [Amazon Neptune, Apache TinkerPop Gremlin]
+
+  - id: db-sol-004
+    type: single
+    text: |
+      A financial audit system must maintain an immutable, cryptographically verifiable ledger of all transactions. The system needs to prove the complete history of any record change, verify data hasn't been altered, and support SQL queries for compliance reporting. Which database service best fits these requirements?
+    options:
+      - id: A
+        text: Amazon RDS for PostgreSQL with triggers to log all changes to an append-only table
+      - id: B
+        text: Amazon DynamoDB with streams and Lambda functions writing to S3 Glacier
+      - id: C
+        text: Amazon QLDB (Quantum Ledger Database) with PartiQL queries
+      - id: D
+        text: Amazon Aurora with Binary Log (binlog) replication to a read-only instance
+    correctAnswer: C
+    explanation: |
+      Amazon QLDB is purpose-built for this use case and provides: (1) Immutable, append-only journal that cryptographically verifies data integrity using a SHA-256 hash chain, (2) Built-in ability to prove complete history of document changes with cryptographic verification, (3) Automatic generation of a cryptographically verifiable digest for the entire ledger, (4) PartiQL support for SQL-like queries for compliance reporting, (5) ACID transactions with full serializability. Option A can't provide cryptographic verification - application code or DBAs could modify the audit logs. Option B creates operational complexity and doesn't provide built-in cryptographic verification. Option D's binlog is designed for replication, not immutable audit trails, and can be manipulated.
+    awsDocLink: https://docs.aws.amazon.com/qldb/latest/developerguide/what-is.html
+    services: [Amazon QLDB, PartiQL]
+
+  - id: db-sol-005
+    type: single
+    text: |
+      An IoT platform ingests time-series sensor data from 100,000 devices, each sending metrics every 10 seconds. The data must be retained for 7 years for compliance but queried primarily for the last 90 days. Queries aggregate data by device, time windows, and sensor type. The solution must minimize storage costs while maintaining query performance. Which approach is most cost-effective?
+    options:
+      - id: A
+        text: Amazon Timestream with magnetic storage for data older than 90 days
+      - id: B
+        text: Amazon DynamoDB with TTL to move old data to S3 and Athena for historical queries
+      - id: C
+        text: Amazon RDS for PostgreSQL with table partitioning by date and tablespace migration to cold storage
+      - id: D
+        text: Amazon Aurora with automated tiering to Aurora Serverless v2 for historical data
+    correctAnswer: A
+    explanation: |
+      Amazon Timestream is purpose-built for this use case providing: (1) Automatic tiering from memory (recent data) to magnetic storage (historical data) with 1/10th the cost, (2) Native time-series optimizations for timestamp-based queries and aggregations, (3) Adaptive query engine that automatically accesses the appropriate storage tier, (4) Built-in data retention policies (7-year compliance), (5) Serverless with no infrastructure management, (6) SQL query support optimized for time-series analysis. Option B adds complexity with DynamoDB+TTL+S3+Athena and requires managing three different systems. Option C (RDS) requires manual partition management and doesn't optimize for time-series patterns. Option D doesn't have automated cold storage tiering and would be expensive for 7 years of data.
+    awsDocLink: https://docs.aws.amazon.com/timestream/latest/developerguide/what-is-timestream.html
+    services: [Amazon Timestream]
+
+  - id: db-sol-006
+    type: multi
+    correctCount: 3
+    text: |
+      A company is migrating a 10TB Oracle database to AWS. The application requires 99.95% availability, must minimize downtime during migration, needs to support read-heavy workloads with complex stored procedures, and must maintain compatibility with existing Oracle PL/SQL code. Which migration strategies and services should be used? (Select THREE)
+    options:
+      - id: A
+        text: Use AWS Database Migration Service (DMS) for continuous replication during migration
+      - id: B
+        text: Migrate to Amazon Aurora PostgreSQL-Compatible Edition using AWS Schema Conversion Tool (SCT)
+      - id: C
+        text: Deploy Amazon RDS for Oracle with Multi-AZ for high availability
+      - id: D
+        text: Use AWS Snowball Edge to physically transfer the 10TB database for minimal downtime
+      - id: E
+        text: Implement Amazon RDS Proxy for connection pooling to handle read-heavy workloads
+    correctAnswer: [A, C, E]
+    explanation: |
+      Option A (DMS) is correct for near-zero downtime migration through continuous data replication - it keeps source and target in sync until cutover. Option C (RDS for Oracle Multi-AZ) is correct because it maintains Oracle PL/SQL compatibility (requirement) and provides 99.95%+ availability through automatic failover. Option E (RDS Proxy) is correct for handling read-heavy workloads by pooling and multiplexing connections, reducing database load. Option B is incorrect despite SCT being useful - Aurora PostgreSQL would require significant PL/SQL code conversion and isn't compatible with "maintaining Oracle PL/SQL code" requirement. Option D is incorrect because while Snowball helps with physical transfer, DMS with continuous replication provides lower downtime for online databases, and 10TB isn't large enough to require Snowball.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Source.Oracle.html
+    services: [AWS Database Migration Service, Amazon RDS for Oracle, Amazon RDS Proxy]
+
+  - id: db-sol-007
+    type: single
+    text: |
+      A gaming application needs to maintain a real-time leaderboard for 50 million players, with rankings updated every second during peak hours. The application must support queries like "get top 100 players," "get player rank," and "get players ranked 1000-1100." Sub-millisecond read latency is required. Which solution provides the best performance?
+    options:
+      - id: A
+        text: Amazon DynamoDB with a Global Secondary Index on score and eventual consistency reads
+      - id: B
+        text: Amazon ElastiCache for Redis using sorted sets with ZADD and ZRANGE commands
+      - id: C
+        text: Amazon Aurora with a covering index on player score and read replicas
+      - id: D
+        text: Amazon MemoryDB for Redis with snapshots for persistence
+    correctAnswer: B
+    explanation: |
+      ElastiCache for Redis with sorted sets is optimal because: (1) Sorted sets (ZADD, ZRANGE, ZRANK) are designed exactly for leaderboard use cases with O(log N) performance, (2) Provides sub-millisecond read and write latency for all leaderboard operations, (3) ZRANK gets a player's rank in O(log N), ZRANGE gets top N or range queries efficiently, (4) Entirely in-memory for maximum performance, (5) Supports atomic score updates. Option A (DynamoDB with GSI) can't efficiently get "player rank" without scanning, and maintaining rankings in real-time is complex. Option C (Aurora) can't achieve sub-millisecond latency for queries on 50M records. Option D (MemoryDB) is overkill - leaderboards don't need the durability guarantees (and associated latency) that MemoryDB provides; ElastiCache with optional persistence snapshots is sufficient.
+    awsDocLink: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/Strategies.html#Strategies.WriteThrough
+    services: [Amazon ElastiCache for Redis, Redis Sorted Sets]
+
+  - id: db-sol-008
+    type: single
+    text: |
+      An application currently uses Amazon ElastiCache for Memcached with three cache nodes. The team needs to add support for: (1) complex data structures like sorted sets and lists, (2) pub/sub messaging for real-time notifications, (3) automatic failover if a cache node fails, and (4) persistence to recover cache data after maintenance. Which change should be made?
+    options:
+      - id: A
+        text: Increase Memcached cluster size to 6 nodes with auto discovery enabled
+      - id: B
+        text: Migrate to Amazon ElastiCache for Redis with cluster mode disabled and Multi-AZ enabled
+      - id: C
+        text: Migrate to Amazon MemoryDB for Redis with Multi-AZ configuration
+      - id: D
+        text: Keep Memcached and add Amazon MQ for messaging with DynamoDB for persistence
+    correctAnswer: B
+    explanation: |
+      ElastiCache for Redis with cluster mode disabled and Multi-AZ is the correct choice because it provides: (1) Complex data structures (sorted sets, lists, hashes, etc.) that Memcached lacks, (2) Built-in pub/sub messaging functionality, (3) Automatic failover through Multi-AZ with a primary and read replicas, (4) Optional persistence (AOF/RDS snapshots) for data recovery. Cluster mode disabled is appropriate here since the question doesn't indicate massive scale requiring partitioning. Option A (more Memcached nodes) doesn't add any of the required features. Option C (MemoryDB) is over-engineered - it provides strong consistency and durability guarantees beyond what's needed for a cache use case, at higher cost. Option D creates unnecessary complexity by using three different services.
+    awsDocLink: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/Replication.Multi-AZ.html
+    services: [Amazon ElastiCache for Redis, Redis Data Structures]
+
+  - id: db-sol-009
+    type: multi
+    correctCount: 2
+    text: |
+      A DynamoDB table stores user profiles with userId as the partition key. The application needs to support two new query patterns: (1) Find all users in a specific city, and (2) Find all premium users who joined after a specific date. Current table size is 50GB with 10 million items. Which design choices are most appropriate? (Select TWO)
+    options:
+      - id: A
+        text: Create a Local Secondary Index (LSI) with city as the sort key
+      - id: B
+        text: Create a Global Secondary Index (GSI) with city as partition key and joinDate as sort key
+      - id: C
+        text: Create a Global Secondary Index (GSI) with userType (premium/free) as partition key and joinDate as sort key
+      - id: D
+        text: Use DynamoDB Streams with Lambda to maintain a separate table indexed by city
+      - id: E
+        text: Create a composite sort key combining city and joinDate on the base table
+    correctAnswer: [B, C]
+    explanation: |
+      Option B is correct because a GSI with city as partition key and joinDate as sort key enables efficient queries for "users in a specific city" and can be further filtered by date ranges. Option C is correct because a GSI with userType as partition key and joinDate as sort key enables querying "premium users who joined after X date" efficiently. Using two GSIs is appropriate for distinct access patterns. Option A (LSI) is incorrect because LSIs must share the same partition key as the base table (userId) and won't help query by city. Option D adds unnecessary complexity - GSIs are designed for exactly this purpose. Option E is incorrect because you can't modify the existing table's key schema after creation, and it wouldn't support the userId-based queries the application already uses.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
+    services: [Amazon DynamoDB, Global Secondary Index]
+
+  - id: db-sol-010
+    type: single
+    text: |
+      A global application uses Amazon Aurora PostgreSQL-Compatible Edition as its primary database. The application has users in US, Europe, and Asia, with most users reading data from their local region. Write operations are less frequent and can tolerate up to 1-second latency globally. Read operations must have sub-100ms latency. The solution must support failover if the primary region fails. Which Aurora configuration meets these requirements most cost-effectively?
+    options:
+      - id: A
+        text: Aurora Global Database with one primary region (US) and read replicas in Europe and Asia regions
+      - id: B
+        text: Three separate Aurora clusters with AWS DMS for bidirectional replication between all regions
+      - id: C
+        text: Aurora Multi-AZ cluster in US with cross-region read replicas in Europe and Asia
+      - id: D
+        text: Aurora Serverless v2 with Aurora Auto Scaling in a single region and CloudFront for global distribution
+    correctAnswer: A
+    explanation: |
+      Aurora Global Database is optimal because: (1) Provides dedicated read replicas in each secondary region (Europe, Asia) with sub-100ms local read latency using the globally distributed storage layer, (2) Replicates data to secondary regions with typical lag under 1 second, meeting write latency requirements, (3) Supports promotion of secondary region to primary for failover within 1 minute (RPO < 1 second), (4) More cost-effective than running separate full clusters - secondary regions share storage with primary, (5) Provides up to 16 read replicas per secondary region for scale. Option B (DMS bidirectional replication) is complex, expensive, and error-prone with potential conflicts. Option C (cross-region read replicas) doesn't provide automatic failover capabilities like Global Database. Option D can't distribute reads globally - CloudFront doesn't cache database queries.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html
+    services: [Amazon Aurora, Aurora Global Database]
+
+  - id: db-sol-011
+    type: single
+    text: |
+      A financial reporting application performs complex analytical queries joining 5-10 tables with billions of rows. Queries run nightly and can take 2-3 hours. The data is stored in Amazon Aurora PostgreSQL. The database also handles OLTP workloads during business hours that require low latency. Which solution improves analytical query performance without impacting OLTP workloads?
+    options:
+      - id: A
+        text: Enable Aurora Parallel Query for the analytical queries
+      - id: B
+        text: Create a cross-region Aurora read replica dedicated to analytical queries
+      - id: C
+        text: Use Aurora Serverless v2 with auto-scaling to handle variable analytical query loads
+      - id: D
+        text: Create an Aurora read replica and use AWS DMS to replicate data to Amazon Redshift for analytics
+    correctAnswer: D
+    explanation: |
+      Replicating to Amazon Redshift is the best solution because: (1) Redshift is purpose-built for OLAP/analytical workloads with columnar storage and massively parallel processing, reducing 2-3 hour queries to minutes, (2) Completely isolates analytical workloads from the OLTP Aurora cluster, (3) DMS provides continuous replication keeping Redshift current, (4) Redshift's columnar compression reduces storage costs for analytical data. Option A (Parallel Query) only helps with specific query types (large table scans) and still runs on the Aurora cluster, potentially impacting OLTP. Option B (cross-region read replica) adds unnecessary cost and latency - same-region read replica would be sufficient if this approach worked, but Aurora isn't optimized for multi-hour analytical queries. Option C (Serverless v2) doesn't solve the fundamental problem that Aurora is optimized for OLTP, not complex analytics.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Target.Redshift.html
+    services: [Amazon Aurora, Amazon Redshift, AWS Database Migration Service]
+
+  - id: db-sol-012
+    type: multi
+    correctCount: 2
+    text: |
+      An application uses Amazon RDS for MySQL with a single db.r5.2xlarge instance. Database CPU consistently runs at 80-90% during business hours due to read-heavy workloads. The application performs both transactional writes and reporting queries. Write operations must see their changes immediately in subsequent reads (read-after-write consistency). Which solutions will reduce CPU utilization on the primary instance? (Select TWO)
+    options:
+      - id: A
+        text: Create RDS read replicas and route reporting queries to them using reader endpoints
+      - id: B
+        text: Enable RDS Multi-AZ deployment for automatic failover and read distribution
+      - id: C
+        text: Implement Amazon ElastiCache for Redis with lazy loading pattern for frequently accessed data
+      - id: D
+        text: Upgrade to a larger instance class (db.r5.4xlarge) to handle the workload
+      - id: E
+        text: Migrate to Amazon Aurora and use cluster endpoints to distribute reads
+    correctAnswer: [A, C]
+    explanation: |
+      Option A is correct because RDS read replicas can handle reporting queries, offloading read traffic from the primary instance while allowing writes to remain on the primary. The application can route transactional reads requiring read-after-write consistency to the primary, and reporting queries to replicas. Option C is correct because ElastiCache can cache frequently accessed data, reducing database read load significantly. Lazy loading is appropriate for read-heavy workloads. Option B is incorrect - Multi-AZ standby instances don't serve read traffic; they're only for failover. Option D addresses the symptom not the cause and increases costs without architectural improvement. Option E would help, but the question asks about RDS MySQL, and Aurora migration is a larger change; A and C are more direct solutions.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html
+    services: [Amazon RDS for MySQL, RDS Read Replicas, Amazon ElastiCache for Redis]
+
+  - id: db-sol-013
+    type: single
+    text: |
+      A SaaS company provides a multi-tenant application where each customer's data must be cryptographically isolated. The database must support encryption at rest with customer-managed keys (CMKs) where each tenant uses a different key, automatic key rotation, and the ability to immediately revoke a tenant's access by disabling their key. Which solution meets these requirements?
+    options:
+      - id: A
+        text: Amazon RDS with AWS KMS encryption using a single CMK with grants per tenant
+      - id: B
+        text: Amazon DynamoDB with client-side encryption using AWS Encryption SDK with per-tenant CMKs in AWS KMS
+      - id: C
+        text: Amazon Aurora with AWS KMS encryption and separate CMK per tenant using table-level encryption
+      - id: D
+        text: Amazon RDS with Transparent Data Encryption (TDE) and per-tenant schemas with separate encryption keys
+    correctAnswer: B
+    explanation: |
+      DynamoDB with client-side encryption using AWS Encryption SDK and per-tenant CMKs is the only solution that meets all requirements: (1) Each tenant gets a separate CMK in AWS KMS, providing cryptographic isolation, (2) Disabling a tenant's CMK immediately prevents decryption of their data, (3) AWS KMS supports automatic key rotation, (4) Client-side encryption encrypts data before it reaches DynamoDB, providing true per-tenant encryption. Option A uses a single CMK - all data is encrypted with the same key, defeating the purpose. Option C is incorrect because Aurora/RDS doesn't support table-level or row-level encryption with different keys - the entire database uses one CMK. Option D's TDE applies at the database level, not per schema/tenant. Only client-side encryption with separate CMKs achieves true per-tenant cryptographic isolation.
+    awsDocLink: https://docs.aws.amazon.com/dynamodb/latest/developerguide/client-side-encryption.html
+    services: [Amazon DynamoDB, AWS Encryption SDK, AWS Key Management Service]
+
+  - id: db-sol-014
+    type: single
+    text: |
+      A gaming company stores player session data in DynamoDB with a partition key of userId and sort key of sessionTimestamp. Sessions are queried frequently for the first 24 hours (active gameplay), occasionally for 7 days (recent history), and rarely after that but must be retained for 90 days for compliance. The table is 2TB and growing by 50GB daily. Which strategy optimizes costs while maintaining access patterns?
+    options:
+      - id: A
+        text: Enable DynamoDB auto scaling with lower provisioned capacity and higher target utilization
+      - id: B
+        text: Use DynamoDB Standard-IA (Infrequent Access) table class for the entire table
+      - id: C
+        text: Implement DynamoDB Time to Live (TTL) to delete items after 90 days and use DynamoDB Streams to archive to S3
+      - id: D
+        text: Keep recent 7 days in DynamoDB Standard table class, move older data to S3 using AWS Data Pipeline, query with Athena
+    correctAnswer: C
+    explanation: |
+      Option C is optimal because: (1) TTL automatically deletes items after 90 days without consuming write capacity, meeting compliance requirements, (2) DynamoDB Streams captures deleted items, allowing Lambda to archive them to S3 Glacier for long-term compliance if needed, (3) All data remains in DynamoDB during the retention period with consistent access patterns, (4) No operational overhead of managing data movement, (5) TTL is free. Option A doesn't address the core issue of storing rarely-accessed data. Option B (Standard-IA) isn't appropriate because 24-hour active gameplay means frequent access - Standard-IA charges per read and is only cost-effective when <1 read per month. Option D adds operational complexity with Data Pipeline and splits data across systems, complicating queries and requiring application changes to query both DynamoDB and Athena.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html
+    services: [Amazon DynamoDB, DynamoDB Time to Live, DynamoDB Streams]
+
+  - id: db-sol-015
+    type: multi
+    correctCount: 3
+    text: |
+      A startup is choosing a database for a new microservices-based application. Different services have different data requirements: (1) User authentication service needs low-latency key-value lookups, (2) Product catalog service needs full-text search with filters, (3) Order management needs ACID transactions across multiple tables, (4) Analytics service needs to run complex aggregations. Which database selections are appropriate? (Select THREE)
+    options:
+      - id: A
+        text: Amazon DynamoDB for user authentication with userId as partition key
+      - id: B
+        text: Amazon OpenSearch Service for product catalog with full-text search capabilities
+      - id: C
+        text: Amazon Aurora PostgreSQL for order management with full ACID support
+      - id: D
+        text: Amazon Neptune for product catalog to model product relationships
+      - id: E
+        text: Amazon Redshift for analytics service with scheduled data loads from operational databases
+    correctAnswer: [A, B, C]
+    explanation: |
+      Option A (DynamoDB for authentication) is correct because single-table key-value lookups by userId are exactly what DynamoDB excels at, providing single-digit millisecond latency at any scale. Option B (OpenSearch for product catalog) is correct because OpenSearch is purpose-built for full-text search, filtering, and faceted navigation that e-commerce catalogs require. Option C (Aurora PostgreSQL for orders) is correct because order management needs ACID transactions across tables (order, line items, inventory, payments) and Aurora provides this with high performance and availability. Option E (Redshift for analytics) is also valid for complex aggregations but Option D is incorrect - while Neptune handles graphs, product catalogs are better served by search engines (OpenSearch) that support full-text search and filtering. This question demonstrates the polyglot persistence pattern where each microservice chooses the optimal database for its access patterns.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-data-persistence/database-models.html
+    services: [Amazon DynamoDB, Amazon OpenSearch Service, Amazon Aurora]

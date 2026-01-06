@@ -1,0 +1,548 @@
+questions:
+  - id: mig-001
+    type: single
+    text: >
+      A company is planning to migrate 500 physical and virtual servers from their
+      data center to AWS within 6 months. The applications are running on various
+      Linux and Windows versions, and the company wants to minimize application
+      changes during migration. They need to test each application before cutover
+      with minimal downtime. Which migration strategy and service combination is
+      MOST appropriate?
+    options:
+      - id: A
+        text: Use refactor strategy with containerization on Amazon ECS
+      - id: B
+        text: Use rehost strategy with AWS Application Migration Service (MGN)
+      - id: C
+        text: Use replatform strategy by migrating to Amazon Lightsail
+      - id: D
+        text: Use repurchase strategy by replacing with SaaS alternatives
+    correctAnswer: B
+    explanation: >
+      AWS Application Migration Service (MGN) is designed specifically for lift-and-shift
+      (rehost) migrations at scale. It supports continuous replication with minimal
+      performance impact, allows non-disruptive testing, and provides automated cutover
+      with minimal downtime (typically minutes). The rehost strategy is appropriate
+      when applications need to be migrated quickly without modifications. Refactor (A)
+      would require significant application changes and doesn't meet the tight timeline.
+      Replatform to Lightsail (C) is not suitable for enterprise-scale migrations.
+      Repurchase (D) would require replacing all applications with SaaS alternatives,
+      which is not feasible for 500 custom applications.
+    awsDocLink: https://docs.aws.amazon.com/mgn/latest/ug/
+    services:
+      - AWS Application Migration Service (MGN)
+    concepts:
+      - 6 R's migration strategies
+      - Rehost (lift-and-shift)
+      - Large-scale migration
+
+  - id: mig-002
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing a landing zone for a large enterprise migration
+      involving 50+ AWS accounts across multiple business units. The organization requires
+      centralized governance, standardized security controls, and automated account
+      provisioning. Which THREE components should be included in the landing zone design?
+    options:
+      - id: A
+        text: AWS Control Tower for automated multi-account setup with guardrails
+      - id: B
+        text: AWS Organizations with Service Control Policies (SCPs) for governance
+      - id: C
+        text: Individual VPCs in each account with no centralized networking
+      - id: D
+        text: Centralized logging with CloudTrail and Config in a dedicated Log Archive account
+      - id: E
+        text: Manual account creation process to maintain control
+      - id: F
+        text: Separate AWS Organization for each business unit
+    correctAnswer:
+      - A
+      - B
+      - D
+    explanation: >
+      Option A (Control Tower) provides automated landing zone setup with guardrails
+      for governance and Account Factory for standardized provisioning. Option B
+      (Organizations with SCPs) enables centralized policy management across all accounts.
+      Option D (centralized logging) is a best practice for security and compliance,
+      storing logs in a dedicated account. Option C is incorrect because centralized
+      networking (Transit Gateway) is recommended. Option E contradicts the requirement
+      for automated provisioning. Option F would create governance silos and is not
+      recommended; a single Organization with OUs is the correct approach.
+    awsDocLink: https://docs.aws.amazon.com/controltower/latest/userguide/
+    services:
+      - AWS Control Tower
+      - AWS Organizations
+      - AWS CloudTrail
+    concepts:
+      - Landing zone design
+      - Multi-account architecture
+      - Centralized governance
+
+  - id: mig-003
+    type: single
+    text: >
+      A company needs to build a business case for migrating their on-premises
+      infrastructure to AWS. They have approximately 200 servers and want to understand
+      current costs, projected AWS costs, and potential savings. The CFO requires a
+      detailed 3-year TCO analysis. Which AWS service should they use?
+    options:
+      - id: A
+        text: AWS Migration Hub for cost analysis and tracking
+      - id: B
+        text: AWS Application Discovery Service for cost assessment
+      - id: C
+        text: AWS Migration Evaluator to build a data-driven business case
+      - id: D
+        text: AWS Cost Explorer to forecast migration costs
+    correctAnswer: C
+    explanation: >
+      AWS Migration Evaluator is specifically designed to build data-driven business
+      cases for cloud migration. It collects infrastructure data, analyzes current
+      costs, projects AWS costs with different migration patterns, and provides a
+      detailed 3-year TCO comparison. Migration Hub (A) is for tracking migrations,
+      not building business cases. Application Discovery Service (B) collects server
+      data but doesn't provide TCO analysis. Cost Explorer (D) shows AWS usage costs
+      but doesn't build migration business cases or compare on-premises TCO.
+    awsDocLink: https://docs.aws.amazon.com/migration-evaluator/latest/userguide/
+    services:
+      - AWS Migration Evaluator
+    concepts:
+      - Business case development
+      - TCO analysis
+      - Migration planning
+
+  - id: mig-004
+    type: single
+    text: >
+      An organization is planning to migrate a complex application with 15 interconnected
+      servers that must migrate together to avoid breaking dependencies. They need to
+      identify all network connections, running processes, and performance metrics.
+      What is the MOST effective approach to discover these dependencies?
+    options:
+      - id: A
+        text: Use AWS Migration Hub Agentless Discovery Connector on VMware
+      - id: B
+        text: Install AWS Application Discovery Agent on all 15 servers
+      - id: C
+        text: Review application documentation and conduct stakeholder interviews
+      - id: D
+        text: Use AWS Migration Evaluator to identify dependencies
+    correctAnswer: B
+    explanation: >
+      AWS Application Discovery Agent provides the most detailed dependency information
+      including network connections, running processes, process-to-process communication,
+      and performance metrics. This agent-based approach captures actual runtime
+      dependencies that may not be documented. The agentless connector (A) only works
+      with VMware and provides less detailed dependency information. Documentation
+      review (C) is helpful but often incomplete or outdated. Migration Evaluator (D)
+      focuses on business case development, not detailed dependency mapping.
+    awsDocLink: https://docs.aws.amazon.com/application-discovery/latest/userguide/
+    services:
+      - AWS Application Discovery Service
+    concepts:
+      - Application dependencies
+      - Discovery and assessment
+      - Agent-based discovery
+
+  - id: mig-005
+    type: multi
+    correctCount: 2
+    text: >
+      A company has completed a portfolio assessment and identified 300 applications
+      for migration. They need to determine the appropriate migration strategy for each
+      application. Which TWO factors are MOST important when deciding between rehost
+      and refactor strategies?
+    options:
+      - id: A
+        text: Timeline and urgency of migration
+      - id: B
+        text: Color scheme of the application UI
+      - id: C
+        text: Business value and ROI of re-architecting
+      - id: D
+        text: Number of users currently accessing the application
+      - id: E
+        text: Programming language used for development
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Timeline/urgency (A) is critical because rehost is faster (weeks) while refactor
+      takes months. If there's pressure to exit the data center quickly, rehost is
+      preferred. Business value/ROI (C) determines whether the investment in refactoring
+      is justified - high-value applications with scalability needs benefit from
+      refactoring, while low-value applications should be rehosted or retired. UI
+      color scheme (B) is irrelevant. Number of users (D) might influence sizing but
+      not the fundamental strategy choice. Programming language (E) may affect
+      implementation details but isn't a primary decision factor between rehost and
+      refactor.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    services:
+      - AWS Migration Hub
+    concepts:
+      - Migration strategy selection
+      - Rehost vs refactor
+      - Business case analysis
+
+  - id: mig-006
+    type: single
+    text: >
+      A solutions architect is using AWS Application Migration Service (MGN) to migrate
+      50 servers. During the replication phase, they notice that the replication lag
+      for several servers is increasing. What is the MOST likely cause and solution?
+    options:
+      - id: A
+        text: Source servers have insufficient CPU; add more CPUs to source servers
+      - id: B
+        text: Insufficient bandwidth between source and AWS; increase network capacity or reduce concurrent replications
+      - id: C
+        text: Replication servers have wrong instance type; manually modify instance types
+      - id: D
+        text: MGN service quotas exceeded; request quota increase from AWS Support
+    correctAnswer: B
+    explanation: >
+      Replication lag in MGN is most commonly caused by network bandwidth constraints
+      between the source environment and AWS. The solution is to increase bandwidth
+      or reduce the number of servers replicating simultaneously to stay within available
+      bandwidth. MGN replicates block-level changes continuously, so network capacity
+      is critical. Source CPU (A) is rarely the bottleneck as the agent is lightweight.
+      MGN automatically selects appropriate replication server instance types (C) based
+      on source server specs. Service quotas (D) would prevent replication from starting,
+      not cause lag to increase over time.
+    awsDocLink: https://docs.aws.amazon.com/mgn/latest/ug/troubleshooting-agent.html
+    services:
+      - AWS Application Migration Service (MGN)
+    concepts:
+      - Replication troubleshooting
+      - Network bandwidth
+      - Migration performance
+
+  - id: mig-007
+    type: single
+    text: >
+      An enterprise is migrating 400 applications over 18 months. They want to track
+      migration status across multiple tools including AWS MGN, AWS DMS, and third-party
+      migration tools, while grouping applications into business-relevant waves. Which
+      service provides this capability?
+    options:
+      - id: A
+        text: AWS Application Discovery Service
+      - id: B
+        text: AWS Migration Hub
+      - id: C
+        text: AWS Systems Manager
+      - id: D
+        text: AWS Service Catalog
+    correctAnswer: B
+    explanation: >
+      AWS Migration Hub provides a central location to track application migrations
+      across multiple AWS and partner migration tools. It supports application grouping
+      for wave planning, unified dashboard views, and integration with MGN, DMS, and
+      authorized partner tools. Application Discovery Service (A) is for discovery,
+      not migration tracking. Systems Manager (C) is for operational management, not
+      migration orchestration. Service Catalog (D) is for standardizing product
+      provisioning, not migration tracking.
+    awsDocLink: https://docs.aws.amazon.com/migrationhub/latest/ug/
+    services:
+      - AWS Migration Hub
+      - AWS Application Migration Service (MGN)
+      - AWS Database Migration Service (DMS)
+    concepts:
+      - Migration tracking
+      - Multi-tool orchestration
+      - Wave planning
+
+  - id: mig-008
+    type: multi
+    correctCount: 2
+    text: >
+      A company has identified 50 applications that are no longer actively used or
+      have been replaced by other systems. Before retiring these applications, what
+      TWO actions should the solutions architect recommend?
+    options:
+      - id: A
+        text: Validate with business stakeholders that applications are truly no longer needed
+      - id: B
+        text: Immediately decommission all servers to reduce costs
+      - id: C
+        text: Determine data retention requirements and plan archival if needed
+      - id: D
+        text: Migrate the applications to AWS anyway as part of the data center exit
+      - id: E
+        text: Convert all applications to serverless architecture
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Before retiring applications, it's critical to validate with business stakeholders
+      (A) that they are truly not needed - discovery tools may show low usage, but
+      applications might be used seasonally or for compliance. Data retention requirements
+      must be considered (C) - some data may need to be archived for regulatory or
+      business continuity reasons before decommissioning. Immediate decommissioning
+      (B) without validation is risky. Migrating unused applications (D) wastes
+      resources and time. Converting to serverless (E) is unnecessary for applications
+      being retired.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    services:
+      - AWS Backup
+    concepts:
+      - Retire strategy
+      - Application portfolio optimization
+      - Data retention
+
+  - id: mig-009
+    type: single
+    text: >
+      A financial services company is planning an AWS migration but must keep certain
+      legacy mainframe applications on-premises due to regulatory constraints. These
+      mainframe applications need to integrate with new cloud-native applications in AWS.
+      Which migration strategy is MOST appropriate for the mainframe applications?
+    options:
+      - id: A
+        text: Rehost the mainframe applications to AWS
+      - id: B
+        text: Refactor the mainframe applications to serverless
+      - id: C
+        text: Retain the mainframe applications on-premises with hybrid integration
+      - id: D
+        text: Retire the mainframe applications immediately
+    correctAnswer: C
+    explanation: >
+      The Retain strategy is appropriate when applications cannot or should not be
+      migrated currently due to regulatory constraints, recent investments, or other
+      business reasons. A hybrid architecture allows the mainframe to remain on-premises
+      while integrating with AWS through Direct Connect, VPN, or API Gateway. Rehosting
+      a mainframe (A) is not possible as mainframes have specialized hardware. Refactoring
+      (B) would require complete application rewrite and doesn't address regulatory
+      constraints. Retiring (D) is not feasible if the applications are still required
+      for business operations and have regulatory constraints.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    services:
+      - AWS Direct Connect
+      - Amazon API Gateway
+    concepts:
+      - Retain strategy
+      - Hybrid cloud architecture
+      - Regulatory constraints
+
+  - id: mig-010
+    type: single
+    text: >
+      A company is migrating a legacy monolithic application that was architected
+      10 years ago. The application experiences scalability issues and requires frequent
+      manual intervention. The business team has approved a 9-month timeline and budget
+      to address these issues during migration. Which migration strategy should the
+      solutions architect recommend?
+    options:
+      - id: A
+        text: Rehost to EC2 to quickly migrate then address issues later
+      - id: B
+        text: Replatform to use managed services like RDS and ALB
+      - id: C
+        text: Refactor to microservices architecture on ECS or Lambda
+      - id: D
+        text: Repurchase by replacing with a SaaS product
+    correctAnswer: C
+    explanation: >
+      Given the scalability and operational issues, combined with business approval
+      for time and budget to address them, refactoring is the best approach. This
+      allows re-architecting the application to cloud-native patterns (microservices,
+      serverless) that solve the underlying issues. Rehosting (A) would move the
+      problems to the cloud without solving them. Replatforming (B) provides some
+      benefits but doesn't address fundamental architectural issues. Repurchase (D)
+      may not be feasible for custom applications and would require replacing business
+      logic, not just infrastructure.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    services:
+      - Amazon ECS
+      - AWS Lambda
+      - Amazon EKS
+    concepts:
+      - Refactor strategy
+      - Application modernization
+      - Cloud-native architecture
+
+  - id: mig-011
+    type: multi
+    correctCount: 3
+    text: >
+      An organization is setting up AWS Control Tower as part of their landing zone.
+      Which THREE components are automatically provisioned by Control Tower?
+    options:
+      - id: A
+        text: Management account for billing and AWS Organizations
+      - id: B
+        text: Log Archive account for centralized logging
+      - id: C
+        text: Audit account for security and compliance tools
+      - id: D
+        text: Application Migration Service replication servers
+      - id: E
+        text: VPC peering connections between all accounts
+      - id: F
+        text: Amazon Connect contact center
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: >
+      AWS Control Tower automatically creates three foundational account types: the
+      Management account (A) for AWS Organizations and billing, the Log Archive account
+      (B) for centralized CloudTrail and Config logs, and the Audit account (C) for
+      security team access and compliance tools. MGN replication servers (D) are only
+      created when using Application Migration Service for migrations. VPC peering
+      (E) is not automatically created by Control Tower (Transit Gateway is more common
+      for multi-account networking). Amazon Connect (F) is a contact center service
+      unrelated to landing zones.
+    awsDocLink: https://docs.aws.amazon.com/controltower/latest/userguide/how-control-tower-works.html
+    services:
+      - AWS Control Tower
+      - AWS Organizations
+    concepts:
+      - Landing zone setup
+      - Multi-account structure
+      - Foundational accounts
+
+  - id: mig-012
+    type: single
+    text: >
+      A company has migrated several applications using AWS MGN. Post-migration, they
+      notice that some applications are running on instance types that are oversized
+      for actual usage. They want to optimize instance sizing based on observed performance
+      data. What should they do?
+    options:
+      - id: A
+        text: Modify the MGN Launch Template to specify smaller instance types and re-launch
+      - id: B
+        text: Use AWS Compute Optimizer recommendations to right-size instances
+      - id: C
+        text: Manually stop and change instance types through EC2 console
+      - id: D
+        text: Re-run the MGN migration with different replication settings
+    correctAnswer: B
+    explanation: >
+      AWS Compute Optimizer analyzes actual usage patterns and provides right-sizing
+      recommendations for EC2 instances, including those migrated via MGN. This data-driven
+      approach considers CPU, memory, network, and disk metrics to recommend optimal
+      instance types. Modifying Launch Templates (A) is useful for future migrations
+      but should be based on data, not guesses. Manual changes (C) work but lack the
+      data-driven recommendations. Re-running MGN migration (D) is unnecessary - the
+      applications are already migrated; this is an optimization task, not a migration
+      issue.
+    awsDocLink: https://docs.aws.amazon.com/compute-optimizer/latest/ug/
+    services:
+      - AWS Compute Optimizer
+      - AWS Application Migration Service (MGN)
+    concepts:
+      - Post-migration optimization
+      - Right-sizing
+      - Cost optimization
+
+  - id: mig-013
+    type: single
+    text: >
+      A solutions architect is planning migration waves for a large-scale migration.
+      They need to determine which applications should be in the first production wave
+      after the pilot. What is the BEST approach for selecting Wave 2 applications?
+    options:
+      - id: A
+        text: Select the most critical business applications to migrate first
+      - id: B
+        text: Select applications with moderate complexity and low business risk
+      - id: C
+        text: Select all applications from a single business unit
+      - id: D
+        text: Select the largest applications to maximize migration progress
+    correctAnswer: B
+    explanation: >
+      After the pilot wave (Wave 1), Wave 2 should include applications with moderate
+      complexity and low business risk. This allows the team to build experience and
+      confidence while minimizing business impact if issues occur. Most critical
+      applications (A) should be migrated later after the team has proven the process.
+      Business unit grouping (C) ignores technical complexity and dependencies. Largest
+      applications (D) are typically highest risk and should be migrated after experience
+      is gained with smaller applications. The migration factory model suggests building
+      velocity over time, saving complex/critical applications for later waves.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-guide/wave-planning.html
+    services:
+      - AWS Migration Hub
+    concepts:
+      - Wave planning
+      - Migration factory
+      - Risk management
+
+  - id: mig-014
+    type: multi
+    correctCount: 2
+    text: >
+      A company wants to test an application in AWS before final cutover using AWS MGN.
+      The test should not impact the production source servers, should use actual replicated
+      data, and should allow testing multiple times. Which TWO capabilities of MGN support
+      this requirement?
+    options:
+      - id: A
+        text: MGN allows launching test instances from replicated data without affecting source servers
+      - id: B
+        text: MGN requires stopping source servers before testing
+      - id: C
+        text: MGN test instances use the same IP addresses as source servers
+      - id: D
+        text: MGN allows repeated testing without re-running full replication
+      - id: E
+        text: MGN automatically rolls back failed tests to source environment
+    correctAnswer:
+      - A
+      - D
+    explanation: >
+      MGN supports non-disruptive testing by launching test instances from the continuously
+      replicated data (A) without any impact on source servers, which continue running
+      normally. Tests can be repeated multiple times (D) using the latest replicated
+      data without re-running full replication - only delta changes are synced. MGN
+      does NOT require stopping source servers (B) - this defeats the purpose of
+      non-disruptive testing. Test instances use different IPs (C) in the AWS environment,
+      not source IPs. MGN doesn't rollback (E) - tests are separate from production
+      and can be terminated independently.
+    awsDocLink: https://docs.aws.amazon.com/mgn/latest/ug/test-and-cutover.html
+    services:
+      - AWS Application Migration Service (MGN)
+    concepts:
+      - Non-disruptive testing
+      - Migration testing strategy
+      - Continuous replication
+
+  - id: mig-015
+    type: single
+    text: >
+      An organization has completed discovery and found that 30% of their application
+      portfolio consists of commercial off-the-shelf (COTS) software running on dedicated
+      servers. The software vendors offer SaaS versions of these products. The licensing
+      costs for on-premises are high, and the company wants to reduce operational burden.
+      Which migration strategy is MOST appropriate for these COTS applications?
+    options:
+      - id: A
+        text: Rehost the COTS applications to EC2 instances
+      - id: B
+        text: Replatform the COTS applications to use managed services
+      - id: C
+        text: Repurchase by moving to the vendors' SaaS offerings
+      - id: D
+        text: Refactor the COTS applications to serverless architecture
+    correctAnswer: C
+    explanation: >
+      Repurchase (drop-and-shop) is the appropriate strategy for COTS applications
+      when SaaS alternatives are available from the same vendors. This eliminates
+      infrastructure management, reduces operational burden, and often provides better
+      features and updates. It also typically includes better licensing models for
+      cloud consumption. Rehosting (A) maintains the operational burden and high
+      licensing costs. Replatforming (B) is not applicable to COTS software that can't
+      be modified. Refactoring (D) is impossible - you cannot refactor commercial
+      software you don't own the source code for.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    services:
+      - AWS Marketplace
+    concepts:
+      - Repurchase strategy
+      - COTS software migration
+      - SaaS adoption

@@ -1,0 +1,65 @@
+id: domain-4-migration-modernization
+name: Accelerate Workload Migration and Modernization
+shortName: Migration & Modernization
+weight: 20
+description: >
+  Design and implement strategies for migrating and modernizing existing workloads to AWS.
+  Includes lift-and-shift, re-platforming, refactoring, and hybrid cloud architectures.
+color: orange
+icon: cloud-upload
+
+examTasks:
+  - id: task-4-1
+    name: Select appropriate migration and modernization strategies for workloads
+    description: >
+      Evaluate workloads and select appropriate migration strategies (rehost, replatform,
+      refactor, retire, retain) based on business requirements.
+  - id: task-4-2
+    name: Determine a migration or modernization strategy for databases
+    description: >
+      Design database migration strategies using DMS, SCT, and native tools while
+      minimizing downtime and ensuring data integrity.
+  - id: task-4-3
+    name: Determine a strategy to modernize legacy applications
+    description: >
+      Transform monolithic applications into microservices, serverless, or containerized
+      architectures while maintaining business continuity.
+  - id: task-4-4
+    name: Determine a strategy for hybrid cloud architectures
+    description: >
+      Design hybrid and edge solutions connecting on-premises infrastructure with AWS
+      using Direct Connect, VPN, Storage Gateway, and Outposts.
+
+topics:
+  - migration-strategies
+  - database-migration
+  - application-modernization
+  - hybrid-architectures
+
+keyServices:
+  - AWS Migration Hub
+  - AWS Application Migration Service (MGN)
+  - AWS Database Migration Service (DMS)
+  - AWS Schema Conversion Tool (SCT)
+  - AWS DataSync
+  - AWS Transfer Family
+  - AWS Snow Family
+  - AWS Direct Connect
+  - AWS VPN
+  - AWS Storage Gateway
+  - AWS Outposts
+  - VMware Cloud on AWS
+
+awsDocLinks:
+  - title: AWS Migration Hub User Guide
+    url: https://docs.aws.amazon.com/migrationhub/latest/ug/
+    type: doc
+  - title: AWS Prescriptive Guidance for Migration
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-guide/
+    type: whitepaper
+  - title: AWS Cloud Adoption Framework
+    url: https://aws.amazon.com/professional-services/CAF/
+    type: doc
+  - title: 6 R's of Migration
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    type: doc

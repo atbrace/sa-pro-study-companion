@@ -1,0 +1,45 @@
+id: networking-solutions
+name: Networking Solutions for New Workloads
+shortName: Networking Solutions
+examTask: task-2-1
+description: >
+  Design network architectures for new workloads using VPC, load balancers, CloudFront,
+  and Route 53. Implement content delivery, DNS routing, and network optimization.
+
+estimatedStudyTime: 110
+difficulty: advanced
+
+keyServices:
+  - Amazon VPC
+  - Elastic Load Balancing (ALB, NLB, GLB)
+  - Amazon CloudFront
+  - Amazon Route 53
+  - AWS PrivateLink
+  - VPC Endpoints
+  - AWS Global Accelerator
+  - AWS WAF
+  - AWS Shield
+
+keyConcepts:
+  - VPC design for new workloads
+  - Load balancer selection (ALB vs NLB vs GLB)
+  - CloudFront distributions and behaviors
+  - Route 53 routing policies
+  - PrivateLink and VPC endpoints
+  - Global Accelerator for performance
+  - Network security (WAF, Shield)
+  - Content delivery optimization
+
+awsDocLinks:
+  - title: Amazon VPC User Guide
+    url: https://docs.aws.amazon.com/vpc/latest/userguide/
+    type: doc
+  - title: Elastic Load Balancing User Guide
+    url: https://docs.aws.amazon.com/elasticloadbalancing/
+    type: doc
+  - title: Amazon CloudFront Developer Guide
+    url: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/
+    type: doc
+  - title: Amazon Route 53 Developer Guide
+    url: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/
+    type: doc

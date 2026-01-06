@@ -1,0 +1,586 @@
+questions:
+  - id: rel-001
+    type: single
+    text: >
+      A company's three-tier application currently runs in a single Availability Zone. The
+      application experiences frequent downtime during AZ maintenance events. The solutions
+      architect needs to improve availability with minimal application changes. The application
+      uses an Application Load Balancer, EC2 instances in an Auto Scaling group, and an RDS
+      MySQL database. Which combination of changes will provide the MOST reliable architecture?
+    options:
+      - id: A
+        text: Enable Multi-AZ for RDS, expand Auto Scaling group to span three AZs, and configure the ALB to distribute traffic across all AZs
+      - id: B
+        text: Create read replicas in two additional AZs, deploy EC2 instances manually in each AZ, and use Route 53 weighted routing
+      - id: C
+        text: Deploy a second identical stack in another AZ and use Route 53 failover routing between the two stacks
+      - id: D
+        text: Migrate the database to DynamoDB Global Tables, use Lambda functions instead of EC2, and deploy in multiple AZs
+    correctAnswer: A
+    explanation: >
+      Option A provides the most straightforward improvement with minimal application changes.
+      RDS Multi-AZ provides automatic failover for the database layer, Auto Scaling groups
+      automatically distribute instances across AZs with the ALB routing traffic appropriately.
+      This is a standard multi-AZ architecture pattern. Option B doesn't provide automatic
+      failover for the database and requires manual instance management. Option C creates
+      unnecessary complexity with duplicate stacks. Option D requires significant application
+      refactoring which violates the "minimal changes" requirement.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html
+    services:
+      - Amazon RDS
+      - Elastic Load Balancing
+      - Amazon EC2 Auto Scaling
+    concepts:
+      - Multi-AZ architecture
+      - High availability
+      - Automatic failover
+
+  - id: rel-002
+    type: multi
+    correctCount: 3
+    text: >
+      A financial services company requires a cross-region disaster recovery solution with
+      an RTO of 5 minutes and RPO of 30 seconds. The application consists of a web tier,
+      application tier, and PostgreSQL database. Which THREE components should be included
+      in the DR architecture?
+    options:
+      - id: A
+        text: Aurora PostgreSQL with cross-region read replica promotion capability
+      - id: B
+        text: Route 53 health checks with automatic failover routing to the secondary region
+      - id: C
+        text: Warm standby environment in the secondary region with scaled-down capacity
+      - id: D
+        text: S3 Cross-Region Replication for static assets and application backups
+      - id: E
+        text: AWS Backup with daily snapshots copied to the secondary region
+      - id: F
+        text: Cold standby using CloudFormation templates ready to deploy when needed
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: >
+      The 5-minute RTO and 30-second RPO requirements demand a warm standby approach.
+      Option A (Aurora cross-region replica) provides RPO < 1 second with promotion in
+      minutes. Option B (Route 53 health checks) enables automatic DNS failover meeting
+      the RTO requirement. Option C (warm standby) maintains running infrastructure for
+      fast failover. Option D (S3 replication) is useful but not critical for the RTO/RPO.
+      Option E (daily backups) cannot meet 30-second RPO. Option F (cold standby) cannot
+      meet 5-minute RTO as deployment takes much longer.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html
+    services:
+      - Amazon Aurora
+      - Amazon Route 53
+      - Amazon EC2
+    concepts:
+      - Disaster recovery strategies
+      - RTO and RPO
+      - Cross-region replication
+      - Warm standby
+
+  - id: rel-003
+    type: single
+    text: >
+      An Auto Scaling group frequently launches and terminates instances during normal
+      traffic fluctuations, causing customer sessions to be dropped. The application stores
+      session state locally on EC2 instances. What is the BEST approach to improve
+      reliability while maintaining auto-scaling benefits?
+    options:
+      - id: A
+        text: Increase the Auto Scaling cooldown period to prevent frequent scaling events
+      - id: B
+        text: Configure lifecycle hooks to deregister instances from the load balancer before termination and enable connection draining
+      - id: C
+        text: Store session state in Amazon ElastiCache or DynamoDB instead of local instance storage
+      - id: D
+        text: Use target tracking scaling instead of step scaling to reduce scaling frequency
+    correctAnswer: C
+    explanation: >
+      The root cause is session state stored locally on instances that are terminated.
+      Option C solves the fundamental problem by externalizing session state to ElastiCache
+      or DynamoDB, making the application stateless and resilient to instance termination.
+      Option B (lifecycle hooks and connection draining) only helps with graceful shutdown
+      but doesn't prevent session loss if the instance is terminated. Options A and D
+      reduce scaling frequency but don't eliminate the session loss problem and compromise
+      auto-scaling effectiveness. This is a classic anti-pattern that requires architectural
+      improvement, not just operational tuning.
+    awsDocLink: https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-suspend-resume-processes.html
+    services:
+      - Amazon EC2 Auto Scaling
+      - Amazon ElastiCache
+      - Amazon DynamoDB
+    concepts:
+      - Stateless architecture
+      - Session management
+      - Application resilience
+
+  - id: rel-004
+    type: single
+    text: >
+      A solutions architect needs to implement automated recovery for EC2 instances that
+      occasionally fail system status checks due to underlying hardware issues. The instances
+      must maintain their instance IDs, private IP addresses, and EBS volumes. What is the
+      MOST appropriate solution?
+    options:
+      - id: A
+        text: Configure Auto Scaling group with health checks to replace failed instances
+      - id: B
+        text: Create a CloudWatch alarm on StatusCheckFailed_System metric and configure EC2 instance recovery action
+      - id: C
+        text: Use AWS Systems Manager Automation to stop and restart failed instances
+      - id: D
+        text: Create a Lambda function triggered by EventBridge to snapshot EBS volumes and launch replacement instances
+    correctAnswer: B
+    explanation: >
+      EC2 automatic instance recovery (Option B) is specifically designed for this scenario.
+      When triggered by system status check failures, it migrates the instance to new
+      hardware while preserving the instance ID, private IP, Elastic IP, and all EBS volumes.
+      Option A (Auto Scaling) would create a new instance with different ID and IP addresses.
+      Option C (stop/restart) doesn't move the instance to new hardware, so the hardware
+      issue persists. Option D is overly complex and would result in different instance
+      attributes. EC2 instance recovery is the native AWS solution for hardware failure
+      scenarios.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-recover.html
+    services:
+      - Amazon EC2
+      - Amazon CloudWatch
+    concepts:
+      - Automatic instance recovery
+      - System status checks
+      - Instance metadata preservation
+
+  - id: rel-005
+    type: multi
+    correctCount: 2
+    text: >
+      A company wants to implement chaos engineering to validate their application's
+      resilience using AWS Fault Injection Simulator. The application runs on ECS Fargate
+      with an Application Load Balancer and Aurora database. Which TWO experiment actions
+      would provide the MOST valuable reliability insights?
+    options:
+      - id: A
+        text: Terminate random ECS tasks and verify the service automatically replaces them within SLA
+      - id: B
+        text: Inject CPU stress into Fargate tasks and monitor application performance degradation
+      - id: C
+        text: Simulate Aurora primary instance failure and measure failover time and application recovery
+      - id: D
+        text: Inject network latency between ECS tasks and the ALB to test timeout handling
+      - id: E
+        text: Throttle Aurora database connections to test connection pool exhaustion scenarios
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Options A and C test critical failure scenarios that validate architectural resilience.
+      Option A (task termination) validates that ECS service automatically maintains desired
+      count and the ALB properly handles task replacement - this is fundamental to the
+      architecture's reliability. Option C (Aurora failover) tests the database tier's
+      high availability and measures actual RTO, which is critical for disaster recovery
+      planning. Options B, D, and E test performance degradation and resource exhaustion,
+      which are valuable but secondary to testing catastrophic failure recovery. Chaos
+      engineering should prioritize validating that systems survive component failures
+      before testing degraded performance scenarios.
+    awsDocLink: https://docs.aws.amazon.com/fis/latest/userguide/what-is.html
+    services:
+      - AWS Fault Injection Simulator
+      - Amazon ECS
+      - Amazon Aurora
+    concepts:
+      - Chaos engineering
+      - Fault injection testing
+      - Service resilience validation
+
+  - id: rel-006
+    type: single
+    text: >
+      A global application uses Route 53 for DNS with health checks monitoring endpoints
+      in us-east-1 (primary) and eu-west-1 (secondary). During a partial us-east-1 outage,
+      some health checkers report the primary as healthy while others report it as unhealthy,
+      causing DNS to oscillate between regions. How can this be prevented?
+    options:
+      - id: A
+        text: Increase the health check failure threshold from 3 to 5 consecutive failures
+      - id: B
+        text: Use a calculated health check that requires multiple independent health checks to agree on failure state
+      - id: C
+        text: Configure health checks to use HTTPS instead of HTTP for more reliable checking
+      - id: D
+        text: Reduce the health check interval from 30 seconds to 10 seconds for faster detection
+    correctAnswer: B
+    explanation: >
+      Option B (calculated health check) solves the split-brain problem by requiring
+      multiple independent health checks to agree before declaring an endpoint unhealthy.
+      You can configure it to require, for example, 2 out of 3 health checks to fail
+      before triggering failover. This prevents oscillation during partial outages.
+      Option A (higher threshold) increases the time to detect failure but doesn't solve
+      the disagreement between checkers. Option C (HTTPS) doesn't address the underlying
+      issue of checker disagreement. Option D (faster interval) makes the problem worse
+      by increasing the frequency of conflicting results. Calculated health checks provide
+      consensus-based failure detection.
+    awsDocLink: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-complex-configs.html
+    services:
+      - Amazon Route 53
+    concepts:
+      - Health check reliability
+      - DNS failover
+      - Calculated health checks
+      - Split-brain prevention
+
+  - id: rel-007
+    type: single
+    text: >
+      A company's backup strategy uses AWS Backup to create daily snapshots of RDS databases
+      and EBS volumes, with 30-day retention. During a compliance audit, they discovered
+      they cannot meet the requirement to restore data from exactly 90 days ago. The backup
+      plan needs to support both operational recovery (recent backups) and compliance
+      (long-term retention). What changes should be made?
+    options:
+      - id: A
+        text: Increase the backup retention period from 30 days to 90 days for all backups
+      - id: B
+        text: Create a separate backup rule that transitions backups to cold storage after 30 days and retains for 90 days total
+      - id: C
+        text: Use lifecycle policies to move backups older than 30 days to S3 Glacier Deep Archive
+      - id: D
+        text: Configure AWS Backup to create monthly backups in addition to daily backups, with 90-day retention for monthly backups
+    correctAnswer: D
+    explanation: >
+      Option D provides the optimal solution by maintaining two backup cadences: daily
+      backups with 30-day retention for operational recovery, and monthly backups with
+      90-day retention for compliance. This meets both requirements efficiently. Option A
+      keeps all daily backups for 90 days, which is expensive and unnecessary. Option B
+      (cold storage transition) is useful for cost optimization but AWS Backup's cold
+      storage requires 90-day minimum retention, and you still need point-in-time recovery
+      for the 30-day window. Option C incorrectly suggests manual lifecycle policies,
+      but AWS Backup manages this automatically. Different recovery requirements (operational
+      vs. compliance) typically warrant different backup schedules.
+    awsDocLink: https://docs.aws.amazon.com/aws-backup/latest/devguide/creating-a-backup-plan.html
+    services:
+      - AWS Backup
+      - Amazon RDS
+      - Amazon EBS
+    concepts:
+      - Backup retention strategies
+      - Compliance requirements
+      - Lifecycle policies
+      - Multi-tier backup
+
+  - id: rel-008
+    type: multi
+    correctCount: 3
+    text: >
+      An Auto Scaling group manages web application servers behind an Application Load
+      Balancer. The application takes 90 seconds to initialize after instance launch.
+      During scale-out events, new instances receive traffic immediately and fail health
+      checks. Which THREE configurations would solve this problem?
+    options:
+      - id: A
+        text: Set the Auto Scaling health check grace period to 120 seconds
+      - id: B
+        text: Configure the ALB target group health check to use a dedicated initialization endpoint
+      - id: C
+        text: Set the ALB target group deregistration delay to 120 seconds
+      - id: D
+        text: Configure the ALB target group health check interval to 60 seconds
+      - id: E
+        text: Use Auto Scaling lifecycle hooks to delay instance registration until initialization completes
+      - id: F
+        text: Increase the ALB target group healthy threshold from 5 to 10 consecutive health checks
+    correctAnswer:
+      - A
+      - B
+      - E
+    explanation: >
+      Option A (health check grace period) prevents Auto Scaling from terminating instances
+      during the initialization period. Option B (dedicated health endpoint) allows the
+      application to signal when it's ready rather than using generic health checks.
+      Option E (lifecycle hooks) can delay ALB registration until initialization completes,
+      preventing premature traffic. Option C (deregistration delay) is for shutdown, not
+      startup. Option D (longer health check interval) makes detection slower but doesn't
+      solve the initialization problem. Option F (higher threshold) delays declaring the
+      instance healthy but doesn't prevent it from receiving traffic if registered.
+      Proper initialization requires both time-based protection (A) and application
+      readiness signaling (B or E).
+    awsDocLink: https://docs.aws.amazon.com/autoscaling/ec2/userguide/health-check-grace-period.html
+    services:
+      - Amazon EC2 Auto Scaling
+      - Elastic Load Balancing
+    concepts:
+      - Health check grace period
+      - Application initialization
+      - Lifecycle hooks
+      - Target group health checks
+
+  - id: rel-009
+    type: single
+    text: >
+      A multi-tier application runs in us-east-1 with a disaster recovery requirement of
+      4-hour RTO and 1-hour RPO. The application uses EC2 instances, RDS PostgreSQL, and
+      S3 for file storage. A warm standby exists in us-west-2 with minimal capacity. During
+      a DR drill, failover took 6 hours due to database restoration time. What is the MOST
+      cost-effective improvement to meet the RTO requirement?
+    options:
+      - id: A
+        text: Increase the warm standby instance count in us-west-2 to match production capacity
+      - id: B
+        text: Change from RDS snapshots to Aurora with cross-region read replicas that can be promoted
+      - id: C
+        text: Switch from warm standby to hot standby with active-active configuration across both regions
+      - id: D
+        text: Implement more frequent RDS snapshot copies to reduce point-in-time recovery time
+    correctAnswer: B
+    explanation: >
+      Option B addresses the root cause - database restoration time. Aurora cross-region
+      read replicas can be promoted to primary in minutes (meeting 4-hour RTO), while
+      providing continuous replication (better than 1-hour RPO). Option A increases compute
+      capacity but doesn't solve the database bottleneck that caused the 6-hour failover.
+      Option C (hot standby) would meet RTO but is expensive and not "most cost-effective".
+      Option D (more frequent snapshots) improves RPO but restoration still takes hours
+      to restore and recover. The key insight is identifying the bottleneck (database
+      restoration) and using Aurora's fast promotion capability. This is more cost-effective
+      than over-provisioning compute resources.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-disaster-recovery.html
+    services:
+      - Amazon Aurora
+      - Amazon RDS
+    concepts:
+      - RTO optimization
+      - Database failover
+      - Cross-region read replicas
+      - DR strategy selection
+
+  - id: rel-010
+    type: single
+    text: >
+      A company uses CloudWatch alarms to trigger Auto Scaling actions. During a traffic
+      spike, the alarm triggered scale-out correctly, but instances were terminated 5
+      minutes later when the alarm returned to OK state, before the traffic spike ended.
+      This caused service degradation. How should this be prevented?
+    options:
+      - id: A
+        text: Configure separate alarms for scale-out and scale-in with different thresholds (scale-out at 70%, scale-in at 30%)
+      - id: B
+        text: Increase the CloudWatch alarm evaluation period from 1 to 5 minutes
+      - id: C
+        text: Use target tracking scaling instead of step scaling based on CloudWatch alarms
+      - id: D
+        text: Set the Auto Scaling cooldown period to prevent rapid scaling changes
+    correctAnswer: A
+    explanation: >
+      Option A implements the best practice of asymmetric scaling thresholds. Scale-out
+      should be aggressive (respond quickly to increased load) while scale-in should be
+      conservative (wait longer before removing capacity). This prevents the oscillation
+      described. Option B (longer evaluation period) makes both scale-out and scale-in
+      slower, which delays response to legitimate traffic increases. Option C (target
+      tracking) would work but is less flexible than step scaling with proper thresholds.
+      Option D (cooldown period) prevents scaling actions entirely during the cooldown,
+      which could prevent necessary scale-out if traffic continues rising. The key principle
+      is: scale out aggressively, scale in conservatively.
+    awsDocLink: https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-simple-step.html
+    services:
+      - Amazon CloudWatch
+      - Amazon EC2 Auto Scaling
+    concepts:
+      - Scaling policies
+      - Alarm thresholds
+      - Scale-out vs scale-in
+      - Capacity oscillation prevention
+
+  - id: rel-011
+    type: multi
+    correctCount: 2
+    text: >
+      A serverless application using Lambda, API Gateway, and DynamoDB experiences occasional
+      failures during AWS service disruptions. The architect wants to improve static stability.
+      Which TWO design changes would MOST improve the application's ability to continue
+      functioning during dependency failures?
+    options:
+      - id: A
+        text: Implement exponential backoff and jitter in API clients when calling the API
+      - id: B
+        text: Use DynamoDB global tables for multi-region active-active deployment
+      - id: C
+        text: Enable Lambda reserved concurrency to guarantee function execution capacity
+      - id: D
+        text: Cache frequently accessed data in API Gateway cache to reduce DynamoDB dependency
+      - id: E
+        text: Implement circuit breaker pattern to fail fast when downstream services are unavailable
+    correctAnswer:
+      - B
+      - D
+    explanation: >
+      Static stability means the system continues functioning even when dependencies fail.
+      Option B (global tables) provides database access even if one region fails. Option D
+      (API Gateway caching) allows the API to serve cached responses without calling DynamoDB,
+      reducing dependency on the database. Option A (exponential backoff) improves retry
+      behavior but doesn't eliminate the dependency. Option C (reserved concurrency) ensures
+      capacity but doesn't help if Lambda service itself is disrupted. Option E (circuit
+      breaker) fails fast rather than maintaining functionality. Static stability prioritizes
+      continued degraded operation over fast failure - caching and redundancy are key patterns.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/rel_withstand_component_failures_static_stability.html
+    services:
+      - AWS Lambda
+      - Amazon DynamoDB
+      - Amazon API Gateway
+    concepts:
+      - Static stability
+      - Graceful degradation
+      - Dependency isolation
+      - Caching strategies
+
+  - id: rel-012
+    type: single
+    text: >
+      An organization wants to validate their RDS Multi-AZ database failover procedures
+      work correctly and measure actual failover time. What is the recommended approach
+      to test this in production safely?
+    options:
+      - id: A
+        text: Use AWS Fault Injection Simulator to trigger an RDS Multi-AZ failover during a maintenance window
+      - id: B
+        text: Manually reboot the RDS instance with failover option during low-traffic hours
+      - id: C
+        text: Simulate instance failure by modifying security groups to block database traffic
+      - id: D
+        text: Create a test environment identical to production and perform failover testing there
+    correctAnswer: A
+    explanation: >
+      Option A (FIS experiment) is the best approach because it provides a controlled,
+      documented, and observable failover test with built-in safety mechanisms (stop
+      conditions). FIS is specifically designed for chaos engineering in production.
+      Option B (manual reboot with failover) works but lacks the observability, documentation,
+      and safety controls that FIS provides. Option C (security group blocking) doesn't
+      test actual failover mechanisms, just connection failure handling. Option D (test
+      environment) doesn't validate production readiness - many issues only appear in
+      production (scale, data volume, complex dependencies). AWS recommends testing in
+      production with proper controls, and FIS is the tool designed for this purpose.
+    awsDocLink: https://docs.aws.amazon.com/fis/latest/userguide/fis-tutorial-rds-failover.html
+    services:
+      - AWS Fault Injection Simulator
+      - Amazon RDS
+    concepts:
+      - Chaos engineering
+      - Failover testing
+      - Production testing
+      - Game days
+
+  - id: rel-013
+    type: single
+    text: >
+      A company's application uses an Auto Scaling group with lifecycle hooks to drain
+      connections before instance termination. During scale-in events, some long-running
+      requests (up to 10 minutes) are still being terminated prematurely. The lifecycle
+      hook timeout is set to 5 minutes. What should be done to prevent request termination?
+    options:
+      - id: A
+        text: Increase the lifecycle hook timeout from 5 minutes to 15 minutes
+      - id: B
+        text: Configure the application to send heartbeat signals to extend the lifecycle hook timeout as needed
+      - id: C
+        text: Disable scale-in actions and only allow manual instance termination after verifying no active requests
+      - id: D
+        text: Implement connection draining at the load balancer level instead of using lifecycle hooks
+    correctAnswer: B
+    explanation: >
+      Option B (heartbeat signals) allows the application to dynamically extend the lifecycle
+      hook timeout while requests are still being processed. The application can send
+      heartbeat signals to keep the instance in the Terminating:Wait state until work
+      completes, up to the maximum timeout. Option A (fixed 15-minute timeout) helps but
+      isn't dynamic - some requests might finish sooner (wasting time) or take longer
+      (still terminated). Option C (disable scale-in) defeats the purpose of Auto Scaling
+      and doesn't scale. Option D (connection draining) is useful but operates at the
+      load balancer level and has a maximum timeout of 3600 seconds; it doesn't give
+      application-level control like lifecycle hooks with heartbeats.
+    awsDocLink: https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html
+    services:
+      - Amazon EC2 Auto Scaling
+    concepts:
+      - Lifecycle hooks
+      - Graceful shutdown
+      - Heartbeat signals
+      - Connection draining
+
+  - id: rel-014
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing a backup strategy for a production application
+      with multiple components. Which THREE AWS Backup features should be used to ensure
+      comprehensive data protection?
+    options:
+      - id: A
+        text: Backup plans with multiple backup rules for different retention requirements
+      - id: B
+        text: Cross-region backup copies to protect against regional failures
+      - id: C
+        text: Backup vault lock to prevent accidental or malicious deletion of backups
+      - id: D
+        text: On-demand backups triggered manually when needed
+      - id: E
+        text: Resource tagging for automatic backup based on tag-based resource assignment
+      - id: F
+        text: Continuous backup for all supported resources instead of scheduled snapshots
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: >
+      Option A (multiple backup rules) allows different retention policies for operational
+      vs. compliance needs. Option B (cross-region copies) protects against regional disasters.
+      Option C (vault lock) provides immutability and prevents deletion during retention
+      period, critical for compliance and ransomware protection. Option D (on-demand backups)
+      is useful but not a comprehensive protection strategy - automated scheduled backups
+      are essential. Option E (tag-based assignment) is a useful organizational feature
+      but not a core protection capability. Option F (continuous backup) is only available
+      for specific services (RDS, Aurora) and isn't universally applicable or always
+      necessary. Comprehensive backup requires multiple retention tiers (A), geographic
+      redundancy (B), and immutability (C).
+    awsDocLink: https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html
+    services:
+      - AWS Backup
+    concepts:
+      - Backup strategies
+      - Data protection
+      - Vault lock
+      - Cross-region backup
+
+  - id: rel-015
+    type: single
+    text: >
+      A microservices application uses Application Load Balancers with health checks for
+      each service. During a deployment, new instances pass ALB health checks but fail
+      when processing actual requests due to a database connection configuration error.
+      The health check endpoint only verifies the web server is running. How should health
+      checks be improved?
+    options:
+      - id: A
+        text: Increase the health check interval from 30 seconds to 5 seconds for faster failure detection
+      - id: B
+        text: Implement deep health checks that verify all critical dependencies including database connectivity
+      - id: C
+        text: Use CloudWatch Synthetics to perform end-to-end transaction testing instead of health checks
+      - id: D
+        text: Configure the health check to require 10 consecutive successful checks before marking healthy
+    correctAnswer: B
+    explanation: >
+      Option B (deep health checks) solves the root problem by verifying all critical
+      dependencies. A proper health check should validate the application can actually
+      handle requests, not just that the web server responds. The health check endpoint
+      should test database connectivity, downstream service availability, and any critical
+      resources. Option A (faster interval) detects problems faster but doesn't prevent
+      unhealthy instances from being marked healthy initially. Option C (Synthetics) is
+      useful for monitoring but doesn't integrate with ALB target registration. Option D
+      (more consecutive checks) delays marking instances healthy but still won't catch
+      the database connectivity issue if the check doesn't test it. This is a common
+      anti-pattern - shallow health checks that only verify process liveness rather than
+      actual readiness to serve traffic.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html
+    services:
+      - Elastic Load Balancing
+    concepts:
+      - Health check design
+      - Deep health checks
+      - Service dependencies
+      - Deployment validation

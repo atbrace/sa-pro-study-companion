@@ -1,0 +1,414 @@
+questions:
+  - id: perf-001
+    type: single
+    text: >
+      A media company serves video content globally through CloudFront. Users in certain regions report high cache
+      miss rates despite the content being popular. Analysis shows that the application is sending various tracking
+      headers and session cookies with each request. What changes will MOST effectively improve the cache hit ratio?
+    options:
+      - id: A
+        text: Create separate cache behaviors for each region with region-specific TTLs
+      - id: B
+        text: Configure a cache policy that excludes session cookies and non-essential headers from the cache key, while using an origin request policy to forward them to the origin
+      - id: C
+        text: Enable CloudFront compression to reduce object size and improve caching
+      - id: D
+        text: Increase the TTL values in the cache behavior to keep content cached longer
+    correctAnswer: B
+    explanation: >
+      Separating cache policy from origin request policy is the correct approach. The cache policy should include only
+      the minimum required components (e.g., viewer country for localization) while excluding session-specific data.
+      The origin request policy can still forward all headers and cookies to the origin for logging/analytics without
+      affecting the cache key. This maximizes cache hits while maintaining origin functionality. Option A doesn't address
+      the root cause (too many cache key variations). Option C improves transfer but not caching. Option D may help but
+      doesn't solve the cache key problem.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html
+    services: [Amazon CloudFront]
+    concepts: [cache-key-optimization, cache-policies, origin-request-policies]
+
+  - id: perf-002
+    type: multi
+    correctCount: 2
+    text: >
+      An e-commerce application experiences performance degradation during flash sales. The application uses RDS MySQL
+      with read replicas and serves product catalog data. Database queries show high CPU usage on read replicas.
+      Which TWO solutions will provide the MOST immediate performance improvement?
+    options:
+      - id: A
+        text: Implement ElastiCache for Redis in front of the database to cache frequently accessed product data
+      - id: B
+        text: Convert the database to Amazon Aurora and enable Aurora Auto Scaling for read replicas
+      - id: C
+        text: Enable RDS Performance Insights and create additional indexes based on slow query analysis
+      - id: D
+        text: Implement RDS Proxy to pool database connections and reduce connection overhead
+      - id: E
+        text: Migrate the product catalog to DynamoDB with DynamoDB Accelerator (DAX)
+    correctAnswer: [A, D]
+    explanation: >
+      ElastiCache for Redis (A) provides immediate read relief by caching hot product data in memory, dramatically
+      reducing database load during high traffic. RDS Proxy (D) reduces connection overhead and improves scalability
+      by pooling connections, which is critical during traffic spikes. These solutions can be implemented quickly.
+      Option B (Aurora) is a good long-term solution but requires migration. Option C helps but takes time to analyze
+      and implement. Option E requires a complete architecture change and is not "immediate."
+    awsDocLink: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/WhatIs.html
+    services: [Amazon ElastiCache, Amazon RDS, RDS Proxy]
+    concepts: [caching-strategy, connection-pooling, read-scaling]
+
+  - id: perf-003
+    type: single
+    text: >
+      A gaming company uses DynamoDB for player session data with millions of concurrent players. The table uses
+      player_id as the partition key. During peak hours, the application experiences throttling errors for a small
+      subset of celebrity players who have very active sessions. What is the BEST solution to eliminate throttling?
+    options:
+      - id: A
+        text: Increase the provisioned write capacity units for the entire table
+      - id: B
+        text: Change to DynamoDB on-demand capacity mode to automatically handle any request rate
+      - id: C
+        text: Implement write sharding by appending a random suffix to the partition key for hot items
+      - id: D
+        text: Enable DynamoDB auto-scaling to automatically adjust capacity based on utilization
+    correctAnswer: C
+    explanation: >
+      Write sharding is the correct solution for hot partition problems. By appending a random suffix (e.g., 1-10) to
+      hot partition keys, you distribute writes across multiple partitions while still maintaining the ability to query
+      all related items. This is the standard pattern for handling celebrity or VIP users who generate disproportionate
+      traffic. Option A wastes capacity on cold partitions. Option B helps but is more expensive and doesn't fundamentally
+      solve hot partition architecture. Option D won't help because the issue is partition-level, not table-level.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-sharding.html
+    services: [Amazon DynamoDB]
+    concepts: [hot-partitions, write-sharding, partition-key-design]
+
+  - id: perf-004
+    type: single
+    text: >
+      A financial services application requires microsecond latency for retrieving user profile data from DynamoDB.
+      The data is read-heavy with a 95:5 read-to-write ratio, and the same user profiles are accessed repeatedly
+      during trading hours. Reads are eventually consistent. What caching solution provides the BEST performance
+      with minimal code changes?
+    options:
+      - id: A
+        text: Implement ElastiCache for Redis with lazy loading pattern
+      - id: B
+        text: Deploy DynamoDB Accelerator (DAX) cluster in the VPC
+      - id: C
+        text: Enable DynamoDB Global Tables for multi-region caching
+      - id: D
+        text: Implement application-level caching using an in-memory hash map
+    correctAnswer: B
+    explanation: >
+      DynamoDB Accelerator (DAX) is purpose-built for this exact use case. It provides microsecond latency, is a
+      drop-in replacement for DynamoDB SDK (minimal code changes - just change endpoint), handles cache invalidation
+      automatically with write-through caching, and is optimized for eventually consistent reads with hot keys. Option A
+      requires explicit cache invalidation logic and code changes. Option C is for multi-region availability, not
+      caching. Option D doesn't scale across application instances and adds complexity.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html
+    services: [Amazon DynamoDB, DynamoDB Accelerator (DAX)]
+    concepts: [microsecond-latency, write-through-caching, hot-keys]
+
+  - id: perf-005
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is optimizing costs and performance for Lambda functions accessing S3 and DynamoDB.
+      The functions are in a VPC to access RDS. Data transfer costs through NAT Gateway are significant.
+      Which THREE actions will reduce costs while maintaining performance?
+    options:
+      - id: A
+        text: Create VPC gateway endpoints for S3 and DynamoDB
+      - id: B
+        text: Create VPC interface endpoints for S3 and DynamoDB
+      - id: C
+        text: Move Lambda functions out of the VPC if RDS access is infrequent
+      - id: D
+        text: Increase Lambda memory allocation to reduce execution time
+      - id: E
+        text: Use Lambda layers to reduce deployment package size
+      - id: F
+        text: Enable Lambda@Edge to reduce data transfer distances
+    correctAnswer: [A, B, D]
+    explanation: >
+      Gateway endpoints for S3 and DynamoDB (A) are free and eliminate NAT gateway data transfer charges for these
+      services. Interface endpoints (B) for other AWS services eliminate NAT gateway traffic (hourly charges apply
+      but are typically lower than NAT data processing). Increasing Lambda memory (D) also increases CPU, reducing
+      execution time and potentially lowering costs. Note: You can use both gateway (free, S3/DynamoDB) and interface
+      endpoints simultaneously. Option C may not be feasible if RDS access is required. Option E reduces deployment
+      time but not runtime costs. Option F is for CloudFront integration, not VPC optimization.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html
+    services: [AWS Lambda, VPC Endpoints, Amazon S3, Amazon DynamoDB]
+    concepts: [vpc-endpoints, cost-optimization, data-transfer-costs]
+
+  - id: perf-006
+    type: single
+    text: >
+      A video streaming platform uses CloudFront to distribute content. The platform needs to serve personalized
+      video recommendations in the HTML page while caching the video files at the edge. The recommendation logic
+      requires user session data. How should this be architected for optimal performance?
+    options:
+      - id: A
+        text: Configure CloudFront to forward all cookies to origin and cache based on session cookie values
+      - id: B
+        text: Use Lambda@Edge Viewer Request to personalize HTML, serve static video files through separate cache behavior with high TTL
+      - id: C
+        text: Disable caching for all content and serve everything dynamically from origin
+      - id: D
+        text: Use CloudFront Functions to modify the response and add personalized content
+    correctAnswer: B
+    explanation: >
+      Lambda@Edge Viewer Request allows dynamic HTML generation based on user session while maintaining separate cache
+      behaviors for static video content. The HTML can be personalized per user (low/no cache), while video files use
+      a different path pattern (e.g., /videos/*) with high TTL and no session cookie in cache key. This provides the
+      best of both worlds: personalization and caching. Option A creates too many cache variations. Option C eliminates
+      caching benefits. Option D (CloudFront Functions) is limited and cannot make external requests for personalization logic.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html
+    services: [Amazon CloudFront, AWS Lambda, Lambda@Edge]
+    concepts: [edge-computing, personalization, cache-behaviors]
+
+  - id: perf-007
+    type: single
+    text: >
+      A company migrated from Memcached to ElastiCache for Redis. They need high availability with automatic failover
+      and the ability to scale read capacity independently. They also require data persistence for disaster recovery.
+      What configuration should be used?
+    options:
+      - id: A
+        text: Redis cluster mode disabled with Multi-AZ and read replicas, enable AOF persistence
+      - id: B
+        text: Redis cluster mode enabled with multiple shards, disable persistence for better performance
+      - id: C
+        text: Single Redis instance with RDB snapshots to S3
+      - id: D
+        text: Redis cluster mode disabled without replicas, enable both RDB and AOF
+    correctAnswer: A
+    explanation: >
+      Redis cluster mode disabled with Multi-AZ provides automatic failover to a replica (typically within 60 seconds).
+      Adding read replicas (up to 5) allows independent read scaling. AOF (Append Only File) persistence provides
+      better durability than RDB snapshots. For most applications not requiring extreme horizontal scale (500+ nodes),
+      cluster mode disabled is simpler to manage. Option B (cluster mode enabled) is for massive scale (horizontal
+      sharding) but adds complexity. Option C lacks high availability. Option D lacks failover capability.
+    awsDocLink: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/Replication.html
+    services: [Amazon ElastiCache]
+    concepts: [redis-replication, multi-az, persistence, high-availability]
+
+  - id: perf-008
+    type: single
+    text: >
+      AWS Compute Optimizer recommends downsizing 50% of an organization's EC2 instances, but the team is concerned
+      about performance degradation. What is the BEST approach to validate recommendations before implementation?
+    options:
+      - id: A
+        text: Immediately implement recommendations during off-peak hours and monitor CloudWatch metrics
+      - id: B
+        text: Review the performance risk indicator and projected utilization metrics, test on non-production instances first, then gradually roll out to production with monitoring
+      - id: C
+        text: Ignore recommendations if current instances are performing adequately
+      - id: D
+        text: Implement recommendations only for instances with "very low" performance risk
+    correctAnswer: B
+    explanation: >
+      A phased approach with risk assessment is the professional solution. Compute Optimizer provides performance risk
+      indicators (low, medium, high) and projected utilization graphs. Test recommendations on dev/staging instances
+      first, validate performance under load, then implement in production incrementally with careful monitoring. This
+      balances cost optimization with risk management. Option A is too aggressive without validation. Option C ignores
+      potential cost savings. Option D is too conservative and may miss significant optimization opportunities.
+    awsDocLink: https://docs.aws.amazon.com/compute-optimizer/latest/ug/view-ec2-recommendations.html
+    services: [AWS Compute Optimizer, Amazon EC2, Amazon CloudWatch]
+    concepts: [right-sizing, performance-risk, gradual-rollout]
+
+  - id: perf-009
+    type: multi
+    correctCount: 2
+    text: >
+      A global SaaS application serves users in North America, Europe, and Asia. The application uses Application Load
+      Balancers in each region with Route 53 latency-based routing. Users report inconsistent performance during
+      regional failovers. Which TWO solutions will improve global performance and failover time?
+    options:
+      - id: A
+        text: Replace Route 53 latency routing with geolocation routing for deterministic routing
+      - id: B
+        text: Implement AWS Global Accelerator with health checks and traffic dials for each regional endpoint
+      - id: C
+        text: Use CloudFront with multiple regional origins and origin failover
+      - id: D
+        text: Configure Route 53 health checks with faster evaluation intervals (10 seconds)
+      - id: E
+        text: Deploy the application in additional regions to reduce latency
+    correctAnswer: [B, D]
+    explanation: >
+      AWS Global Accelerator (B) provides static anycast IP addresses and routes traffic over the AWS global network,
+      not the public internet. It performs health checks and fails over within 30 seconds (vs. DNS TTL-dependent
+      failover). Traffic dials allow gradual traffic shifting. Faster Route 53 health checks (D) reduce detection time
+      for endpoint failures. Together, these significantly improve both performance (AWS backbone vs. internet) and
+      failover speed. Option A doesn't improve failover. Option C is for content delivery, not application endpoints.
+      Option E adds cost without addressing failover issues.
+    awsDocLink: https://docs.aws.amazon.com/global-accelerator/latest/dg/introduction-benefits.html
+    services: [AWS Global Accelerator, Amazon Route 53, Application Load Balancer]
+    concepts: [global-traffic-management, failover, health-checks]
+
+  - id: perf-010
+    type: single
+    text: >
+      A microservices application experiences intermittent latency spikes. The operations team needs to identify
+      which service in the request chain is causing delays and understand the timing of external API calls and
+      database queries. What solution provides the MOST detailed visibility?
+    options:
+      - id: A
+        text: Enable VPC Flow Logs to analyze network traffic patterns between services
+      - id: B
+        text: Configure CloudWatch Logs Insights to search application logs for timing information
+      - id: C
+        text: Implement AWS X-Ray with service instrumentation to capture traces, segments, and subsegments
+      - id: D
+        text: Deploy CloudWatch Application Insights to automatically detect performance anomalies
+    correctAnswer: C
+    explanation: >
+      AWS X-Ray is designed specifically for distributed tracing. It captures end-to-end traces showing the complete
+      request path through microservices, with segments representing each service and subsegments showing granular
+      operations (database calls, HTTP requests, AWS SDK calls). The service map visualizes latency distribution and
+      error rates per service. This provides exactly the detailed timing visibility needed. Option A shows network
+      flows, not application performance. Option B requires manual instrumentation and parsing. Option D is for
+      high-level problem detection, not detailed tracing.
+    awsDocLink: https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html
+    services: [AWS X-Ray, Amazon CloudWatch]
+    concepts: [distributed-tracing, service-map, performance-debugging]
+
+  - id: perf-011
+    type: single
+    text: >
+      A data analytics application queries an RDS PostgreSQL database with complex joins across large tables.
+      Performance Insights shows high CPU usage with specific queries taking 30+ seconds. The queries are run
+      frequently with the same parameters. What is the MOST effective optimization?
+    options:
+      - id: A
+        text: Enable ElastiCache for Redis and cache query results with a lazy loading pattern
+      - id: B
+        text: Create RDS read replicas and distribute queries across them
+      - id: C
+        text: Migrate to Amazon Redshift for better analytics performance
+      - id: D
+        text: Analyze slow query logs, create appropriate indexes, and consider materialized views for complex queries
+    correctAnswer: D
+    explanation: >
+      Database-level optimization should be the first approach for slow queries. Analyzing slow query logs and execution
+      plans (EXPLAIN) reveals missing indexes. Creating appropriate indexes can reduce query time from seconds to
+      milliseconds. Materialized views pre-compute complex joins and aggregations. This addresses the root cause.
+      Option A helps with identical queries but adds complexity. Option B distributes load but doesn't make individual
+      queries faster. Option C is a major migration appropriate for data warehousing but overkill for OLTP with slow queries.
+    awsDocLink: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.html
+    services: [Amazon RDS, RDS Performance Insights]
+    concepts: [query-optimization, indexing, materialized-views]
+
+  - id: perf-012
+    type: single
+    text: >
+      An organization has a DynamoDB table with a Global Secondary Index (GSI) on the email attribute. Queries on
+      the GSI frequently throttle during peak hours, but the base table has sufficient capacity. What explains this
+      behavior and what is the solution?
+    options:
+      - id: A
+        text: GSIs share capacity with the base table; increase the base table's provisioned capacity
+      - id: B
+        text: GSIs have separate capacity allocation; increase the GSI's provisioned write and read capacity independently
+      - id: C
+        text: GSIs always use on-demand capacity regardless of base table setting; switch the base table to on-demand
+      - id: D
+        text: GSI throttling is caused by hot partitions; redesign the email attribute to include a random suffix
+    correctAnswer: B
+    explanation: >
+      Global Secondary Indexes (GSIs) have their own independent capacity allocation (separate RCU and WCU). When you
+      write to the base table, DynamoDB also writes to GSIs, consuming GSI WCU. If the GSI doesn't have sufficient
+      capacity, writes will throttle even if the base table has capacity. You must provision or configure auto-scaling
+      for GSIs independently. Note: Local Secondary Indexes (LSIs) share capacity with the base table, but GSIs do not.
+      Option A confuses GSIs with LSIs. Option C is incorrect. Option D addresses a different problem (hot partitions).
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
+    services: [Amazon DynamoDB]
+    concepts: [global-secondary-indexes, capacity-management, throttling]
+
+  - id: perf-013
+    type: multi
+    correctCount: 2
+    text: >
+      A company wants to invalidate cached content in CloudFront after deploying a new version of their single-page
+      application (SPA). They deploy several times per day. Which TWO approaches minimize cost and operational overhead?
+    options:
+      - id: A
+        text: Submit CloudFront invalidation requests for /* after each deployment
+      - id: B
+        text: Use versioned file names (e.g., app.v123.js) and update HTML to reference new versions
+      - id: C
+        text: Set a short TTL (60 seconds) on all files so they expire naturally
+      - id: D
+        text: Implement cache control headers with max-age=0 on all application files
+      - id: E
+        text: Use a build process that generates unique hashed filenames (e.g., app.a3f2b1.js) for assets
+    correctAnswer: [B, E]
+    explanation: >
+      Versioned or hashed filenames are the industry best practice for cache invalidation. Option B (versioned names)
+      and Option E (content-based hashing) both ensure new deployments serve new files without invalidations. The HTML
+      file can have a short TTL or be excluded from caching, while assets have long TTLs. This eliminates invalidation
+      costs (first 1,000 paths free, then $0.005 per path) and is faster than waiting for invalidation propagation.
+      Option A is expensive with frequent deployments. Options C and D reduce caching effectiveness and increase origin load.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html
+    services: [Amazon CloudFront]
+    concepts: [cache-invalidation, versioning, content-addressing]
+
+  - id: perf-014
+    type: single
+    text: >
+      A financial application requires consistent single-digit millisecond latency for database reads and writes.
+      The application currently uses RDS PostgreSQL with read replicas, but latency occasionally spikes during
+      traffic bursts. What database solution provides the MOST consistent low latency at scale?
+    options:
+      - id: A
+        text: Migrate to Amazon Aurora with Aurora Replicas and enable Auto Scaling
+      - id: B
+        text: Implement ElastiCache for Redis in front of RDS with write-through caching
+      - id: C
+        text: Migrate to DynamoDB with on-demand capacity and implement DAX for caching
+      - id: D
+        text: Use RDS Provisioned IOPS (io2) storage with increased IOPS allocation
+    correctAnswer: C
+    explanation: >
+      DynamoDB with DAX is architected for consistent single-digit millisecond latency at any scale. DynamoDB provides
+      consistent performance regardless of table size, and DAX adds microsecond in-memory caching. On-demand capacity
+      eliminates provisioning and scales automatically. This is the only option that fundamentally provides the
+      consistency required. Option A (Aurora) improves RDS but still has connection overhead and variable query
+      performance. Option B adds caching but doesn't solve write latency. Option D improves storage performance but
+      doesn't address database/query layer variability.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.html
+    services: [Amazon DynamoDB, DynamoDB Accelerator (DAX)]
+    concepts: [consistent-latency, nosql-performance, microsecond-latency]
+
+  - id: perf-015
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing a high-performance computing (HPC) application that requires low-latency,
+      high-throughput network communication between EC2 instances. Which THREE configurations will optimize network
+      performance?
+    options:
+      - id: A
+        text: Use a cluster placement group to place instances in a single availability zone
+      - id: B
+        text: Enable Enhanced Networking with Elastic Network Adapter (ENA)
+      - id: C
+        text: Deploy instances across multiple availability zones for high availability
+      - id: D
+        text: Use instance types that support Elastic Fabric Adapter (EFA) for MPI workloads
+      - id: E
+        text: Configure multiple Elastic Network Interfaces (ENIs) per instance
+      - id: F
+        text: Enable jumbo frames (MTU 9001) within the VPC
+    correctAnswer: [A, B, D]
+    explanation: >
+      Cluster placement groups (A) provide the lowest latency and highest throughput by placing instances in close
+      physical proximity within a single AZ. Enhanced Networking with ENA (B) is required for high performance (up to
+      100 Gbps). EFA (D) is specifically designed for HPC workloads requiring MPI (Message Passing Interface) and
+      provides OS-bypass capabilities for ultra-low latency. Option C contradicts low-latency requirements (cross-AZ
+      has higher latency). Option E doesn't increase per-instance bandwidth. Option F helps but is less critical than
+      A, B, D for HPC.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+    services: [Amazon EC2, EFA, Enhanced Networking]
+    concepts: [hpc-networking, cluster-placement-groups, low-latency]

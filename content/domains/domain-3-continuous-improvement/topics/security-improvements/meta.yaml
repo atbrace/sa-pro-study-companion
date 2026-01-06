@@ -1,0 +1,61 @@
+id: security-improvements
+name: Security Improvements for Existing Solutions
+shortName: Security Improvements
+examTask: task-3-2
+description: >
+  Implement security improvements for existing AWS solutions using threat detection,
+  compliance frameworks, configuration management, data discovery, access analysis,
+  and secrets management to enhance overall security posture.
+
+estimatedStudyTime: 150
+difficulty: advanced
+
+keyServices:
+  - Amazon GuardDuty
+  - AWS Security Hub
+  - AWS Config
+  - Amazon Macie
+  - IAM Access Analyzer
+  - AWS Secrets Manager
+  - AWS Systems Manager Parameter Store
+  - AWS CloudTrail
+  - AWS KMS
+
+keyConcepts:
+  - Threat detection and response
+  - Compliance frameworks (CIS, PCI-DSS, HIPAA)
+  - Config rules and conformance packs
+  - Automated remediation
+  - Sensitive data discovery
+  - Unintended access detection
+  - Secrets rotation automation
+  - Security findings aggregation
+  - Multi-account security posture
+
+awsDocLinks:
+  - title: Amazon GuardDuty User Guide
+    url: https://docs.aws.amazon.com/guardduty/latest/ug/
+    type: doc
+  - title: AWS Security Hub User Guide
+    url: https://docs.aws.amazon.com/securityhub/latest/userguide/
+    type: doc
+  - title: AWS Config Developer Guide
+    url: https://docs.aws.amazon.com/config/latest/developerguide/
+    type: doc
+  - title: Amazon Macie User Guide
+    url: https://docs.aws.amazon.com/macie/latest/user/
+    type: doc
+  - title: IAM Access Analyzer Documentation
+    url: https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html
+    type: doc
+  - title: AWS Security Best Practices Whitepaper
+    url: https://docs.aws.amazon.com/whitepapers/latest/aws-security-best-practices/
+    type: whitepaper
+  - title: Security Pillar - AWS Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/
+    type: whitepaper
+
+relatedExperiments:
+  - lab-guardduty-threat-detection
+  - lab-security-hub-multi-account
+  - lab-macie-data-discovery

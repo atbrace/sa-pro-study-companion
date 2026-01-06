@@ -1,0 +1,386 @@
+questions:
+  - id: app-int-001
+    type: single
+    text: |
+      A financial services company is building a payment processing system that must process transactions in the exact order they are received. Each transaction must be processed exactly once to prevent duplicate charges. The system must support up to 500 transactions per second.
+
+      Which solution meets these requirements?
+    options:
+      - id: A
+        text: Use Amazon SQS standard queue with application-level deduplication logic
+      - id: B
+        text: Use Amazon SQS FIFO queue with content-based deduplication
+      - id: C
+        text: Use Amazon SNS FIFO topic with Lambda function subscribers
+      - id: D
+        text: Use Amazon EventBridge with exactly-once delivery guarantees
+    correctAnswer: B
+    explanation: |
+      SQS FIFO queues provide exactly-once processing and guarantee ordering. Content-based deduplication uses message body hash for automatic deduplication within 5-minute window. FIFO queues support 300 TPS (3,000 with batching), which meets the 500 TPS requirement with batching.
+
+      Option A: Standard queues don't guarantee ordering or exactly-once delivery.
+      Option C: SNS doesn't provide queue-based processing with exactly-once semantics.
+      Option D: EventBridge doesn't guarantee exactly-once delivery or strict ordering.
+    awsDocLink: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html
+    services: [Amazon SQS]
+
+  - id: app-int-002
+    type: multi
+    correctCount: 2
+    text: |
+      An e-commerce platform receives order notifications that must be processed by multiple backend systems: inventory management, shipping, analytics, and email notifications. Each system has different processing speeds and must receive all order events. The solution must be resilient to individual system failures.
+
+      Which TWO actions should be taken?
+    options:
+      - id: A
+        text: Create an SNS topic and configure SQS queue subscriptions for each backend system
+      - id: B
+        text: Use a single SQS queue with multiple consumers polling the queue
+      - id: C
+        text: Configure dead letter queues for each SQS subscription to handle processing failures
+      - id: D
+        text: Implement fan-out pattern using Lambda function to invoke each backend system synchronously
+      - id: E
+        text: Use EventBridge with separate rules routing to each backend system
+    correctAnswer: [A, C]
+    explanation: |
+      SNS fan-out pattern with SQS subscriptions is ideal for this scenario. Each system gets its own queue, allowing independent processing and scaling. DLQs ensure failed messages are preserved for analysis and reprocessing.
+
+      Option B: Single queue means one consumer gets message, others don't.
+      Option D: Synchronous invocation creates tight coupling and single point of failure.
+      Option E: While EventBridge works, SNS+SQS is simpler for basic fan-out scenarios.
+    awsDocLink: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
+    services: [Amazon SNS, Amazon SQS]
+
+  - id: app-int-003
+    type: single
+    text: |
+      A company has a microservices architecture where services need to react to state changes in other services. The system has 20+ services, and the number is growing. Services should only receive events they're interested in, and new services should be able to subscribe without changes to publishers.
+
+      Which solution provides the MOST scalable and loosely coupled architecture?
+    options:
+      - id: A
+        text: Use SNS topics with message attribute filtering for each event type
+      - id: B
+        text: Use Amazon EventBridge with custom event bus and event pattern matching
+      - id: C
+        text: Use SQS queues with Lambda functions to route messages based on content
+      - id: D
+        text: Implement REST APIs between services for direct event notification
+    correctAnswer: B
+    explanation: |
+      EventBridge is designed for event-driven architectures with many publishers and subscribers. Content-based filtering routes events to interested parties without publisher knowledge. Schema registry provides discoverability. Event archive and replay support debugging.
+
+      Option A: SNS works but has limited filtering compared to EventBridge.
+      Option C: Custom routing logic is harder to maintain as system grows.
+      Option D: Direct APIs create tight coupling and don't scale well.
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+    services: [Amazon EventBridge]
+
+  - id: app-int-004
+    type: single
+    text: |
+      A data processing application polls an SQS queue every 2 seconds. Most of the time, the queue is empty, resulting in high costs and unnecessary API calls. The application should process messages as soon as they arrive.
+
+      What is the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Reduce polling frequency to every 30 seconds
+      - id: B
+        text: Enable long polling by setting ReceiveMessageWaitTimeSeconds to 20
+      - id: C
+        text: Use SNS instead of SQS with Lambda function subscriber
+      - id: D
+        text: Implement exponential backoff when queue is empty
+    correctAnswer: B
+    explanation: |
+      Long polling eliminates empty responses by waiting up to 20 seconds for messages to arrive. This reduces API calls, costs, and latency compared to short polling. Messages are processed immediately when they arrive.
+
+      Option A: Still generates empty responses, just less frequently.
+      Option C: Changing architecture is unnecessary; SQS supports efficient polling.
+      Option D: Adds complexity and doesn't eliminate empty responses.
+    awsDocLink: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html
+    services: [Amazon SQS]
+
+  - id: app-int-005
+    type: single
+    text: |
+      A Lambda function processes messages from an SQS queue. Processing takes 45 seconds on average, but sometimes up to 2 minutes. Messages are being processed multiple times, causing duplicate operations.
+
+      What should be configured to resolve this issue?
+    options:
+      - id: A
+        text: Set visibility timeout to 120 seconds
+      - id: B
+        text: Enable content-based deduplication on the queue
+      - id: C
+        text: Increase Lambda function timeout to 3 minutes
+      - id: D
+        text: Configure batch size to 1 to ensure sequential processing
+    correctAnswer: A
+    explanation: |
+      Visibility timeout should be set to at least 6x the average processing time. With processing up to 2 minutes, 120 seconds ensures the message remains hidden while being processed. Default 30 seconds causes message to become visible again, leading to duplicate processing.
+
+      Option B: Deduplication prevents duplicate messages, not duplicate processing.
+      Option C: Lambda timeout doesn't affect SQS visibility timeout.
+      Option D: Batch size doesn't solve visibility timeout issue.
+    awsDocLink: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html
+    services: [Amazon SQS, AWS Lambda]
+
+  - id: app-int-006
+    type: multi
+    correctCount: 3
+    text: |
+      A solutions architect is designing a workflow to process customer orders. The workflow includes credit card validation, inventory check, warehouse assignment, and shipping label generation. Each step may take several minutes and could fail. The entire process must be auditable and recoverable.
+
+      Which THREE characteristics make AWS Step Functions the appropriate choice?
+    options:
+      - id: A
+        text: Built-in error handling with retry and catch mechanisms
+      - id: B
+        text: Visual workflow representation and execution history
+      - id: C
+        text: Support for long-running workflows up to 1 year
+      - id: D
+        text: Automatic horizontal scaling based on message volume
+      - id: E
+        text: Native integration with Lambda, ECS, SNS, and other AWS services
+    correctAnswer: [A, B, E]
+    explanation: |
+      Step Functions provides declarative error handling (Retry/Catch), visual workflow editor with execution history for auditability, and optimized integrations with AWS services.
+
+      Option C: While true, Standard workflows support up to 1 year, this specific workflow likely completes in minutes/hours, not months.
+      Option D: Step Functions scales automatically but this isn't unique compared to other AWS services.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+    services: [AWS Step Functions]
+
+  - id: app-int-007
+    type: single
+    text: |
+      A company processes 50,000 events per second from IoT devices. Each event triggers a 200ms Lambda function for transformation and storage. The solution must minimize cost while maintaining performance.
+
+      Which Step Functions configuration is MOST appropriate?
+    options:
+      - id: A
+        text: Standard workflow with Lambda task for each event
+      - id: B
+        text: Express workflow with synchronous execution
+      - id: C
+        text: Express workflow with asynchronous execution
+      - id: D
+        text: Standard workflow with Map state for batch processing
+    correctAnswer: C
+    explanation: |
+      Express workflows are designed for high-volume event processing (priced per execution and duration, not per state transition). Asynchronous execution doesn't wait for response, providing better throughput for fire-and-forget scenarios.
+
+      Option A: Standard workflows are too expensive at this scale (priced per state transition).
+      Option B: Synchronous Express workflows wait for response, reducing throughput.
+      Option D: Map state doesn't address the pricing model issue with Standard workflows.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html
+    services: [AWS Step Functions]
+
+  - id: app-int-008
+    type: single
+    text: |
+      An API receives traffic spikes that occasionally exceed 15,000 requests per second, causing throttling errors. The backend can process 5,000 requests per second. The API must accept all requests and process them asynchronously without data loss.
+
+      Which architecture should be implemented?
+    options:
+      - id: A
+        text: API Gateway with Lambda integration and increased concurrent execution limit
+      - id: B
+        text: API Gateway with SQS integration using AWS service integration, consumers process from queue
+      - id: C
+        text: Application Load Balancer with connection draining and target group deregistration delay
+      - id: D
+        text: API Gateway with response caching enabled to reduce backend load
+    correctAnswer: B
+    explanation: |
+      API Gateway can directly integrate with SQS using AWS service integration, allowing it to enqueue requests without Lambda. This decouples API from backend processing capacity. SQS buffers requests, and consumers process at their own pace (5,000 RPS). No messages are lost during spikes.
+
+      Option A: Lambda still has concurrency limits and creates tight coupling.
+      Option C: ALB doesn't solve the throughput mismatch problem.
+      Option D: Caching only helps for duplicate requests, not unique traffic spikes.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-http.html
+    services: [Amazon API Gateway, Amazon SQS]
+
+  - id: app-int-009
+    type: multi
+    correctCount: 2
+    text: |
+      A gaming company is building a real-time multiplayer game requiring persistent WebSocket connections for player communication. The backend must handle connection lifecycle, route messages to specific players, and scale to millions of concurrent connections.
+
+      Which TWO components are required?
+    options:
+      - id: A
+        text: API Gateway WebSocket API with route selection expressions
+      - id: B
+        text: Application Load Balancer with WebSocket support
+      - id: C
+        text: DynamoDB table to track connection IDs and player sessions
+      - id: D
+        text: ElastiCache cluster for WebSocket connection state
+      - id: E
+        text: SQS FIFO queue for message ordering between players
+    correctAnswer: [A, C]
+    explanation: |
+      API Gateway WebSocket API manages persistent connections and routes messages based on route keys. DynamoDB stores connectionId mappings to enable sending messages to specific players using the connection management API.
+
+      Option B: ALB supports WebSocket but doesn't provide route selection and connection management like API Gateway.
+      Option D: ElastiCache could work but DynamoDB is recommended pattern in AWS documentation.
+      Option E: Direct WebSocket delivery is more efficient than queue-based delivery for real-time gaming.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html
+    services: [Amazon API Gateway, Amazon DynamoDB]
+
+  - id: app-int-010
+    type: single
+    text: |
+      A company wants to migrate data from Salesforce to Amazon Redshift every hour for analytics. The solution must transform and validate data during transfer, handle schema changes, and not require custom code.
+
+      Which service should be used?
+    options:
+      - id: A
+        text: AWS Glue with Salesforce JDBC connection
+      - id: B
+        text: Amazon AppFlow with scheduled flows and field mapping
+      - id: C
+        text: AWS Data Pipeline with Salesforce API integration
+      - id: D
+        text: Lambda function triggered by EventBridge schedule
+    correctAnswer: B
+    explanation: |
+      AppFlow is purpose-built for SaaS integration with native Salesforce connector. It supports scheduled flows (up to every 1 minute), field mapping, transformation, validation, and Redshift as destination - all without code.
+
+      Option A: Glue requires more setup and custom scripting for SaaS integration.
+      Option C: Data Pipeline is deprecated in favor of modern services.
+      Option D: Requires custom code and ongoing maintenance.
+    awsDocLink: https://docs.aws.amazon.com/appflow/latest/userguide/what-is-appflow.html
+    services: [Amazon AppFlow, Amazon Redshift]
+
+  - id: app-int-011
+    type: single
+    text: |
+      An SNS topic fans out order events to three SQS queues for different processing systems. One system frequently fails, and its messages end up in the dead letter queue. The company wants to analyze these failures without affecting the other systems.
+
+      What should be configured?
+    options:
+      - id: A
+        text: Configure a DLQ on the SNS topic to capture all failed deliveries
+      - id: B
+        text: Configure a DLQ on the specific SQS queue subscription that's experiencing failures
+      - id: C
+        text: Enable SNS message delivery status logging to CloudWatch
+      - id: D
+        text: Create a separate SNS topic for the failing system
+    correctAnswer: B
+    explanation: |
+      Each SQS queue should have its own DLQ configured. When messages fail processing after maxReceiveCount, they move to that queue's DLQ. This isolates failures to the specific subscriber without affecting others.
+
+      Option A: SNS topics don't have DLQs; subscriptions and queues do.
+      Option C: Delivery status logging helps monitoring but doesn't capture failed processing.
+      Option D: Doesn't solve the failure handling problem.
+    awsDocLink: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+    services: [Amazon SNS, Amazon SQS]
+
+  - id: app-int-012
+    type: single
+    text: |
+      A company's EventBridge rule triggers a Lambda function when EC2 instances terminate. During a large-scale deployment, 500 instances terminated simultaneously, but only 100 Lambda invocations occurred. The Lambda function has sufficient concurrency limits.
+
+      What is the MOST likely cause?
+    options:
+      - id: A
+        text: EventBridge has a limit of 5 targets per rule
+      - id: B
+        text: Lambda function DLQ is not configured, causing silent failures
+      - id: C
+        text: EventBridge rule doesn't have a DLQ configured for failed invocations
+      - id: D
+        text: EC2 events were throttled before reaching EventBridge
+    correctAnswer: C
+    explanation: |
+      EventBridge retries failed target invocations for 24 hours, then discards events unless a DLQ is configured. Without DLQ, failed invocations are lost silently. Configure DLQ on the EventBridge rule target to capture failed invocations.
+
+      Option A: Limit is 5 targets per rule, but this is about multiple events to one target.
+      Option B: Lambda DLQ handles async invocation failures, not EventBridge delivery failures.
+      Option D: EC2 service events are reliably delivered to default event bus.
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-dlq.html
+    services: [Amazon EventBridge, AWS Lambda]
+
+  - id: app-int-013
+    type: multi
+    correctCount: 2
+    text: |
+      A Step Functions workflow orchestrates a data pipeline with extract, transform, and load steps. The transform step occasionally fails due to malformed data. When this happens, the workflow should retry with exponential backoff, and if still failing after 3 attempts, send notification and continue to a data validation step.
+
+      Which TWO state configurations are required in the transform step?
+    options:
+      - id: A
+        text: Retry with ErrorEquals States.TaskFailed, MaxAttempts 3, BackoffRate 2.0
+      - id: B
+        text: Catch with ErrorEquals States.ALL, Next set to SNS notification state
+      - id: C
+        text: Heartbeat configuration to detect stuck executions
+      - id: D
+        text: Timeout configuration to prevent infinite retries
+      - id: E
+        text: ResultPath to preserve input data along with error information
+    correctAnswer: [A, B]
+    explanation: |
+      Retry handles transient errors with exponential backoff (BackoffRate 2.0 doubles interval each retry). After 3 failed attempts, Catch handles the error by transitioning to notification state. Catch must come after Retry in state definition.
+
+      Option C: Heartbeat is for detecting stalled tasks, not error handling.
+      Option D: Timeout helps but doesn't provide the retry/catch behavior specified.
+      Option E: ResultPath is useful but not required for this error handling scenario.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+    services: [AWS Step Functions]
+
+  - id: app-int-014
+    type: single
+    text: |
+      A REST API built with API Gateway experiences high read traffic with repetitive queries. 80% of requests return the same data within a 5-minute window. The API should minimize backend Lambda invocations while ensuring users receive up-to-date data when changes occur.
+
+      Which solution meets these requirements MOST cost-effectively?
+    options:
+      - id: A
+        text: Enable API Gateway caching with 300-second TTL and cache key parameters
+      - id: B
+        text: Implement ElastiCache between API Gateway and Lambda function
+      - id: C
+        text: Use Lambda function with DAX for DynamoDB queries
+      - id: D
+        text: Enable Lambda response streaming to reduce invocation time
+    correctAnswer: A
+    explanation: |
+      API Gateway caching stores responses at the API layer, eliminating Lambda invocations for cache hits. 300-second (5-minute) TTL matches the data freshness requirement. Cache key parameters ensure different requests are cached separately.
+
+      Option B: ElastiCache requires Lambda invocation for every request, not reducing invocations.
+      Option C: DAX caches DynamoDB reads but doesn't prevent Lambda invocations.
+      Option D: Response streaming doesn't reduce invocation count.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html
+    services: [Amazon API Gateway]
+
+  - id: app-int-015
+    type: single
+    text: |
+      A company processes events from multiple AWS accounts. Each account should publish events to a central event bus in the monitoring account for aggregation and analysis. Events should maintain their original source account information.
+
+      How should this be configured?
+    options:
+      - id: A
+        text: Create SNS topics in each account with cross-account subscriptions to monitoring account SQS queue
+      - id: B
+        text: Configure EventBridge rules in each account to forward events to the central event bus with PutEvents permission
+      - id: C
+        text: Enable CloudTrail in all accounts with logs delivered to central S3 bucket
+      - id: D
+        text: Use Lambda functions in each account to publish events to Kinesis stream in monitoring account
+    correctAnswer: B
+    explanation: |
+      EventBridge supports cross-account event delivery. Create rules in source accounts that target the central event bus. Grant PutEvents permission via resource-based policy on central event bus. Original account information is preserved in event detail.
+
+      Option A: SNS works but EventBridge is purpose-built for event routing and has better filtering.
+      Option C: CloudTrail is for API logging, not application events.
+      Option D: Custom Lambda functions add unnecessary complexity and cost.
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-cross-account.html
+    services: [Amazon EventBridge]

@@ -1,0 +1,454 @@
+questions:
+  - id: net-new-001
+    type: single
+    text: |
+      A company is designing a new three-tier web application that will be deployed across multiple Availability Zones in a single region. The application requires:
+      - Public-facing web tier with SSL termination
+      - Application tier that processes HTTP/2 traffic
+      - Database tier accessible only from the application tier
+      - Path-based routing to direct /api/* requests to microservices
+
+      Which VPC design and load balancing solution best meets these requirements?
+    options:
+      - id: A
+        text: Deploy an Internet Gateway with public subnets for the web tier using Network Load Balancer, private subnets for application tier using Application Load Balancer with path-based routing, and isolated subnets for the database tier.
+      - id: B
+        text: Deploy an Internet Gateway with public subnets for the web tier using Application Load Balancer with SSL termination and path-based routing rules, private subnets for application tier, and isolated subnets for the database tier with no route to NAT Gateway.
+      - id: C
+        text: Deploy all tiers in public subnets with Application Load Balancer handling SSL termination, use security groups to restrict database access, and configure path-based routing on the ALB.
+      - id: D
+        text: Deploy a Network Load Balancer in public subnets for SSL termination, use private subnets with Application Load Balancer for the application tier, and deploy databases in private subnets with VPC endpoints.
+    correctAnswer: B
+    explanation: |
+      Option B provides the correct architecture for a three-tier application. The Application Load Balancer (ALB) operates at Layer 7 and supports SSL termination, HTTP/2, and path-based routing, making it ideal for the web tier. The isolated subnets for the database tier (no route to NAT Gateway or Internet Gateway) ensure the database is only accessible from the application tier through security groups.
+
+      Option A is incorrect because NLB operates at Layer 4 and doesn't support path-based routing or native SSL termination. Option C violates security best practices by placing databases in public subnets. Option D is incorrect because NLB doesn't natively support path-based routing, and VPC endpoints are for AWS services, not database access.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
+    services: [Amazon VPC, Application Load Balancer, AWS Security Groups]
+
+  - id: net-new-002
+    type: multi
+    correctCount: 3
+    text: |
+      A Solutions Architect is designing a global content delivery solution for a media streaming platform. The solution must:
+      - Serve video content from multiple origin servers in different regions
+      - Support geo-restriction for certain content
+      - Cache content at edge locations
+      - Provide real-time logs for analytics
+      - Support custom SSL certificates
+
+      Which THREE CloudFront features should be configured to meet these requirements?
+    options:
+      - id: A
+        text: Configure multiple origin groups with failover to secondary origins for high availability.
+      - id: B
+        text: Enable geo-restriction at the distribution level or use signed URLs/cookies for content-level restrictions.
+      - id: C
+        text: Configure CloudFront to use Lambda@Edge for all request processing instead of standard caching behaviors.
+      - id: D
+        text: Enable real-time logs to send detailed request data to Kinesis Data Streams for analytics.
+      - id: E
+        text: Import custom SSL certificates into AWS Certificate Manager for use with CloudFront alternate domain names (CNAMEs).
+      - id: F
+        text: Use Amazon S3 Transfer Acceleration as the primary origin for all video content.
+    correctAnswer: [B, D, E]
+    explanation: |
+      Options B, D, and E correctly address the requirements:
+      - B: CloudFront geo-restriction can be applied at the distribution level (whitelist/blacklist countries) or using signed URLs/cookies for more granular content-level control.
+      - D: CloudFront real-time logs deliver detailed log records to Kinesis Data Streams within seconds for real-time analytics.
+      - E: Custom SSL certificates must be imported into ACM in the us-east-1 region for use with CloudFront CNAMEs.
+
+      Option A, while a valid CloudFront feature, isn't required by the stated requirements. Option C is incorrect because Lambda@Edge should complement, not replace, standard caching behaviors. Option F is incorrect because S3 Transfer Acceleration is for uploads, not origin serving, and the requirement specifies multiple origin servers.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html
+    services: [Amazon CloudFront, AWS Certificate Manager, Amazon Kinesis Data Streams]
+
+  - id: net-new-003
+    type: single
+    text: |
+      A financial services company is launching a new real-time trading application that requires:
+      - Ultra-low latency (single-digit milliseconds)
+      - Support for millions of concurrent connections
+      - Preservation of source IP addresses for compliance
+      - Static IP addresses for firewall whitelisting
+      - TLS termination
+
+      Which load balancing solution meets ALL of these requirements?
+    options:
+      - id: A
+        text: Application Load Balancer with cross-zone load balancing enabled and Proxy Protocol v2 for source IP preservation.
+      - id: B
+        text: Network Load Balancer with TLS listeners, client IP preservation enabled, and Elastic IPs assigned to each Availability Zone.
+      - id: C
+        text: Gateway Load Balancer with third-party virtual appliances handling TLS termination and IP address preservation.
+      - id: D
+        text: Network Load Balancer with TCP listeners behind AWS Global Accelerator for static anycast IPs and use X-Forwarded-For headers.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because Network Load Balancer (NLB) operates at Layer 4 and provides ultra-low latency, supports millions of concurrent connections, preserves client source IP addresses by default, and supports TLS termination through TLS listeners. NLB can be assigned static Elastic IPs per Availability Zone for firewall whitelisting.
+
+      Option A is incorrect because ALB operates at Layer 7 with higher latency than NLB, and while it supports Proxy Protocol, it doesn't provide static IPs. Option C is incorrect because GLB is designed for inline security appliances, not application load balancing, and adds complexity. Option D is incorrect because X-Forwarded-For is an HTTP header (Layer 7), not applicable to TCP connections, and Global Accelerator adds unnecessary complexity and cost when NLB alone meets requirements.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html
+    services: [Network Load Balancer, Elastic IP]
+
+  - id: net-new-004
+    type: single
+    text: |
+      A company is migrating a latency-sensitive application to AWS that serves users globally. The application currently experiences high latency and packet loss for users in Asia and Europe when connecting to the US-based data center. The solution must:
+      - Improve network performance and reduce latency globally
+      - Provide static anycast IPs
+      - Route traffic over the AWS global network instead of the public internet
+      - Support automatic failover between regions
+
+      What is the MOST appropriate solution?
+    options:
+      - id: A
+        text: Deploy the application in multiple regions and use Route 53 geolocation routing with health checks to route users to the nearest region.
+      - id: B
+        text: Deploy AWS Global Accelerator with endpoints in multiple regions, configure health checks for automatic failover, and use the provided static anycast IPs.
+      - id: C
+        text: Create a CloudFront distribution with multiple regional origins and configure origin groups for automatic failover.
+      - id: D
+        text: Deploy Network Load Balancers in each region with Elastic IPs and use Route 53 latency-based routing to direct traffic.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because AWS Global Accelerator provides all required capabilities: it uses static anycast IP addresses, routes traffic over the AWS global network (not the public internet) for improved performance, and supports automatic failover between regional endpoints based on health checks. Global Accelerator continuously monitors application health and routes traffic to the optimal endpoint.
+
+      Option A uses Route 53 geolocation routing which still routes traffic over the public internet, not the AWS global network. Option C (CloudFront) is designed for caching static content, not accelerating dynamic application traffic. Option D provides static IPs but still routes traffic over the public internet between client and AWS regions, not utilizing the AWS global network backbone.
+    awsDocLink: https://docs.aws.amazon.com/global-accelerator/latest/dg/what-is-global-accelerator.html
+    services: [AWS Global Accelerator, Application Load Balancer]
+
+  - id: net-new-005
+    type: multi
+    correctCount: 2
+    text: |
+      A healthcare SaaS provider needs to expose their API to hundreds of customer VPCs without traversing the public internet. Customers should connect to the service using private IPs, and the solution must:
+      - Scale automatically without peering limitations
+      - Not require customers to configure complex routing
+      - Maintain customer network isolation
+
+      Which TWO actions should the Solutions Architect take?
+    options:
+      - id: A
+        text: Create a VPC peering connection between the service provider VPC and each customer VPC.
+      - id: B
+        text: Create a VPC endpoint service (AWS PrivateLink) backed by a Network Load Balancer in the service provider VPC.
+      - id: C
+        text: Configure AWS Transit Gateway and share it with customer accounts using AWS Resource Access Manager.
+      - id: D
+        text: Instruct customers to create interface VPC endpoints in their VPCs that connect to the VPC endpoint service.
+      - id: E
+        text: Deploy AWS Direct Connect with virtual interfaces to each customer's data center.
+    correctAnswer: [B, D]
+    explanation: |
+      Options B and D together provide the correct AWS PrivateLink architecture:
+      - B: Creating a VPC endpoint service backed by NLB exposes the service through AWS PrivateLink, which scales to thousands of customer connections without peering limitations.
+      - D: Customers create interface VPC endpoints in their VPCs that connect to the endpoint service, establishing private connectivity using private IPs without complex routing or internet traversal.
+
+      Option A (VPC peering) doesn't scale to hundreds of customers due to peering limitations (125 per VPC) and requires complex routing tables. Option C (Transit Gateway) is overly complex for this use case and requires customers to participate in shared networking. Option E (Direct Connect) is for on-premises connectivity, not VPC-to-VPC communication.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html
+    services: [AWS PrivateLink, Network Load Balancer, VPC Endpoint]
+
+  - id: net-new-006
+    type: single
+    text: |
+      A company is deploying a new containerized application on Amazon ECS that needs to access Amazon S3, DynamoDB, and Secrets Manager. The security team requires:
+      - No traffic traversing the internet
+      - Minimal data transfer costs
+      - No changes to application code
+      - Prevention of data exfiltration to unauthorized services
+
+      What is the MOST cost-effective and secure solution?
+    options:
+      - id: A
+        text: Deploy NAT Gateways in each Availability Zone and configure route tables to route AWS service traffic through the NAT Gateway.
+      - id: B
+        text: Create gateway VPC endpoints for S3 and DynamoDB, and interface VPC endpoints for Secrets Manager. Configure VPC endpoint policies to restrict access to specific resources.
+      - id: C
+        text: Use AWS PrivateLink for all three services with interface VPC endpoints in each Availability Zone.
+      - id: D
+        text: Enable VPC Flow Logs and use AWS Network Firewall to inspect and filter traffic to AWS services.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because it uses the most appropriate endpoint types for each service:
+      - Gateway endpoints (S3, DynamoDB) are free and route traffic through the Amazon network without internet traversal
+      - Interface endpoints (Secrets Manager) provide private connectivity via AWS PrivateLink
+      - VPC endpoint policies allow fine-grained access control to prevent data exfiltration
+      - No application code changes required; endpoints integrate transparently with AWS SDKs
+
+      Option A incurs NAT Gateway data processing charges and doesn't provide the same level of security. Option C is incorrect because S3 and DynamoDB should use gateway endpoints (free) instead of interface endpoints (charged per hour and per GB). Option D adds unnecessary complexity and cost without addressing the core requirement for private connectivity.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html
+    services: [VPC Endpoints, Amazon S3, Amazon DynamoDB, AWS Secrets Manager]
+
+  - id: net-new-007
+    type: single
+    text: |
+      A gaming company is launching a new multiplayer game that requires:
+      - Support for UDP traffic for game state synchronization
+      - Ability to handle sudden traffic spikes during launches
+      - Preservation of client IP addresses for anti-cheat systems
+      - Health checks at the target level
+      - Static IP addresses for players to connect
+
+      Which load balancing solution should be implemented?
+    options:
+      - id: A
+        text: Application Load Balancer with UDP listener support and target-level health checks.
+      - id: B
+        text: Network Load Balancer with UDP listeners, target-level health checks, and Elastic IPs attached.
+      - id: C
+        text: Gateway Load Balancer with third-party gaming-optimized virtual appliances.
+      - id: D
+        text: Classic Load Balancer with UDP support and Elastic IPs for static addressing.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because Network Load Balancer supports UDP traffic, preserves client source IP addresses automatically, provides target-level health checks, can be assigned static Elastic IPs, and handles millions of requests per second with ultra-low latency. NLB is ideal for gaming workloads requiring Layer 4 protocol support.
+
+      Option A is incorrect because Application Load Balancer operates at Layer 7 (HTTP/HTTPS) and does not support UDP traffic. Option C (Gateway Load Balancer) is designed for inline security appliances and network virtual appliances, not for general load balancing of gaming traffic. Option D is incorrect because Classic Load Balancer is legacy and doesn't support UDP protocol (only TCP, SSL/TLS, HTTP, HTTPS).
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html
+    services: [Network Load Balancer, Elastic IP]
+
+  - id: net-new-008
+    type: multi
+    correctCount: 3
+    text: |
+      A company is designing a new e-commerce platform with the following requirements:
+      - Route traffic based on HTTP headers (user-agent) to different target groups
+      - Implement weighted traffic splitting for A/B testing (90% to production, 10% to test)
+      - Authenticate users using an existing corporate OIDC identity provider
+      - Maintain sticky sessions for shopping cart functionality
+
+      Which THREE Application Load Balancer features should be configured?
+    options:
+      - id: A
+        text: Configure listener rules with HTTP header-based conditions to route mobile and desktop traffic to different target groups.
+      - id: B
+        text: Enable weighted target groups at the listener rule level to distribute traffic 90/10 between production and test environments.
+      - id: C
+        text: Configure ALB authentication with OIDC integration to authenticate users before routing to targets.
+      - id: D
+        text: Enable cross-zone load balancing to ensure even distribution across all Availability Zones.
+      - id: E
+        text: Configure application-based sticky sessions (application-generated cookie) for shopping cart persistence.
+      - id: F
+        text: Use AWS WAF with ALB to filter traffic based on user-agent strings.
+    correctAnswer: [A, B, C]
+    explanation: |
+      Options A, B, and C directly address the requirements:
+      - A: ALB listener rules support routing based on HTTP headers, including user-agent, to direct traffic to different target groups
+      - B: ALB supports weighted target groups for forward actions, enabling traffic splitting for A/B testing scenarios
+      - C: ALB natively supports OIDC authentication, validating users against an identity provider before forwarding requests to targets
+
+      Option D (cross-zone load balancing) is enabled by default on ALB but doesn't address any stated requirement. Option E is partially correct (sticky sessions are needed), but ALB sticky sessions use load balancer-generated cookies, not application-generated cookies. Option F uses WAF for filtering, but the requirement is routing (not filtering) based on user-agent, which is better handled by ALB rules.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-listeners.html
+    services: [Application Load Balancer, Amazon Cognito]
+
+  - id: net-new-009
+    type: single
+    text: |
+      A SaaS company is deploying a new API service that will be consumed by both internet-facing clients and internal services within the VPC. The architecture must:
+      - Minimize the number of load balancers to reduce costs
+      - Support both public and private connectivity
+      - Use HTTPS with SSL/TLS termination
+      - Route requests based on URL path patterns
+
+      What is the MOST cost-effective architecture?
+    options:
+      - id: A
+        text: Deploy a public-facing Application Load Balancer in public subnets and an internal Application Load Balancer in private subnets for VPC traffic.
+      - id: B
+        text: Deploy a single internet-facing Application Load Balancer in public subnets with security groups allowing traffic from both internet and VPC CIDR ranges.
+      - id: C
+        text: Deploy a Network Load Balancer with TLS termination in public subnets and use VPC endpoints for internal connectivity.
+      - id: D
+        text: Deploy two Network Load Balancers, one public and one private, and use AWS PrivateLink to connect them.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because a single internet-facing Application Load Balancer can serve both internet and VPC clients simultaneously, reducing costs by eliminating the need for two load balancers. ALB security groups can be configured to allow traffic from both 0.0.0.0/0 (internet) and VPC CIDR ranges. ALB supports SSL/TLS termination and path-based routing as required.
+
+      Option A is more expensive, deploying two ALBs when one suffices. An internet-facing ALB is accessible from within the VPC, making a separate internal ALB unnecessary. Option C doesn't minimize load balancers and NLB doesn't support path-based routing. Option D is overcomplicated and expensive, using two load balancers and PrivateLink unnecessarily.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html
+    services: [Application Load Balancer, AWS Security Groups]
+
+  - id: net-new-010
+    type: single
+    text: |
+      A financial services company needs to implement disaster recovery for a critical application. They require:
+      - Automated failover to a secondary region within 60 seconds
+      - Health checks that validate application functionality, not just network reachability
+      - Weighted routing to gradually shift traffic during failover testing
+      - DNS TTL that allows fast propagation of changes
+
+      Which Route 53 configuration meets these requirements?
+    options:
+      - id: A
+        text: Use geolocation routing policy with health checks pointing to Application Load Balancers in each region.
+      - id: B
+        text: Configure failover routing policy with primary and secondary records, associate Route 53 health checks with Application Load Balancer endpoints, and set TTL to 60 seconds.
+      - id: C
+        text: Implement weighted routing policy with Route 53 health checks, distribute traffic 100/0 normally and adjust weights during testing, and set TTL to 30 seconds.
+      - id: D
+        text: Use latency-based routing with health checks and set TTL to 300 seconds for DNS caching efficiency.
+    correctAnswer: C
+    explanation: |
+      Option C is correct because weighted routing allows flexible traffic distribution (100% to primary, 0% to secondary normally), can be adjusted for gradual failover testing, and supports Route 53 health checks that can validate application functionality (not just network reachability) using HTTP/HTTPS endpoints. A 30-second TTL allows reasonably fast DNS propagation.
+
+      Option B (failover routing) doesn't support weighted traffic distribution during testing; it's binary (all or nothing). Option A (geolocation) routes based on user location, not failover scenarios. Option D's 300-second TTL is too long for 60-second failover requirements. Additionally, latency-based routing is for performance optimization, not disaster recovery failover.
+    awsDocLink: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+    services: [Amazon Route 53, Application Load Balancer]
+
+  - id: net-new-011
+    type: multi
+    correctCount: 2
+    text: |
+      A video streaming company is optimizing their CloudFront distribution for a live sports streaming event. They need to:
+      - Minimize latency for viewers globally
+      - Reduce origin load during high-traffic events
+      - Serve personalized content based on viewer authentication
+      - Optimize cache hit ratios
+
+      Which TWO CloudFront configurations will BEST achieve these goals?
+    options:
+      - id: A
+        text: Configure CloudFront to forward all headers, cookies, and query strings to the origin to ensure personalized content delivery.
+      - id: B
+        text: Use Lambda@Edge viewer request functions to make authorization decisions at edge locations and return cached personalized content based on claims in JWT tokens.
+      - id: C
+        text: Enable CloudFront Origin Shield to add an additional caching layer between edge locations and the origin.
+      - id: D
+        text: Configure CloudFront to use the price class that includes all edge locations worldwide for maximum global coverage.
+      - id: E
+        text: Disable caching entirely and use CloudFront only as a proxy to ensure viewers always receive live content.
+    correctAnswer: [B, C]
+    explanation: |
+      Options B and C together provide optimal performance:
+      - B: Lambda@Edge at viewer request allows authentication and authorization at edge locations, enables serving cached personalized content based on token claims without origin requests, reducing latency and origin load
+      - C: Origin Shield provides an additional caching layer in a centralized AWS Region, improving cache hit ratios and reducing origin load, especially during traffic spikes
+
+      Option A is incorrect because forwarding all headers/cookies destroys cache effectiveness, increasing origin load. Option D might help with global reach but doesn't directly address latency reduction or origin load. Option E defeats the purpose of using a CDN and maximizes origin load. Streaming benefits from caching manifest files, player assets, and video segments.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html
+    services: [Amazon CloudFront, AWS Lambda@Edge, CloudFront Origin Shield]
+
+  - id: net-new-012
+    type: single
+    text: |
+      A global logistics company is designing a new multi-region application architecture. They need to route users to the AWS region with the lowest network latency while ensuring automatic failover if a region becomes unhealthy. The solution must also support blue/green deployments by gradually shifting traffic between application versions.
+
+      Which Route 53 routing strategy provides ALL of these capabilities?
+    options:
+      - id: A
+        text: Configure latency-based routing with health checks on each regional endpoint, then use Route 53 Traffic Flow to implement weighted policies for blue/green deployments.
+      - id: B
+        text: Use geolocation routing to direct users to the nearest region, configure health checks for automatic failover, and manually adjust DNS records during blue/green deployments.
+      - id: C
+        text: Implement weighted routing policy with equal weights across regions, configure health checks, and adjust weights for blue/green traffic shifting.
+      - id: D
+        text: Deploy AWS Global Accelerator with health checks and use endpoint weights for blue/green deployments.
+    correctAnswer: A
+    explanation: |
+      Option A is correct because it combines multiple Route 53 features optimally:
+      - Latency-based routing automatically directs users to the region with lowest latency based on AWS's latency measurements
+      - Health checks enable automatic failover if a region becomes unhealthy
+      - Route 53 Traffic Flow allows creating complex routing policies, including weighted distributions for blue/green deployments on top of latency-based routing
+
+      Option B (geolocation) routes based on user's geographic location, not actual network latency, which may not be optimal. Option C (weighted routing) doesn't route based on latency. Option D (Global Accelerator) provides static IPs and AWS network routing but isn't a Route 53 routing policy and adds cost; the requirement specifically asks for a Route 53 routing strategy.
+    awsDocLink: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy-latency.html
+    services: [Amazon Route 53, Route 53 Traffic Flow]
+
+  - id: net-new-013
+    type: single
+    text: |
+      A company is deploying a new IoT platform that will receive telemetry data from millions of devices globally. The platform requires:
+      - Protocol translation from MQTT to HTTP for backend processing
+      - DDoS protection and traffic filtering
+      - Integration with third-party security appliances for deep packet inspection
+      - Automatic scaling based on traffic patterns
+      - Equal distribution of connections across appliance instances
+
+      Which architecture should be implemented?
+    options:
+      - id: A
+        text: Deploy Application Load Balancer with AWS WAF for DDoS protection, use Lambda functions for protocol translation, and send traffic to backend services.
+      - id: B
+        text: Deploy Gateway Load Balancer with third-party security appliances as targets, configure GENEVE encapsulation for traffic inspection, and route processed traffic to backend services.
+      - id: C
+        text: Deploy Network Load Balancer with third-party security appliances as targets, use UDP listeners for IoT traffic, and configure cross-zone load balancing.
+      - id: D
+        text: Use AWS IoT Core for MQTT ingestion with AWS Shield Advanced for DDoS protection, integrate with third-party appliances via VPC peering.
+    correctAnswer: B
+    explanation: |
+      Option B is correct because Gateway Load Balancer (GWLB) is specifically designed for deploying inline security and network appliances at scale. GWLB:
+      - Distributes traffic across multiple third-party virtual appliance instances using 5-tuple hashing for connection stickiness
+      - Uses GENEVE protocol encapsulation to preserve packet flow information during inspection
+      - Automatically scales based on traffic patterns
+      - Integrates transparently with VPC routing for traffic interception and forwarding
+
+      Option A doesn't support third-party appliance integration for deep packet inspection. Option C (NLB) doesn't provide the GENEVE encapsulation and appliance orchestration features needed for security appliance deployment. Option D relies on IoT Core which adds cost and doesn't address the requirement for third-party deep packet inspection appliances.
+    awsDocLink: https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html
+    services: [Gateway Load Balancer, Amazon VPC]
+
+  - id: net-new-014
+    type: multi
+    correctCount: 3
+    text: |
+      A Solutions Architect is designing network connectivity for a new microservices-based application running on Amazon ECS. The application has the following requirements:
+      - Services must communicate using service discovery without hardcoded IPs
+      - Internal services should not be accessible from the internet
+      - Support both HTTP REST APIs and gRPC communication between services
+      - Implement progressive traffic shifting for canary deployments
+
+      Which THREE AWS services and features should be used?
+    options:
+      - id: A
+        text: AWS Cloud Map for service discovery, allowing services to register and discover each other using DNS or API-based lookups.
+      - id: B
+        text: Internal Application Load Balancer for HTTP traffic with weighted target groups for canary deployments.
+      - id: C
+        text: Amazon Route 53 private hosted zones with ALIAS records pointing to Network Load Balancers.
+      - id: D
+        text: AWS App Mesh to provide service mesh capabilities, including gRPC support and traffic management for canary deployments.
+      - id: E
+        text: VPC endpoints for PrivateLink connectivity between microservices.
+      - id: F
+        text: Elastic Network Interfaces attached directly to ECS tasks for static IP addressing.
+    correctAnswer: [A, B, D]
+    explanation: |
+      Options A, B, and D provide a complete solution:
+      - A: AWS Cloud Map integrates with ECS for automatic service discovery, allowing services to find each other dynamically without hardcoded IPs using DNS-based or API-based discovery
+      - B: Internal ALB provides Layer 7 load balancing for HTTP REST APIs, stays within the VPC (not internet-accessible), and supports weighted target groups for canary deployments
+      - D: AWS App Mesh adds service mesh capabilities including gRPC protocol support, advanced traffic management for canaries, observability, and cross-service communication features
+
+      Option C is redundant when using Cloud Map and doesn't add value for this use case. Option E (PrivateLink/VPC endpoints) is for exposing services to other VPCs, not for intra-VPC microservices communication. Option F (static ENIs) defeats the purpose of service discovery and doesn't support dynamic scaling.
+    awsDocLink: https://docs.aws.amazon.com/cloud-map/latest/dg/what-is-cloud-map.html
+    services: [AWS Cloud Map, Application Load Balancer, AWS App Mesh, Amazon ECS]
+
+  - id: net-new-015
+    type: single
+    text: |
+      A media company is designing a CloudFront distribution for their new streaming service. They need to:
+      - Protect premium content from unauthorized access
+      - Allow paying subscribers to access content for 24 hours after authentication
+      - Prevent URL sharing between users
+      - Support mobile, web, and smart TV clients
+
+      Which CloudFront security mechanism should be implemented?
+    options:
+      - id: A
+        text: Configure CloudFront to use AWS WAF with IP-based rules to restrict access to known subscriber IP addresses.
+      - id: B
+        text: Use CloudFront signed URLs with a custom policy that expires after 24 hours, generated by the application after user authentication, and tied to client IP address.
+      - id: C
+        text: Implement CloudFront signed cookies with a canned policy valid for 24 hours, set after successful authentication, allowing access to multiple resources.
+      - id: D
+        text: Enable CloudFront field-level encryption with public keys distributed to authenticated clients for content decryption.
+    correctAnswer: C
+    explanation: |
+      Option C is correct because CloudFront signed cookies are ideal for this scenario:
+      - Allow access to multiple files/resources (streaming segments, manifests, etc.) without generating individual signed URLs
+      - Support expiration policies (24-hour access after authentication)
+      - Work seamlessly across mobile, web, and TV clients (cookies/headers supported on all platforms)
+      - Generated server-side after authentication, preventing unauthorized access
+      - More user-friendly than signed URLs for streaming scenarios with multiple content files
+
+      Option A (WAF IP rules) is impractical as subscriber IPs are dynamic, especially on mobile. Option B (signed URLs) requires generating a unique signed URL for each content segment, which is cumbersome for streaming; additionally, tying to client IP prevents mobile users from accessing content when switching networks. Option D (field-level encryption) is for encrypting specific form fields during transmission, not for content access control.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-cookies.html
+    services: [Amazon CloudFront, CloudFront Signed Cookies]

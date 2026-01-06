@@ -1,0 +1,49 @@
+id: migration-strategies
+name: Migration Strategies and Planning
+shortName: Migration Strategies
+examTask: task-4-1
+description: >
+  Design and implement comprehensive migration strategies using the 6 R's framework,
+  AWS Migration Hub, Application Migration Service (MGN), and migration assessment tools
+  to plan and execute workload migrations to AWS.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - AWS Migration Hub
+  - AWS Application Migration Service (MGN)
+  - AWS Migration Evaluator
+  - AWS Application Discovery Service
+  - AWS Control Tower
+  - AWS Landing Zone
+
+keyConcepts:
+  - 6 R's migration strategies (Rehost, Replatform, Repurchase, Refactor, Retire, Retain)
+  - Migration portfolio assessment and discovery
+  - Migration Hub for tracking and orchestration
+  - Application Migration Service for lift-and-shift
+  - Landing zone preparation and design
+  - Migration wave planning
+  - Business case development
+
+awsDocLinks:
+  - title: AWS Migration Hub Documentation
+    url: https://docs.aws.amazon.com/migrationhub/latest/ug/
+    type: doc
+  - title: AWS Application Migration Service Documentation
+    url: https://docs.aws.amazon.com/mgn/latest/ug/
+    type: doc
+  - title: AWS Prescriptive Guidance for Migration
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-guide/
+    type: whitepaper
+  - title: Understanding the 6 R's
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-readiness/understanding-6-rs.html
+    type: doc
+  - title: AWS Migration Evaluator Guide
+    url: https://docs.aws.amazon.com/migration-evaluator/latest/userguide/
+    type: doc
+
+relatedExperiments:
+  - lab-mgn-migration
+  - lab-migration-hub

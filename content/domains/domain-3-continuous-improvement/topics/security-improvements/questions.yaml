@@ -1,0 +1,596 @@
+questions:
+  - id: sec-imp-001
+    type: single
+    text: >
+      A company with 80 AWS accounts needs to implement threat detection across all accounts and regions.
+      They require automated response when cryptocurrency mining or C2 server communication is detected,
+      with all findings centralized in a security account. What is the MOST operationally efficient solution?
+    options:
+      - id: A
+        text: Deploy GuardDuty manually in each account, configure EventBridge rules in each account for automated response
+      - id: B
+        text: Enable GuardDuty through AWS Organizations with delegated administrator, configure EventBridge in the security account for centralized automated response
+      - id: C
+        text: Use CloudWatch Logs Insights with scheduled queries to detect threats across all accounts
+      - id: D
+        text: Deploy a third-party SIEM on EC2 and forward VPC Flow Logs from all accounts for threat analysis
+    correctAnswer: B
+    explanation: >
+      GuardDuty with Organizations integration provides automatic enablement across all accounts and regions.
+      The delegated administrator (security account) receives all findings centrally. EventBridge rules in
+      the security account can trigger automated responses (Lambda, Step Functions) for remediation. This
+      scales efficiently and provides unified management. Option A doesn't scale and lacks centralization.
+      Option C is manual and lacks ML-based threat intelligence. Option D introduces unnecessary cost and
+      complexity for functionality GuardDuty provides natively.
+    awsDocLink: https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_organizations.html
+    services: [Amazon GuardDuty, AWS Organizations, Amazon EventBridge, AWS Lambda]
+    concepts: [delegated-administration, threat-detection, centralized-security, automated-response]
+
+  - id: sec-imp-002
+    type: multi
+    correctCount: 3
+    text: >
+      A financial services company must aggregate security findings from GuardDuty, Inspector, Macie, and
+      IAM Access Analyzer across 50 accounts in multiple regions. They need automated PCI DSS compliance
+      checks and the ability to create custom security insights. Which THREE actions are required?
+    options:
+      - id: A
+        text: Enable AWS Security Hub in all accounts and regions with a delegated administrator
+      - id: B
+        text: Configure cross-region aggregation with a designated home region in Security Hub
+      - id: C
+        text: Enable the PCI DSS security standard in Security Hub for automated compliance checks
+      - id: D
+        text: Create a Lambda function to aggregate findings from each security service into DynamoDB
+      - id: E
+        text: Configure each security service to send findings to a central S3 bucket for manual analysis
+      - id: F
+        text: Deploy AWS Config aggregator to collect security findings from all accounts
+    correctAnswer: [A, B, C]
+    explanation: >
+      Security Hub is purpose-built for this use case. Enable it with delegated administrator (A) for
+      multi-account management. Configure cross-region aggregation with a home region (B) to consolidate
+      findings across regions. Enable the PCI DSS standard (C) for automated compliance checks against
+      the framework. Security Hub natively integrates with all mentioned services and provides custom
+      insights capability. Options D and E require custom development for native functionality. Option F
+      is for configuration compliance, not security findings aggregation.
+    awsDocLink: https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-settingup.html
+    services: [AWS Security Hub, Amazon GuardDuty, Amazon Inspector, Amazon Macie, IAM Access Analyzer]
+    concepts: [centralized-security, compliance-frameworks, findings-aggregation, cross-region-aggregation]
+
+  - id: sec-imp-003
+    type: single
+    text: >
+      A company needs to ensure all EBS volumes are encrypted, all S3 buckets have default encryption,
+      and all EC2 instances have Systems Manager agent installed across 40 accounts. Non-compliant
+      resources should be automatically remediated. What is the BEST approach?
+    options:
+      - id: A
+        text: Deploy AWS Config rules with automatic remediation via Systems Manager Automation using CloudFormation StackSets
+      - id: B
+        text: Create EventBridge rules to detect resource creation and use Lambda to enforce compliance
+      - id: C
+        text: Use Service Control Policies (SCPs) to prevent creation of non-compliant resources
+      - id: D
+        text: Deploy AWS Config aggregator with manual remediation playbooks
+    correctAnswer: A
+    explanation: >
+      AWS Config with automatic remediation provides the complete solution. Deploy managed Config rules
+      (encrypted-volumes, s3-default-encryption-kms, ec2-instance-managed-by-ssm) via StackSets to all
+      accounts. Configure automatic remediation using Systems Manager Automation documents to fix
+      non-compliant resources. Config continuously evaluates resources and triggers remediation when
+      drift occurs. Option B requires custom code for native functionality. Option C can prevent some
+      actions but cannot enforce SSM agent installation or remediate existing resources. Option D lacks
+      automation.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/remediation.html
+    services: [AWS Config, AWS Systems Manager, AWS CloudFormation, AWS Organizations]
+    concepts: [automatic-remediation, compliance-as-code, multi-account-governance, config-rules]
+
+  - id: sec-imp-004
+    type: single
+    text: >
+      A healthcare organization stores patient data in S3 buckets across multiple accounts. They need
+      to identify which buckets contain Protected Health Information (PHI) such as medical record numbers
+      and health insurance IDs using machine learning, with minimal operational overhead. What should
+      they implement?
+    options:
+      - id: A
+        text: Enable S3 inventory and use Athena queries with regex patterns to identify PHI
+      - id: B
+        text: Deploy Amazon Macie with scheduled discovery jobs using managed PHI data identifiers and configure EventBridge alerts
+      - id: C
+        text: Create Lambda functions triggered by S3 events to scan objects for PHI patterns
+      - id: D
+        text: Enable AWS Config rules to scan S3 objects for sensitive data patterns
+    correctAnswer: B
+    explanation: >
+      Amazon Macie is purpose-built for sensitive data discovery in S3 using machine learning. Macie
+      provides managed data identifiers for PHI including medical record numbers, health insurance claim
+      numbers, and HIPAA-defined identifiers. Schedule discovery jobs to scan buckets automatically, and
+      Macie classifies data with high accuracy. EventBridge integration provides real-time alerts on
+      findings. This is fully managed with minimal overhead. Option A requires manual pattern maintenance
+      and lacks ML capabilities. Options C and D require custom development and don't leverage pre-built
+      PHI detection capabilities.
+    awsDocLink: https://docs.aws.amazon.com/macie/latest/user/discovery-jobs.html
+    services: [Amazon Macie, Amazon S3, Amazon EventBridge]
+    concepts: [sensitive-data-discovery, phi-detection, machine-learning, data-classification]
+
+  - id: sec-imp-005
+    type: multi
+    correctCount: 2
+    text: >
+      A security team discovered that several S3 buckets and KMS keys are shared with external AWS
+      accounts not part of their organization. They need to identify all resources accessible externally
+      and validate IAM policies against AWS best practices before deployment. Which TWO services should
+      they use?
+    options:
+      - id: A
+        text: AWS Config to track resource sharing configurations and policy changes
+      - id: B
+        text: IAM Access Analyzer to identify resources shared with external entities using zone of trust
+      - id: C
+        text: Amazon GuardDuty to detect unauthorized access attempts from external accounts
+      - id: D
+        text: IAM Access Analyzer policy validation API to check policies against AWS security best practices
+      - id: E
+        text: AWS Security Hub to aggregate resource sharing findings from multiple sources
+    correctAnswer: [B, D]
+    explanation: >
+      IAM Access Analyzer serves both purposes. For external access detection (B), configure the
+      organization as the zone of trust and Access Analyzer continuously analyzes resource policies to
+      identify S3 buckets, KMS keys, IAM roles, Lambda functions, and other resources accessible from
+      outside the organization. For policy validation (D), use the ValidatePolicy API to check IAM
+      policies before deployment, receiving errors for syntax issues, security warnings for risky
+      patterns like NotPrincipal with Allow, and suggestions for improvements. Config (A) tracks changes
+      but doesn't analyze external access. GuardDuty (C) detects runtime threats, not policy-based
+      access. Security Hub (E) aggregates findings but Access Analyzer is the source.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html
+    services: [IAM Access Analyzer, AWS IAM, AWS Organizations]
+    concepts: [unintended-access-detection, policy-validation, external-access, zone-of-trust]
+
+  - id: sec-imp-006
+    type: single
+    text: >
+      A company uses AWS Config to enforce compliance but notices the 'encrypted-volumes' rule shows
+      frequent non-compliance. After manual remediation, new unencrypted volumes appear. They need a
+      solution that prevents creation of non-compliant resources AND remediates existing ones. What is
+      the MOST comprehensive approach?
+    options:
+      - id: A
+        text: Configure AWS Config automatic remediation using Systems Manager Automation to encrypt volumes
+      - id: B
+        text: Create an SCP denying ec2 CreateVolume without encryption, and enable Config automatic remediation for existing volumes
+      - id: C
+        text: Use EventBridge to detect volume creation and trigger Lambda to delete non-compliant volumes
+      - id: D
+        text: Enable EBS encryption by default at the account level via the console in all regions
+    correctAnswer: B
+    explanation: >
+      A layered security approach requires both preventive and detective controls. The SCP (B) prevents
+      creation of unencrypted EBS volumes across all accounts in the organization (preventive control),
+      while Config with automatic remediation handles existing non-compliant volumes (detective and
+      corrective controls). This ensures future compliance and fixes past issues. Option A only remediates
+      but doesn't prevent new violations. Option C is destructive and causes data loss. Option D enables
+      encryption by default but is regional, can be disabled by users, and doesn't remediate existing
+      volumes or provide enforcement like SCPs.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/operational-best-practices-for-Encryption.html
+    services: [AWS Config, AWS Organizations, Amazon EC2, AWS Systems Manager]
+    concepts: [preventive-controls, detective-controls, layered-security, scps]
+
+  - id: sec-imp-007
+    type: single
+    text: >
+      A financial institution must comply with PCI DSS, HIPAA, and SOC 2 across their AWS environment.
+      They need to deploy hundreds of Config rules mapped to these frameworks consistently across all
+      accounts. What is the MOST efficient approach?
+    options:
+      - id: A
+        text: Manually enable each Config rule in every account using the AWS Console
+      - id: B
+        text: Create custom CloudFormation templates with all required Config rules and deploy via StackSets
+      - id: C
+        text: Deploy AWS Config Conformance Packs for Operational Best Practices for PCI DSS, HIPAA, and SOC 2 using Organizations
+      - id: D
+        text: Use AWS Service Catalog to create a portfolio of Config rules for on-demand deployment
+    correctAnswer: C
+    explanation: >
+      AWS Config Conformance Packs are pre-built, templatized bundles of Config rules and remediation
+      actions for specific compliance frameworks. AWS provides conformance packs for PCI DSS, HIPAA,
+      SOC 2, and other frameworks containing all necessary rules. Deploy via Organizations to all
+      accounts from a central location with a single operation, including support for cross-account
+      aggregation and compliance reporting. This is far more efficient than creating custom templates
+      (B) or enabling rules individually (A). Option D requires manual deployment in each account and
+      lacks the pre-built compliance mappings.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/conformance-packs.html
+    services: [AWS Config, AWS Organizations]
+    concepts: [conformance-packs, compliance-frameworks, multi-account-deployment, automation]
+
+  - id: sec-imp-008
+    type: single
+    text: >
+      A GuardDuty finding indicates an EC2 instance is communicating with a command-and-control server.
+      The security team needs automated response that immediately isolates the instance, captures
+      forensic data, notifies the team, and creates an ITSM ticket. What is the BEST architecture?
+    options:
+      - id: A
+        text: GuardDuty finding to Security Hub to SNS for manual team response
+      - id: B
+        text: GuardDuty finding to EventBridge to Lambda for isolation, snapshot creation, SNS notification, and API call to ITSM
+      - id: C
+        text: GuardDuty finding to EventBridge to Step Functions orchestrating Lambda for isolation, Systems Manager for forensics, SNS notification, and API Gateway to ITSM
+      - id: D
+        text: GuardDuty finding to CloudWatch Logs to CloudWatch Alarm to SNS for manual investigation
+    correctAnswer: C
+    explanation: >
+      Step Functions provides orchestration for complex, multi-step automated responses with error
+      handling and state management. The workflow: (1) EventBridge detects GuardDuty finding, (2) triggers
+      Step Functions state machine, (3) Lambda changes security group to isolate instance, (4) Systems
+      Manager creates EBS snapshots and memory dumps for forensics, (5) SNS sends notification, (6) API
+      Gateway calls ITSM API to create ticket. Step Functions provides visibility into each step, retry
+      logic, and complete audit trail. Option B works but lacks orchestration for complex workflows.
+      Options A and D are manual or incomplete. This pattern follows AWS prescriptive guidance for
+      incident response automation.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/patterns/automate-incident-response-and-forensics.html
+    services: [Amazon GuardDuty, Amazon EventBridge, AWS Step Functions, AWS Lambda, AWS Systems Manager]
+    concepts: [automated-incident-response, workflow-orchestration, forensics, threat-response]
+
+  - id: sec-imp-009
+    type: multi
+    correctCount: 2
+    text: >
+      An organization needs automated rotation of RDS database credentials every 30 days. Applications
+      in multiple AWS accounts must access the credentials, rotation must not cause downtime, and all
+      credential access must be audited. Which TWO actions satisfy these requirements?
+    options:
+      - id: A
+        text: Store credentials in AWS Secrets Manager with automatic rotation enabled using multi-user rotation strategy
+      - id: B
+        text: Configure Secrets Manager resource-based policies to allow cross-account access via IAM roles
+      - id: C
+        text: Store credentials in Systems Manager Parameter Store with Lambda for rotation
+      - id: D
+        text: Use Secrets Manager replication to copy secrets to all regions and accounts needing access
+      - id: E
+        text: Store credentials in S3 with KMS encryption and Lambda for rotation
+    correctAnswer: [A, B]
+    explanation: >
+      Secrets Manager with automatic rotation (A) and cross-account access via resource policies (B) is
+      the correct solution. Secrets Manager natively supports RDS credential rotation with zero-downtime
+      using multi-user rotation strategy (creates new user, updates applications, removes old user).
+      Resource-based policies enable cross-account access without replication. CloudTrail automatically
+      logs all GetSecretValue calls for comprehensive auditing. Parameter Store (C) doesn't support
+      native automatic rotation. Secrets replication (D) is unnecessary when resource policies provide
+      secure cross-account access. Option E introduces complexity without providing native rotation
+      capabilities.
+    awsDocLink: https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html
+    services: [AWS Secrets Manager, Amazon RDS, AWS CloudTrail, AWS IAM]
+    concepts: [secrets-rotation, cross-account-access, zero-downtime, audit-trail]
+
+  - id: sec-imp-010
+    type: single
+    text: >
+      A security audit reveals several IAM roles assumable by external AWS accounts that shouldn't have
+      access. The team needs continuous monitoring for resources shared externally with alerts on new
+      external access grants. The zone of trust is defined as their AWS Organization. What is the MOST
+      effective solution?
+    options:
+      - id: A
+        text: Enable AWS Config with custom rules checking resource policies for external account principals
+      - id: B
+        text: Create IAM Access Analyzer with organization as zone of trust and configure EventBridge rules to alert on new findings
+      - id: C
+        text: Use Amazon GuardDuty to detect unauthorized cross-account access attempts
+      - id: D
+        text: Enable CloudTrail and create CloudWatch Logs Insights queries for AssumeRole from external accounts
+    correctAnswer: B
+    explanation: >
+      IAM Access Analyzer is specifically designed for this use case. Configure the organization as the
+      zone of trust, and Access Analyzer continuously analyzes resource policies for S3 buckets, IAM
+      roles, KMS keys, Lambda functions, SQS queues, Secrets Manager secrets, and other resources. It
+      generates findings when resources are accessible from outside the organization using automated
+      reasoning to analyze all possible access paths. EventBridge integration provides real-time alerts
+      on new findings. Option A requires custom logic for built-in functionality. Option C detects runtime
+      threats, not policy-based access. Option D is reactive and requires manual query execution.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-getting-started.html
+    services: [IAM Access Analyzer, AWS Organizations, Amazon EventBridge]
+    concepts: [zone-of-trust, external-access-detection, continuous-monitoring, automated-reasoning]
+
+  - id: sec-imp-011
+    type: single
+    text: >
+      A company uses AWS Security Hub across 60 accounts in 3 regions (us-east-1, us-west-2, eu-west-1).
+      Security analysts work from us-east-1 and need a single dashboard showing all findings from all
+      regions. What is the MOST operationally efficient configuration?
+    options:
+      - id: A
+        text: Enable Security Hub in all accounts and regions, configure us-east-1 as home region with cross-region aggregation
+      - id: B
+        text: Deploy Lambda to query Security Hub in each region and consolidate findings in DynamoDB
+      - id: C
+        text: Enable Security Hub only in us-east-1 and configure all security services to send findings to this region
+      - id: D
+        text: Create separate Security Hub dashboards for each region and have analysts check all three
+    correctAnswer: A
+    explanation: >
+      Security Hub's cross-region aggregation feature is designed for this scenario. Enable Security Hub
+      in all regions (required because security services generate findings where resources exist), then
+      designate us-east-1 as the home region and enable cross-region aggregation. This automatically
+      aggregates findings from all linked regions to the home region, providing a single pane of glass.
+      Analysts view and manage all findings from us-east-1. Option B requires custom code for built-in
+      functionality. Option C won't work because services like GuardDuty generate findings in the region
+      where monitored resources exist. Option D is operationally inefficient.
+    awsDocLink: https://docs.aws.amazon.com/securityhub/latest/userguide/finding-aggregation.html
+    services: [AWS Security Hub]
+    concepts: [cross-region-aggregation, centralized-visibility, multi-region, single-pane-of-glass]
+
+  - id: sec-imp-012
+    type: multi
+    correctCount: 3
+    text: >
+      A company needs to remove hardcoded database credentials from ECS Fargate tasks. The application
+      runs across multiple AZs, and credentials must rotate every 30 days without task redeployment.
+      Which THREE actions are required?
+    options:
+      - id: A
+        text: Store database credentials in AWS Secrets Manager with automatic rotation enabled
+      - id: B
+        text: Configure ECS task definitions to retrieve secrets from Secrets Manager using the secrets parameter
+      - id: C
+        text: Grant the ECS task execution role permissions to secretsmanager GetSecretValue
+      - id: D
+        text: Store credentials in Systems Manager Parameter Store and reference in task definitions
+      - id: E
+        text: Create Lambda to update ECS task definition environment variables when credentials rotate
+      - id: F
+        text: Modify application code to call Secrets Manager API for credentials at runtime
+    correctAnswer: [A, B, C]
+    explanation: >
+      The correct approach uses Secrets Manager native integration with ECS. Store credentials in Secrets
+      Manager with automatic rotation (A). Reference secrets in ECS task definitions using the 'secrets'
+      parameter (B), which injects secrets as environment variables at task startup. Grant the task
+      execution role secretsmanager:GetSecretValue permissions (C). When rotation occurs, newly launched
+      tasks automatically receive updated credentials without redeployment. ECS handles secret retrieval
+      at task launch. Parameter Store (D) doesn't support native automatic rotation. Option E is
+      unnecessary - ECS native integration handles this. Option F requires code changes when the native
+      integration works without code modifications.
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html
+    services: [AWS Secrets Manager, Amazon ECS, AWS IAM]
+    concepts: [secrets-management, ecs-integration, zero-code-change, automatic-rotation]
+
+  - id: sec-imp-013
+    type: single
+    text: >
+      A security team needs to validate a new IAM policy before production deployment. The policy should
+      be checked for security violations like using NotPrincipal with Allow, syntax errors, and overly
+      permissive actions. What AWS service provides this capability?
+    options:
+      - id: A
+        text: AWS Config with custom rules that evaluate IAM policy compliance
+      - id: B
+        text: IAM Access Analyzer policy validation API
+      - id: C
+        text: AWS Security Hub with IAM security standard enabled
+      - id: D
+        text: Amazon GuardDuty with IAM threat detection enabled
+    correctAnswer: B
+    explanation: >
+      IAM Access Analyzer provides policy validation through the ValidatePolicy API. It checks policies
+      against AWS best practices and returns: (1) ERROR for syntax errors, (2) SECURITY_WARNING for
+      issues like NotPrincipal with Allow or missing conditions on sensitive actions, (3) WARNING for
+      non-optimal patterns, and (4) SUGGESTION for improvements. This integrates into CI/CD pipelines
+      to validate policies before deployment (shift-left security). Config (A) checks compliance of
+      deployed resources, not pre-deployment validation. Security Hub (C) aggregates findings but doesn't
+      validate policies pre-deployment. GuardDuty (D) detects runtime threats, not policy validation.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-validation.html
+    services: [IAM Access Analyzer, AWS IAM]
+    concepts: [policy-validation, security-best-practices, shift-left-security, ci-cd-integration]
+
+  - id: sec-imp-014
+    type: single
+    text: >
+      Amazon Macie discovered several S3 buckets containing credit card numbers. The company needs
+      automated response to encrypt these buckets with KMS, add a sensitivity tag, and notify the data
+      protection officer. What is the BEST automated solution?
+    options:
+      - id: A
+        text: Macie finding to Security Hub for manual remediation by security team
+      - id: B
+        text: Macie finding to EventBridge to Lambda that enables KMS encryption, adds tag, and publishes SNS notification
+      - id: C
+        text: Macie finding to CloudWatch Logs to CloudWatch Alarm to SNS for manual remediation
+      - id: D
+        text: Scheduled Lambda function that queries Macie findings API and remediates buckets
+    correctAnswer: B
+    explanation: >
+      EventBridge integration with Lambda provides real-time automated remediation. Macie publishes
+      findings to EventBridge as they're discovered. Create an EventBridge rule matching Macie sensitive
+      data findings (detail-type: "Macie Finding", severity: HIGH/MEDIUM). Target a Lambda function that:
+      (1) enables default S3 bucket encryption with KMS key using PutBucketEncryption, (2) adds a tag
+      like DataClassification=Sensitive, and (3) publishes SNS notification to DPO. This executes
+      immediately upon discovery. Option A is manual. Option C requires log parsing and is manual.
+      Option D introduces delay and is less efficient than event-driven automation.
+    awsDocLink: https://docs.aws.amazon.com/macie/latest/user/findings-publish-event-schemas.html
+    services: [Amazon Macie, Amazon EventBridge, AWS Lambda, Amazon S3, AWS KMS, Amazon SNS]
+    concepts: [automated-remediation, data-protection, event-driven-security, real-time-response]
+
+  - id: sec-imp-015
+    type: single
+    text: >
+      A company needs continuous evaluation against CIS AWS Foundations Benchmark across 60 accounts.
+      Findings should be prioritized by severity, aggregated with GuardDuty and Inspector findings, and
+      displayed in a unified dashboard. What combination of services accomplishes this?
+    options:
+      - id: A
+        text: AWS Config with CIS conformance pack to all accounts, findings to S3, analyzed with Athena
+      - id: B
+        text: AWS Security Hub with CIS AWS Foundations Benchmark standard enabled and delegated administrator for cross-account aggregation
+      - id: C
+        text: AWS Audit Manager with CIS framework enabled and findings exported to CloudWatch dashboard
+      - id: D
+        text: AWS Config aggregator with custom rules for each CIS control, Lambda for prioritization, QuickSight for visualization
+    correctAnswer: B
+    explanation: >
+      AWS Security Hub natively provides: (1) CIS AWS Foundations Benchmark as a built-in security
+      standard with automated compliance checks, (2) severity-based finding prioritization (CRITICAL,
+      HIGH, MEDIUM, LOW, INFORMATIONAL), (3) automatic aggregation of findings from Config (for CIS
+      checks), GuardDuty, Inspector, Macie, and other services, (4) delegated administrator model for
+      multi-account management, and (5) unified dashboard with custom insights capability. Security Hub
+      runs CIS checks using Config rules under the hood. Option A doesn't aggregate with GuardDuty/Inspector
+      or provide prioritization. Option C (Audit Manager) is for compliance evidence collection, not
+      continuous monitoring. Option D requires significant custom development for built-in Security Hub
+      functionality.
+    awsDocLink: https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-standards-cis.html
+    services: [AWS Security Hub, Amazon GuardDuty, Amazon Inspector, AWS Config]
+    concepts: [cis-benchmark, centralized-compliance, unified-security-dashboard, multi-account]
+
+  - id: sec-imp-016
+    type: single
+    text: >
+      A company discovered that developers are creating IAM users with console access but no MFA enabled.
+      They need to prevent this and ensure all existing IAM users with console access have MFA enabled.
+      What combination provides both preventive and corrective controls?
+    options:
+      - id: A
+        text: Deploy an SCP requiring MFA for all console access and use Config rule with automatic remediation to enable MFA
+      - id: B
+        text: Create an SCP denying IAM CreateLoginProfile without MFA and enable Config rule mfa-enabled-for-iam-console-access with SNS notifications
+      - id: C
+        text: Use EventBridge to detect IAM user creation and trigger Lambda to enforce MFA requirement
+      - id: D
+        text: Enable AWS Config rule requiring MFA and manually remediate non-compliant users
+    correctAnswer: B
+    explanation: >
+      This requires both preventive and detective controls. The SCP (B) prevents creating console access
+      for IAM users without MFA (preventive control). The Config rule mfa-enabled-for-iam-console-access
+      continuously monitors existing users (detective control) and SNS notifications alert security teams
+      to remediate non-compliant users. Note: MFA cannot be automatically enabled via Config remediation
+      because it requires user interaction (physical MFA device registration). Option A is incorrect
+      because MFA can't be auto-enabled. Option C only addresses new users. Option D lacks prevention.
+      SCPs provide organization-wide enforcement that can't be overridden.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/mfa-enabled-for-iam-console-access.html
+    services: [AWS Organizations, AWS Config, Amazon SNS, AWS IAM]
+    concepts: [preventive-controls, detective-controls, mfa-enforcement, scps]
+
+  - id: sec-imp-017
+    type: multi
+    correctCount: 2
+    text: >
+      A security team needs to track all API calls made to AWS services across 100 accounts for
+      compliance auditing, investigate security incidents, and identify unusual API activity patterns.
+      Which TWO services should they use together?
+    options:
+      - id: A
+        text: AWS CloudTrail with organization trail sending logs to centralized S3 bucket in logging account
+      - id: B
+        text: Amazon GuardDuty to analyze CloudTrail logs for anomalous API activity
+      - id: C
+        text: AWS Config to record all API calls and configuration changes
+      - id: D
+        text: Amazon CloudWatch Logs Insights to query API activity patterns
+      - id: E
+        text: VPC Flow Logs to track API calls at network level
+    correctAnswer: [A, B]
+    explanation: >
+      CloudTrail with organization trail (A) records all API activity across all accounts and sends logs
+      to a centralized S3 bucket in a dedicated logging account for compliance auditing and incident
+      investigation. GuardDuty (B) automatically analyzes CloudTrail event logs using ML to detect
+      anomalous API activity like credential misuse, privilege escalation attempts, and unusual API call
+      patterns without manual rule creation. This combination provides comprehensive API auditing and
+      intelligent threat detection. Config (C) tracks resource configurations, not all API calls. Option
+      D requires manual query creation for anomaly detection. VPC Flow Logs (E) capture network traffic,
+      not API calls.
+    awsDocLink: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
+    services: [AWS CloudTrail, Amazon GuardDuty, AWS Organizations, Amazon S3]
+    concepts: [api-auditing, threat-detection, centralized-logging, compliance-auditing]
+
+  - id: sec-imp-018
+    type: single
+    text: >
+      A company uses AWS Systems Manager Parameter Store for application configuration. They need to
+      ensure database passwords stored as SecureString parameters are rotated every 60 days with
+      automatic notifications 7 days before expiration. What is the BEST approach?
+    options:
+      - id: A
+        text: Use Parameter Store advanced parameters with expiration policies and ExpirationNotification events to EventBridge
+      - id: B
+        text: Create Lambda function that rotates parameters on schedule and sends SNS notifications
+      - id: C
+        text: Migrate to AWS Secrets Manager for native automatic rotation capability
+      - id: D
+        text: Use AWS Config rule to detect parameters older than 60 days and trigger remediation
+    correctAnswer: C
+    explanation: >
+      AWS Secrets Manager is the correct choice for this requirement. Secrets Manager provides native
+      automatic rotation with built-in Lambda templates for RDS databases and custom rotation for other
+      services. It manages the complete rotation lifecycle including testing before finalization. While
+      Parameter Store advanced parameters (A) support expiration policies and notifications, they do NOT
+      support automatic rotation - you still need to manually update the parameter or build custom Lambda
+      functions. For database credentials requiring automatic rotation, Secrets Manager is the AWS-recommended
+      service. Option B requires custom code for native functionality. Option D only detects, doesn't
+      rotate.
+    awsDocLink: https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
+    services: [AWS Secrets Manager, AWS Systems Manager, AWS Lambda]
+    concepts: [secrets-rotation, automatic-rotation, lifecycle-management, managed-services]
+
+  - id: sec-imp-019
+    type: single
+    text: >
+      A financial services company needs to demonstrate compliance with multiple regulatory frameworks
+      (PCI DSS, SOC 2, GDPR). They require automated evidence collection, assignment of controls to team
+      members, and generation of audit-ready reports. What AWS service is designed for this use case?
+    options:
+      - id: A
+        text: AWS Security Hub with multiple compliance standards enabled
+      - id: B
+        text: AWS Audit Manager with pre-built frameworks for PCI DSS, SOC 2, and GDPR
+      - id: C
+        text: AWS Config with conformance packs for each compliance framework
+      - id: D
+        text: AWS Artifact to download compliance reports and third-party attestations
+    correctAnswer: B
+    explanation: >
+      AWS Audit Manager is specifically designed for audit preparation and compliance evidence collection.
+      It provides pre-built frameworks for PCI DSS, SOC 2, GDPR, HIPAA, and other standards. Audit
+      Manager automatically collects evidence from AWS services (CloudTrail, Config, Security Hub), maps
+      evidence to compliance controls, allows assignment of controls to team members for review, and
+      generates audit-ready assessment reports. Security Hub (A) monitors security posture but doesn't
+      collect evidence or generate audit reports. Config conformance packs (C) check compliance but don't
+      manage the audit process or evidence collection workflow. AWS Artifact (D) provides access to AWS
+      compliance reports, not customer evidence collection.
+    awsDocLink: https://docs.aws.amazon.com/audit-manager/latest/userguide/what-is.html
+    services: [AWS Audit Manager, AWS CloudTrail, AWS Config, AWS Security Hub]
+    concepts: [compliance-auditing, evidence-collection, audit-preparation, regulatory-frameworks]
+
+  - id: sec-imp-020
+    type: multi
+    correctCount: 3
+    text: >
+      A company wants to implement a comprehensive data protection strategy for their S3 buckets across
+      all accounts. They need to prevent public access, detect sensitive data, encrypt all buckets, and
+      monitor for policy changes. Which THREE actions are required?
+    options:
+      - id: A
+        text: Enable S3 Block Public Access at the organization level via AWS Organizations
+      - id: B
+        text: Deploy Amazon Macie with continuous sensitive data discovery jobs across all buckets
+      - id: C
+        text: Create Config rules for s3-bucket-public-read-prohibited and s3-default-encryption-kms with automatic remediation
+      - id: D
+        text: Enable S3 Versioning on all buckets to protect against accidental deletion
+      - id: E
+        text: Configure S3 Object Lock for all buckets to prevent data modification
+      - id: F
+        text: Use CloudTrail to monitor all S3 API calls and bucket policy changes
+    correctAnswer: [A, B, C]
+    explanation: >
+      A comprehensive data protection strategy requires multiple layers. S3 Block Public Access at the
+      organization level (A) provides a preventive control that overrides bucket policies and ACLs,
+      preventing public access across all accounts. Amazon Macie (B) continuously discovers and classifies
+      sensitive data using ML, providing visibility into what data exists and where. Config rules (C)
+      enforce encryption and public access settings with automatic remediation to fix drift. Together,
+      these provide prevention, detection, and correction. Versioning (D) is useful for backup but not
+      part of comprehensive security. Object Lock (E) is for compliance retention, not general security.
+      CloudTrail (F) provides audit logs but is already implied in options A-C for monitoring.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html
+    services: [Amazon S3, AWS Organizations, Amazon Macie, AWS Config, AWS CloudTrail]
+    concepts: [data-protection, defense-in-depth, preventive-controls, detective-controls]

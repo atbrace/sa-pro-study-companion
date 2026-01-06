@@ -1,0 +1,49 @@
+id: database-migration
+name: Database Migration Strategies
+shortName: Database Migration
+examTask: task-4-2
+description: >
+  Design and implement database migration strategies using AWS DMS, Schema Conversion Tool,
+  and native database tools. Covers homogeneous and heterogeneous migrations, change data
+  capture, zero-downtime patterns, and large-scale data transfers.
+
+estimatedStudyTime: 150
+difficulty: advanced
+
+keyServices:
+  - AWS Database Migration Service (DMS)
+  - AWS Schema Conversion Tool (SCT)
+  - AWS Snowball Edge
+  - Amazon RDS
+  - Amazon Aurora
+  - AWS DataSync
+  - Amazon S3
+
+keyConcepts:
+  - Homogeneous vs heterogeneous migrations
+  - Change Data Capture (CDC)
+  - Zero-downtime migration patterns
+  - Schema conversion strategies
+  - Replication instance sizing
+  - Snowball Edge for large transfers
+  - Migration validation and testing
+  - Cutover strategies
+  - Network optimization for migrations
+
+awsDocLinks:
+  - title: AWS Database Migration Service User Guide
+    url: https://docs.aws.amazon.com/dms/latest/userguide/
+    type: doc
+  - title: AWS Schema Conversion Tool User Guide
+    url: https://docs.aws.amazon.com/SchemaConversionTool/latest/userguide/
+    type: doc
+  - title: Database Migration Best Practices
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-database/
+    type: whitepaper
+  - title: AWS DMS Best Practices
+    url: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_BestPractices.html
+    type: doc
+
+relatedExperiments:
+  - lab-dms-migration
+  - lab-aurora-migration

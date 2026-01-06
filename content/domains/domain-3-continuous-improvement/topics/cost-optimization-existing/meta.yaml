@@ -1,0 +1,51 @@
+id: cost-optimization-existing
+name: Cost Optimization for Existing Solutions
+shortName: Cost Optimization
+examTask: task-3-5
+description: >
+  Analyze and optimize costs for existing AWS solutions using Trusted Advisor,
+  Compute Optimizer, Cost Explorer, and right-sizing strategies without
+  compromising performance or reliability.
+
+estimatedStudyTime: 75
+difficulty: intermediate
+
+keyServices:
+  - AWS Trusted Advisor
+  - AWS Compute Optimizer
+  - AWS Cost Explorer
+  - AWS Cost and Usage Reports
+  - AWS Budgets
+  - Amazon S3 Intelligent-Tiering
+  - AWS Savings Plans
+  - Amazon EC2 Reserved Instances
+
+keyConcepts:
+  - Trusted Advisor cost optimization checks
+  - Right-sizing recommendations
+  - Unused resource identification
+  - Storage lifecycle optimization
+  - Reserved capacity analysis
+  - Cost allocation and tagging
+  - Savings Plans vs Reserved Instances
+  - Cost anomaly detection
+
+awsDocLinks:
+  - title: AWS Trusted Advisor Documentation
+    url: https://docs.aws.amazon.com/awssupport/latest/user/trusted-advisor.html
+    type: doc
+  - title: AWS Compute Optimizer Documentation
+    url: https://docs.aws.amazon.com/compute-optimizer/latest/ug/
+    type: doc
+  - title: AWS Cost Management User Guide
+    url: https://docs.aws.amazon.com/cost-management/latest/userguide/
+    type: doc
+  - title: Cost Optimization Pillar - AWS Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/
+    type: whitepaper
+  - title: AWS Cost Optimization Best Practices
+    url: https://aws.amazon.com/pricing/cost-optimization/
+    type: doc
+
+relatedExperiments:
+  - lab-cost-optimization

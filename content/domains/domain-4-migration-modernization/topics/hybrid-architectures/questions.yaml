@@ -1,0 +1,490 @@
+questions:
+  - id: hybrid-dx-resilience-001
+    type: multi
+    correctCount: 2
+    text: |
+      A financial services company requires maximum resilience for their hybrid connectivity to AWS. They have critical workloads that cannot tolerate more than 30 seconds of network downtime. Their primary data center in New York handles 5 TB of data transfer to AWS daily, and they have a secondary data center in Chicago.
+
+      Which solutions provide the highest level of resilience for this scenario? (Select TWO)
+    options:
+      - id: A
+        text: Establish two Direct Connect connections at the same Direct Connect location in New York with BGP routing
+      - id: B
+        text: Establish Direct Connect connections at two different Direct Connect locations (one in New York, one in New Jersey) with BGP routing
+      - id: C
+        text: Use a primary Direct Connect connection with a VPN connection as backup, configured with BGP to prefer Direct Connect
+      - id: D
+        text: Implement four Direct Connect connections across two locations (two in New York, two in Chicago) attached to Transit Gateway
+      - id: E
+        text: Use AWS Global Accelerator with VPN connections from both data centers for automatic failover
+    correctAnswer: [B, D]
+    explanation: |
+      Maximum resilience for Direct Connect requires connections at multiple physically separate locations to protect against location-level failures. Option B provides resilience against a single location failure with connections in New York and New Jersey. Option D provides the highest resilience with geographic diversity (New York and Chicago) and redundancy at each location, protecting against both location and device failures.
+
+      Option A only protects against device failure, not location failure. Option C uses VPN as backup which doesn't meet the performance requirements for 5 TB daily. Option E uses VPN which cannot handle the bandwidth requirements and introduces internet-dependent latency.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/resilency_toolkit.html
+    services: [AWS Direct Connect, AWS Transit Gateway]
+
+  - id: hybrid-storage-gateway-002
+    type: single
+    text: |
+      A healthcare organization needs to migrate their on-premises radiology imaging system to AWS. The system currently stores 200 TB of DICOM images on a NAS device accessed via NFS. The clinical staff needs low-latency access to recent images (last 30 days, approximately 15 TB), while older images are accessed infrequently. Images must be retained for 7 years for compliance.
+
+      Which Storage Gateway configuration best meets these requirements?
+    options:
+      - id: A
+        text: File Gateway with S3 Standard storage class and a lifecycle policy to transition objects to S3 Glacier Deep Archive after 30 days
+      - id: B
+        text: File Gateway with S3 Intelligent-Tiering and a 15 TB local cache, with lifecycle policy to Glacier Deep Archive after 7 years
+      - id: C
+        text: Volume Gateway in Cached Volumes mode with 15 TB local cache and snapshots to S3
+      - id: D
+        text: Volume Gateway in Stored Volumes mode with complete dataset on-premises and asynchronous backup to S3
+    correctAnswer: A
+    explanation: |
+      File Gateway is the correct choice because the current system uses NFS, which File Gateway supports natively. With a proper cache size, recent images (15 TB) are cached locally for low-latency access, while all data is stored in S3. The lifecycle policy automatically transitions objects to Glacier Deep Archive after 30 days for cost optimization while meeting the 7-year retention requirement.
+
+      Option B uses Intelligent-Tiering which doesn't transition to Glacier Deep Archive (only to Archive and Deep Archive Access tiers within Intelligent-Tiering) and the 7-year lifecycle doesn't optimize for 30-day access pattern. Option C (Cached Volumes) uses iSCSI block storage, not NFS, requiring application changes. Option D (Stored Volumes) keeps 200 TB on-premises which doesn't align with migration goals and is costly.
+    awsDocLink: https://docs.aws.amazon.com/storagegateway/latest/userguide/WhatIsStorageGateway.html
+    services: [AWS Storage Gateway, Amazon S3, S3 Glacier]
+
+  - id: hybrid-datasync-003
+    type: single
+    text: |
+      A media company needs to transfer 500 TB of video content from their on-premises production environment to Amazon S3 for cloud-based rendering. They have a 10 Gbps Direct Connect connection. The transfer must complete within 5 days, and they need to verify data integrity. The on-premises storage uses SMB protocol.
+
+      What is the most efficient solution for this data transfer?
+    options:
+      - id: A
+        text: Deploy multiple AWS DataSync agents with scheduled tasks, using VPC endpoints over Direct Connect for private connectivity
+      - id: B
+        text: Use Storage Gateway File Gateway to expose S3 as SMB share and copy files directly
+      - id: C
+        text: Order multiple AWS Snowball Edge devices and ship data to AWS
+      - id: D
+        text: Use AWS Transfer Family with SFTP to upload files over Direct Connect
+    correctAnswer: A
+    explanation: |
+      AWS DataSync is designed for large-scale data transfers with built-in data integrity verification. With a 10 Gbps Direct Connect connection and multiple agents, DataSync can achieve sufficient throughput to transfer 500 TB within 5 days (requires ~900 Gbps sustained, achievable with 1-2 optimized agents). DataSync natively supports SMB, includes automatic checksum validation, and can use VPC endpoints for private connectivity over Direct Connect.
+
+      Option B (File Gateway) is for ongoing hybrid storage integration, not optimized for large initial migrations. Option C (Snowball Edge) is unnecessary given the available 10 Gbps network and would take longer considering shipping time. Option D (Transfer Family) is not optimized for bulk transfers and doesn't provide the same performance or built-in verification as DataSync.
+    awsDocLink: https://docs.aws.amazon.com/datasync/latest/userguide/how-datasync-works.html
+    services: [AWS DataSync, AWS Direct Connect, Amazon S3]
+
+  - id: hybrid-snow-family-004
+    type: multi
+    correctCount: 2
+    text: |
+      An oil and gas company needs to collect and process seismic sensor data at remote drilling sites with no reliable internet connectivity. Each site generates 5-10 TB of data daily that must be processed locally for real-time decisions, then transferred to AWS monthly for long-term analysis. Some sites have limited space and power.
+
+      Which solutions should the architect recommend? (Select TWO)
+    options:
+      - id: A
+        text: Deploy AWS Snowball Edge Storage Optimized at each site with local EC2 instances for data processing
+      - id: B
+        text: Deploy AWS Snowcone SSD devices with local processing capabilities and ship devices monthly
+      - id: C
+        text: Deploy AWS Snowball Edge Compute Optimized at each site for enhanced processing capabilities
+      - id: D
+        text: Deploy AWS Outposts at each remote site for consistent AWS services
+      - id: E
+        text: Use AWS DataSync agents with scheduled offline mode transfers
+    correctAnswer: [B, C]
+    explanation: |
+      Option B (Snowcone SSD) is ideal for sites with limited space and power constraints, providing 14 TB SSD storage and 2 vCPUs for local processing. Option C (Snowball Edge Compute Optimized) is suitable for sites with more space, offering 52 vCPUs and 208 GiB memory for enhanced local processing, plus 42 TB HDD storage adequate for 30 days of data (10 TB/day × 30 = 300 TB, use multiple devices or ship more frequently).
+
+      Option A (Storage Optimized) has less compute capacity than Compute Optimized variant. Option D (Outposts) requires reliable network connectivity to AWS region, which contradicts the "no reliable internet" requirement. Option E (DataSync) cannot function without network connectivity to AWS.
+    awsDocLink: https://docs.aws.amazon.com/snowball/latest/developer-guide/device-differences.html
+    services: [AWS Snowcone, AWS Snowball Edge]
+
+  - id: hybrid-outposts-005
+    type: single
+    text: |
+      A manufacturing company must process sensitive production data on-premises due to data sovereignty regulations, but wants to use AWS services and tools. They need to run containerized applications with Amazon EKS, store data in Amazon RDS PostgreSQL with <10ms latency, and integrate with their existing on-premises network (192.168.0.0/16). They have space for a 42U rack and reliable 10 Gbps connectivity to the AWS region.
+
+      Which solution meets these requirements?
+    options:
+      - id: A
+        text: Deploy VMware Cloud on AWS in the nearest AWS region and use Direct Connect for low-latency connectivity
+      - id: B
+        text: Deploy AWS Outpost rack with EKS and RDS, configure Local Gateway for on-premises network integration using customer-owned IP addresses
+      - id: C
+        text: Use AWS Snowball Edge Compute Optimized cluster with ECS and containerized PostgreSQL
+      - id: D
+        text: Deploy EC2 instances on-premises and use AWS Systems Manager for management consistency
+    correctAnswer: B
+    explanation: |
+      AWS Outposts provides native AWS services (EKS, RDS) running on-premises to meet data sovereignty requirements while delivering the <10ms latency needed. The Local Gateway enables integration with the on-premises network (192.168.0.0/16), and customer-owned IP addresses (CoIP) allow using on-premises IP space for Outpost resources. This provides true AWS services with on-premises deployment.
+
+      Option A (VMware Cloud on AWS) runs in AWS region, not on-premises, violating data sovereignty. Option C (Snowball Edge) doesn't support native EKS or RDS, only EC2 and requires custom PostgreSQL deployment. Option D doesn't provide AWS-native EKS or RDS services.
+    awsDocLink: https://docs.aws.amazon.com/outposts/latest/userguide/what-is-outposts.html
+    services: [AWS Outposts, Amazon EKS, Amazon RDS]
+
+  - id: hybrid-vmware-cloud-006
+    type: single
+    text: |
+      A company is running 500 VMware virtual machines on-premises and wants to migrate to AWS with minimal downtime. They need to maintain their existing VMware vCenter management, use VMware vMotion for live migration, and integrate with AWS native services like Amazon S3 and Amazon RDS after migration. Their operations team has deep VMware expertise but limited AWS experience.
+
+      What is the most appropriate migration strategy?
+    options:
+      - id: A
+        text: Re-platform applications to run on Amazon EC2 using AWS Application Migration Service
+      - id: B
+        text: Deploy VMware Cloud on AWS, use VMware HCX for live migration, and integrate AWS services via ENI
+      - id: C
+        text: Convert VMware VMs to AMIs using VM Import/Export, then launch as EC2 instances
+      - id: D
+        text: Deploy AWS Outposts with VMware support and migrate VMs to Outposts environment
+    correctAnswer: B
+    explanation: |
+      VMware Cloud on AWS is purpose-built for this scenario. It provides native VMware environment (vSphere, vCenter, vSAN, NSX) running on AWS infrastructure, allowing the team to use existing VMware skills. VMware HCX enables live migration with vMotion for minimal downtime. AWS service integration via Elastic Network Interface (ENI) provides access to S3, RDS, and other AWS services while maintaining VMware management.
+
+      Option A requires re-platforming which contradicts "minimal downtime" and doesn't leverage existing VMware expertise. Option C requires VM conversion and restart (downtime) and loses VMware management. Option D (Outposts) doesn't provide native VMware support—it runs AWS services on-premises, not VMware workloads.
+    awsDocLink: https://docs.aws.amazon.com/vmware-cloud/latest/userguide/what-is-vmware-cloud.html
+    services: [VMware Cloud on AWS, VMware HCX]
+
+  - id: hybrid-transit-gateway-007
+    type: multi
+    correctCount: 3
+    text: |
+      A global enterprise is designing a hybrid architecture with VPCs in three AWS regions (us-east-1, eu-west-1, ap-southeast-1), two on-premises data centers (New York and London), and segregated environments for production, development, and shared services. They require production isolation while allowing development to access shared services.
+
+      Which components are required for this architecture? (Select THREE)
+    options:
+      - id: A
+        text: Transit Gateway in each region with inter-region peering between all three Transit Gateways
+      - id: B
+        text: Multiple Transit Gateway route tables in each region for production, development, and shared services segregation
+      - id: C
+        text: Direct Connect connections from each data center to their nearest region, with Transit VIFs to Transit Gateway
+      - id: D
+        text: VPC peering between all VPCs across regions for direct connectivity
+      - id: E
+        text: AWS PrivateLink endpoints in each VPC for cross-region communication
+      - id: F
+        text: Virtual Private Gateway in each VPC with VPN connections to on-premises
+    correctAnswer: [A, B, C]
+    explanation: |
+      This architecture requires: (A) Transit Gateway in each region with inter-region peering for global connectivity, (B) multiple route tables within each Transit Gateway to enforce segregation (production isolated, development can access shared services), and (C) Direct Connect with Transit VIFs to connect on-premises data centers to Transit Gateway for hybrid connectivity.
+
+      Option D (VPC peering) doesn't scale well and doesn't provide the routing segregation needed—Transit Gateway is the correct solution. Option E (PrivateLink) is for accessing specific services, not general network connectivity. Option F (VPG per VPC) doesn't scale and requires separate connections, whereas Transit Gateway centralizes hybrid connectivity.
+    awsDocLink: https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html
+    services: [AWS Transit Gateway, AWS Direct Connect]
+
+  - id: hybrid-dx-vif-types-008
+    type: single
+    text: |
+      An architecture team is designing Direct Connect connectivity for multiple use cases: connecting to 50 VPCs across 5 regions, accessing S3 and DynamoDB without internet traversal, and maintaining private connectivity to CloudFront distributions. Their on-premises network uses BGP with AS number 65000.
+
+      Which Direct Connect Virtual Interface (VIF) configuration supports all these requirements?
+    options:
+      - id: A
+        text: Create one Private VIF connected to a Virtual Private Gateway in each VPC, and one Public VIF for AWS public services
+      - id: B
+        text: Create one Transit VIF to Direct Connect Gateway with Transit Gateway in each region, and one Public VIF for S3, DynamoDB, and CloudFront
+      - id: C
+        text: Create multiple Private VIFs to Direct Connect Gateway spanning all regions, and use VPC endpoints for S3 and DynamoDB
+      - id: D
+        text: Create one Transit VIF with BGP to Transit Gateway, and use AWS PrivateLink for all service access
+    correctAnswer: B
+    explanation: |
+      Transit VIF connected to Transit Gateway (via Direct Connect Gateway) scales to 50 VPCs across multiple regions efficiently. Public VIF provides private access to AWS public services (S3, DynamoDB, CloudFront) without internet traversal. This configuration uses BGP routing and scales effectively.
+
+      Option A doesn't scale—creating 50 Private VIFs is impractical (Direct Connect supports limited VIFs per connection). Option C misunderstands Private VIF—you cannot connect multiple Private VIFs to a single Direct Connect Gateway spanning regions; this requires Transit VIF. Option D is incorrect—PrivateLink doesn't provide access to S3, DynamoDB, and CloudFront privately from on-premises; Public VIF is required for these public services.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/WorkingWithVirtualInterfaces.html
+    services: [AWS Direct Connect, AWS Transit Gateway, Direct Connect Gateway]
+
+  - id: hybrid-storage-gateway-modes-009
+    type: single
+    text: |
+      A database administrator needs to migrate an on-premises SQL Server database (8 TB) to AWS. During migration, the database must remain operational on-premises with full local performance, while maintaining a continuous backup in AWS for disaster recovery. After migration completes, they plan to launch the database on EC2 from the AWS backup.
+
+      Which Storage Gateway configuration is most appropriate for this migration approach?
+    options:
+      - id: A
+        text: File Gateway with SMB sharing backed by S3, using AWS Backup for SQL Server
+      - id: B
+        text: Volume Gateway in Stored Volumes mode with asynchronous snapshots to EBS
+      - id: C
+        text: Volume Gateway in Cached Volumes mode with data primarily in S3
+      - id: D
+        text: Tape Gateway with virtual tape backup to S3 and Glacier
+    correctAnswer: B
+    explanation: |
+      Volume Gateway in Stored Volumes mode keeps the complete dataset on-premises (providing full local performance for the operational database) while asynchronously backing up snapshots to Amazon EBS in AWS. These EBS snapshots can then be used to create EBS volumes for the EC2-based SQL Server after migration. This provides both operational continuity and a migration path.
+
+      Option A (File Gateway) is not suitable for block-level database storage—SQL Server requires block storage, not file storage. Option C (Cached Volumes) stores primary data in S3 with only frequently accessed data cached locally, which would degrade on-premises database performance. Option D (Tape Gateway) is for backup applications using tape format, not for live database operations.
+    awsDocLink: https://docs.aws.amazon.com/storagegateway/latest/userguide/StorageGatewayConcepts.html
+    services: [AWS Storage Gateway, Amazon EBS]
+
+  - id: hybrid-datasync-filtering-010
+    type: multi
+    correctCount: 2
+    text: |
+      A research organization needs to sync 100 TB of genomics data from on-premises NFS storage to Amazon S3. The data includes raw sequencing files (.fastq), processed analysis files (.bam, .vcf), and metadata (.xml, .json). They only want to transfer processed files and metadata, excluding raw sequencing data. Transfers should occur nightly during off-peak hours, and they need to verify all transferred files for integrity.
+
+      Which AWS DataSync configurations are required? (Select TWO)
+    options:
+      - id: A
+        text: Configure DataSync task with include filters for *.bam, *.vcf, *.xml, *.json file patterns
+      - id: B
+        text: Configure DataSync task with exclude filter for *.fastq file pattern
+      - id: C
+        text: Enable verification mode to "Check all objects in the source and destination" with FULL verification level
+      - id: D
+        text: Configure task schedule to run daily during specified time window with bandwidth limiting
+      - id: E
+        text: Deploy multiple DataSync agents in cluster mode for parallel transfers
+    correctAnswer: [A, D]
+    explanation: |
+      Option A configures include filters to select only the desired file types (.bam, .vcf, .xml, .json), ensuring only processed files and metadata are transferred. Option D sets up scheduled transfers during off-peak hours with optional bandwidth limiting to avoid network congestion.
+
+      Option B (exclude filter for .fastq) would work but is less precise than include filters—if new raw data formats are added, they would be transferred unless explicitly excluded. Include filters are the better approach. Option C is partially correct but uses wrong terminology—DataSync verification is always enabled by default with checksum validation, and there's no "FULL verification level" setting. Option E (agent clustering) is not a DataSync feature—multiple agents can be deployed for different sources but not in cluster mode.
+    awsDocLink: https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html
+    services: [AWS DataSync, Amazon S3]
+
+  - id: hybrid-dx-lag-011
+    type: single
+    text: |
+      A financial trading firm requires consistent 40 Gbps bandwidth between their data center and AWS for real-time market data processing. They want to protect against individual connection failures while maximizing bandwidth utilization. Their Direct Connect location supports 10 Gbps connections.
+
+      What is the most appropriate Direct Connect configuration?
+    options:
+      - id: A
+        text: Order one 100 Gbps Direct Connect connection with bandwidth throttling configured to 40 Gbps
+      - id: B
+        text: Order four 10 Gbps connections and configure them as a Link Aggregation Group (LAG)
+      - id: C
+        text: Order four 10 Gbps connections and use BGP multipathing for load distribution
+      - id: D
+        text: Order two 100 Gbps connections and use one as primary and one as standby
+    correctAnswer: B
+    explanation: |
+      Link Aggregation Group (LAG) allows combining multiple physical connections into a single logical connection using LACP. Four 10 Gbps connections in a LAG provide 40 Gbps aggregate bandwidth with automatic failover if any single connection fails. LAG operates at layer 2 for efficient load distribution across all active connections.
+
+      Option A (100 Gbps connection) is available but cannot be throttled to 40 Gbps, and is more expensive than needed. Option C (BGP multipathing) works for redundancy but requires configuring equal-cost multipath routing and is less efficient than LAG for this use case. Option D (two 100 Gbps) vastly exceeds requirements (200 Gbps total) and is cost-prohibitive.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/lags.html
+    services: [AWS Direct Connect]
+
+  - id: hybrid-outposts-networking-012
+    type: multi
+    correctCount: 2
+    text: |
+      A retail company deployed an AWS Outpost rack to run point-of-sale applications with single-digit millisecond latency requirements. The Outpost needs to communicate with both the local on-premises network (10.0.0.0/8) and VPCs in the parent AWS region. The on-premises network uses existing IP addressing that cannot change.
+
+      Which networking components are required? (Select TWO)
+    options:
+      - id: A
+        text: Local Gateway to route traffic between Outpost and on-premises network
+      - id: B
+        text: Customer-Owned IP (CoIP) pool to assign on-premises IP addresses to Outpost resources
+      - id: C
+        text: Virtual Private Gateway attached to Outpost subnets for AWS region connectivity
+      - id: D
+        text: Transit Gateway attachment for Outpost subnets
+      - id: E
+        text: AWS Direct Connect from Outpost to AWS region
+    correctAnswer: [A, B]
+    explanation: |
+      Option A (Local Gateway) is required to route traffic between the Outpost and the on-premises network. Option B (Customer-Owned IP pool/CoIP) allows Outpost resources to use IP addresses from the on-premises IP range (10.0.0.0/8), maintaining compatibility with existing network addressing.
+
+      Option C (Virtual Private Gateway) is not used with Outposts—the VPC extension from the region inherently includes connectivity to the parent region. Option D (Transit Gateway attachment) is not applicable—Outpost subnets are part of the regional VPC and communicate via the service link. Option E (Direct Connect from Outpost) is incorrect—Outposts use a service link connection to the parent region, not Direct Connect.
+    awsDocLink: https://docs.aws.amazon.com/outposts/latest/userguide/how-outposts-works.html
+    services: [AWS Outposts, Local Gateway]
+
+  - id: hybrid-snowball-clustering-013
+    type: single
+    text: |
+      A genomics research facility needs durable local storage for 500 TB of sequencing data with S3-compatible API access. The data must remain on-premises for low-latency analysis but also needs to be highly available across device failures. They have reliable internet connectivity but insufficient bandwidth for continuous cloud storage sync.
+
+      Which solution provides the required capabilities?
+    options:
+      - id: A
+        text: Deploy Storage Gateway File Gateway with 500 TB local cache and S3 backend
+      - id: B
+        text: Deploy AWS Snowball Edge Storage Optimized cluster of 7 devices with S3-compatible storage
+      - id: C
+        text: Deploy AWS Outposts rack with S3 on Outposts service
+      - id: D
+        text: Deploy multiple Snowcone devices with local S3-compatible storage
+    correctAnswer: B
+    explanation: |
+      AWS Snowball Edge devices support clustering (5-10 devices) to create a durable, highly available, S3-compatible storage pool on-premises. With 7 Storage Optimized devices (80 TB each), the cluster provides 560 TB raw capacity with durability across device failures. The S3-compatible API allows applications to use familiar S3 operations locally.
+
+      Option A (File Gateway) requires continuous or frequent connectivity to S3 for durability, which contradicts "insufficient bandwidth for continuous cloud storage sync." Option C (Outposts with S3 on Outposts) requires reliable low-latency connection to AWS region for control plane operations and is a larger commitment. Option D (Snowcone) devices don't support clustering and have insufficient capacity (8-14 TB each).
+    awsDocLink: https://docs.aws.amazon.com/snowball/latest/developer-guide/UsingCluster.html
+    services: [AWS Snowball Edge]
+
+  - id: hybrid-vpn-cloudHub-014
+    type: single
+    text: |
+      A global company has 12 regional offices that need to communicate with each other and with AWS resources. Each office has a <100 Mbps internet connection. They want to establish connectivity without deploying dedicated networking equipment at each office, and they need all offices to communicate through AWS as a hub.
+
+      Which solution provides the most cost-effective hub-and-spoke connectivity?
+    options:
+      - id: A
+        text: Deploy Transit Gateway with VPN attachments from each office
+      - id: B
+        text: Use AWS VPN CloudHub with a single Virtual Private Gateway and VPN connections from each office using BGP
+      - id: C
+        text: Deploy Direct Connect with 12 VPN connections as backup
+      - id: D
+        text: Create VPC peering between a central VPC and 12 regional VPCs, with VPN to each regional VPC
+    correctAnswer: B
+    explanation: |
+      AWS VPN CloudHub is specifically designed for this hub-and-spoke scenario with multiple remote sites. It uses a single Virtual Private Gateway with multiple VPN connections, enabling sites to communicate with each other via AWS. CloudHub uses BGP to advertise routes between sites. This is cost-effective (only VPN connection charges, no Transit Gateway fees) and doesn't require additional on-premises equipment.
+
+      Option A (Transit Gateway) works but is more expensive due to Transit Gateway attachment and data processing charges, which are unnecessary for this simple hub-and-spoke with moderate bandwidth. Option C (Direct Connect) is not cost-effective for 12 offices with <100 Mbps requirements and has higher complexity. Option D creates management complexity with 12 VPN connections and 12 peering relationships, and doesn't enable site-to-site communication through AWS.
+    awsDocLink: https://docs.aws.amazon.com/vpn/latest/s2svpn/VPN_CloudHub.html
+    services: [AWS VPN, Virtual Private Gateway]
+
+  - id: hybrid-dx-macsec-015
+    type: single
+    text: |
+      A healthcare organization requires encrypted data in transit for their Direct Connect connection to meet HIPAA compliance. They have a 10 Gbps Direct Connect connection and need layer 2 encryption that doesn't impact application performance.
+
+      Which solution meets these requirements?
+    options:
+      - id: A
+        text: Enable MACsec encryption on the 10 Gbps Direct Connect connection
+      - id: B
+        text: Configure IPsec VPN over the Direct Connect connection using the public VIF
+      - id: C
+        text: Use TLS encryption at the application layer for all traffic over Direct Connect
+      - id: D
+        text: Deploy third-party encryption appliances on both ends of the Direct Connect connection
+    correctAnswer: A
+    explanation: |
+      MACsec (Media Access Control Security) provides layer 2 encryption natively on Direct Connect 10 Gbps and 100 Gbps connections. It encrypts data at the link layer with minimal performance impact, providing line-rate encryption. This meets HIPAA requirements for data in transit without application changes or additional overhead.
+
+      Option B (IPsec VPN over Direct Connect) adds encryption but introduces overhead, reduces effective throughput, and adds latency—not optimal when native MACsec is available. Option C (TLS at application layer) requires application modifications and doesn't provide comprehensive encryption for all traffic. Option D (third-party appliances) adds cost, complexity, and performance overhead when native MACsec is available.
+    awsDocLink: https://docs.aws.amazon.com/directconnect/latest/UserGuide/MACsec.html
+    services: [AWS Direct Connect]
+
+  - id: hybrid-multi-service-integration-016
+    type: multi
+    correctCount: 3
+    text: |
+      An enterprise is designing a comprehensive hybrid architecture with the following requirements: 150 VPCs across 4 regions, two on-premises data centers with 20 Gbps aggregate bandwidth requirement, on-premises file servers that need S3 integration, monthly transfer of 80 TB of archival data to AWS, and VMware workloads that need to be migrated with minimal refactoring.
+
+      Which combination of services satisfies all requirements? (Select THREE)
+    options:
+      - id: A
+        text: Transit Gateway in each region with inter-region peering and Transit VIFs from Direct Connect
+      - id: B
+        text: Storage Gateway File Gateway for on-premises file server S3 integration
+      - id: C
+        text: Multiple Snowball Edge devices for the monthly 80 TB archival transfers
+      - id: D
+        text: VMware Cloud on AWS for VMware workload migration
+      - id: E
+        text: AWS DataSync for ongoing 80 TB monthly archival transfers over Direct Connect
+      - id: F
+        text: AWS Outposts for running VMware workloads on-premises
+    correctAnswer: [A, B, E]
+    explanation: |
+      Option A (Transit Gateway with Transit VIFs) provides scalable connectivity for 150 VPCs across regions with hybrid connectivity from on-premises via Direct Connect. Option B (Storage Gateway File Gateway) enables on-premises file servers to integrate with S3 seamlessly. Option E (AWS DataSync) is optimal for recurring monthly 80 TB transfers over the existing Direct Connect connection—more efficient than shipping Snowball devices monthly.
+
+      Option C (Snowball Edge) is inefficient for recurring monthly transfers when 20 Gbps Direct Connect is available (80 TB monthly = ~300 Mbps average, well within capacity). Option D (VMware Cloud on AWS) is correct for VMware migration but the question asks for THREE answers. Option F (Outposts) doesn't address the migration requirement—it's for running AWS services on-premises, not migrating VMware workloads to AWS.
+
+      If the question asked for four answers, A, B, D, E would all be correct. With THREE answers required, A, B, E represent the core hybrid architecture, storage integration, and data transfer requirements.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/hybrid-cloud-with-aws/hybrid-cloud-with-aws.html
+    services: [AWS Transit Gateway, AWS Direct Connect, AWS Storage Gateway, AWS DataSync]
+
+  - id: hybrid-vpn-performance-017
+    type: single
+    text: |
+      A company is using Site-to-Site VPN for hybrid connectivity and needs to increase throughput from the current 1.25 Gbps (single tunnel) to 5 Gbps. They want to continue using VPN rather than Direct Connect due to quick setup requirements for new sites. The company uses AWS Transit Gateway for their VPC connectivity.
+
+      How can they achieve 5 Gbps VPN throughput?
+    options:
+      - id: A
+        text: Enable VPN acceleration using AWS Global Accelerator on existing VPN connection
+      - id: B
+        text: Create multiple VPN connections to Transit Gateway and enable Equal-Cost Multi-Path (ECMP) routing with BGP
+      - id: C
+        text: Upgrade to a Direct Connect connection with VPN backup
+      - id: D
+        text: Deploy multiple Virtual Private Gateways with VPN connections across different VPCs
+    correctAnswer: B
+    explanation: |
+      Transit Gateway supports ECMP (Equal-Cost Multi-Path) routing across multiple VPN connections. With ECMP, you can aggregate bandwidth from multiple VPN tunnels. Each VPN connection provides up to 1.25 Gbps per tunnel (2.5 Gbps with both tunnels using ECMP), so 2-3 VPN connections would provide 5+ Gbps aggregate throughput. This is configured automatically when multiple VPN connections advertise the same routes via BGP.
+
+      Option A (VPN acceleration with Global Accelerator) improves performance and reliability but doesn't increase the 1.25 Gbps per tunnel limit. Option C (Direct Connect) contradicts the requirement to "continue using VPN rather than Direct Connect." Option D (multiple VGWs) doesn't provide bandwidth aggregation across connections and creates management complexity.
+    awsDocLink: https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html
+    services: [AWS VPN, AWS Transit Gateway]
+
+  - id: hybrid-data-transfer-selection-018
+    type: single
+    text: |
+      A media company needs to decide on a data transfer solution for migrating 2 PB of video content to AWS. They have a 1 Gbps internet connection and a 10 Gbps Direct Connect connection. The migration must complete within 30 days, and they need the most cost-effective solution.
+
+      Which approach should they use?
+    options:
+      - id: A
+        text: Use AWS DataSync over the 10 Gbps Direct Connect connection with multiple agents
+      - id: B
+        text: Order 25 AWS Snowball Edge Storage Optimized devices (80 TB each) for parallel data transfer
+      - id: C
+        text: Use AWS DataSync over the 1 Gbps internet connection with bandwidth throttling
+      - id: D
+        text: Order one AWS Snowmobile for the 2 PB transfer
+    correctAnswer: A
+    explanation: |
+      With a 10 Gbps Direct Connect connection, AWS DataSync can theoretically transfer 2 PB in approximately 2 days at full bandwidth (10 Gbps = ~3.2 PB/day theoretical maximum). Even with real-world efficiency of 50%, this allows completing the 2 PB migration well within 30 days. DataSync is more cost-effective than Snowball for this scenario because the network infrastructure already exists, and per-GB DataSync pricing is lower than Snowball device rental and shipping for this volume.
+
+      Option B (Snowball Edge) would work but involves device rental costs, shipping time, and operational overhead for managing 25 devices when sufficient network capacity exists. Option C (1 Gbps internet) would take approximately 60 days at 50% efficiency, exceeding the 30-day requirement. Option D (Snowmobile) is designed for 10+ PB transfers and is overkill for 2 PB.
+    awsDocLink: https://docs.aws.amazon.com/datasync/latest/userguide/how-datasync-works.html
+    services: [AWS DataSync, AWS Direct Connect]
+
+  - id: hybrid-vmware-cloud-integration-019
+    type: multi
+    correctCount: 2
+    text: |
+      A company running VMware Cloud on AWS wants to leverage AWS native services for their VMware workloads. They need VMware VMs to access objects in Amazon S3, write metrics to Amazon CloudWatch, and store backups in Amazon RDS. The VMware environment uses private IP addressing (172.16.0.0/16) that overlaps with some VPCs.
+
+      Which configurations enable this AWS service integration? (Select TWO)
+    options:
+      - id: A
+        text: Configure Elastic Network Interface (ENI) to connect VMware Cloud SDDC to AWS services VPC
+      - id: B
+        text: Use AWS PrivateLink endpoints within the VMware Cloud SDDC for S3 and CloudWatch access
+      - id: C
+        text: Attach Amazon FSx for NetApp ONTAP to the VMware Cloud SDDC for shared storage that can integrate with RDS
+      - id: D
+        text: Configure VMware NSX to route traffic to AWS services through NAT gateway
+      - id: E
+        text: Use VPC peering between VMware Cloud management VPC and application VPCs
+    correctAnswer: [A, B]
+    explanation: |
+      Option A (Elastic Network Interface/ENI) is the primary mechanism for connecting VMware Cloud on AWS SDDC to a customer-owned VPC where AWS services reside. This enables VMs to access AWS services. Option B (PrivateLink endpoints) can be deployed in the connected VPC to provide private access to S3, CloudWatch, and other AWS services without internet or NAT gateway, solving the IP overlap issue since PrivateLink uses DNS resolution.
+
+      Option C confuses services—FSx for NetApp ONTAP is a file storage service, not related to RDS database backup integration. Option D (NSX with NAT) could work but doesn't solve IP overlap issues as elegantly as PrivateLink and is more complex. Option E (VPC peering) is not used—VMware Cloud on AWS uses ENI for AWS service integration, not VPC peering from the SDDC.
+    awsDocLink: https://docs.aws.amazon.com/vmware-cloud/latest/userguide/aws-integrations.html
+    services: [VMware Cloud on AWS, AWS PrivateLink]
+
+  - id: hybrid-cost-optimization-020
+    type: multi
+    correctCount: 2
+    text: |
+      A solutions architect is optimizing costs for a hybrid architecture that includes Direct Connect, Storage Gateway, and monthly DataSync transfers. Current monthly costs: Direct Connect (1 Gbps port) $500, data transfer out 100 TB at $0.02/GB = $2,000, Storage Gateway with 200 TB in S3 Standard at $0.023/GB = $4,600.
+
+      Which optimizations can reduce costs while maintaining functionality? (Select TWO)
+    options:
+      - id: A
+        text: Implement S3 Intelligent-Tiering for Storage Gateway backend to automatically optimize storage costs based on access patterns
+      - id: B
+        text: Reduce Direct Connect bandwidth to 500 Mbps hosted connection to lower port charges
+      - id: C
+        text: Use S3 Transfer Acceleration for DataSync transfers to reduce data transfer time
+      - id: D
+        text: Configure S3 Lifecycle policies to transition infrequently accessed data to S3 Standard-IA or Glacier based on access patterns
+      - id: E
+        text: Replace Direct Connect with VPN to eliminate port charges
+    correctAnswer: [A, D]
+    explanation: |
+      Option A (S3 Intelligent-Tiering) automatically moves objects between access tiers based on usage patterns, reducing storage costs for data that becomes less frequently accessed over time, which is common with Storage Gateway use cases. Option D (S3 Lifecycle policies) allows defining specific transition rules to Standard-IA (after 30 days) or Glacier (after 90 days) for data with known access patterns, significantly reducing the $4,600 monthly storage cost.
+
+      Option B (reduce bandwidth to 500 Mbps) may save on port charges (~$250/month) but could impact performance and may not handle 100 TB monthly transfer adequately. Option C (S3 Transfer Acceleration) increases costs and doesn't reduce them—it's for improving transfer speed, not cost. Option E (replace with VPN) saves port charges but increases data transfer costs (Direct Connect has lower data transfer rates than VPN/internet) and reduces performance.
+    awsDocLink: https://aws.amazon.com/s3/pricing/
+    services: [Amazon S3, AWS Storage Gateway, AWS Direct Connect]

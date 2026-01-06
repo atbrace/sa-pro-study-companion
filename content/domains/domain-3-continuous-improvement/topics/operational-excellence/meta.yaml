@@ -1,0 +1,53 @@
+id: operational-excellence
+name: Operational Excellence Strategies
+shortName: Operational Excellence
+examTask: task-3-1
+description: >
+  Implement operational excellence through monitoring, logging, automation,
+  and infrastructure as code using CloudWatch, X-Ray, Systems Manager,
+  EventBridge, and CI/CD best practices.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - Amazon CloudWatch
+  - AWS CloudWatch Logs
+  - AWS X-Ray
+  - AWS Systems Manager
+  - Amazon EventBridge
+  - AWS CloudFormation
+  - AWS CDK
+  - AWS CodePipeline
+
+keyConcepts:
+  - CloudWatch metrics, alarms, and dashboards
+  - CloudWatch Logs Insights query language
+  - X-Ray distributed tracing and service maps
+  - Systems Manager automation and patching
+  - EventBridge event-driven patterns
+  - Infrastructure as Code best practices
+  - CI/CD pipeline design
+  - Observability and monitoring strategies
+
+awsDocLinks:
+  - title: Amazon CloudWatch Documentation
+    url: https://docs.aws.amazon.com/cloudwatch/
+    type: doc
+  - title: AWS X-Ray Documentation
+    url: https://docs.aws.amazon.com/xray/latest/devguide/
+    type: doc
+  - title: AWS Systems Manager Documentation
+    url: https://docs.aws.amazon.com/systems-manager/
+    type: doc
+  - title: Operational Excellence Pillar - Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/
+    type: whitepaper
+  - title: Amazon EventBridge Documentation
+    url: https://docs.aws.amazon.com/eventbridge/
+    type: doc
+
+relatedExperiments:
+  - lab-cloudwatch-monitoring
+  - lab-xray-tracing
+  - lab-systems-manager-automation

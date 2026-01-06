@@ -1,0 +1,45 @@
+id: storage-solutions
+name: Storage Solutions and Data Management
+shortName: Storage Solutions
+examTask: task-2-1
+description: >
+  Design storage solutions using S3, EBS, EFS, and FSx. Implement data lifecycle
+  policies, optimize performance, and manage costs across object, block, and file storage.
+
+estimatedStudyTime: 100
+difficulty: intermediate
+
+keyServices:
+  - Amazon S3
+  - Amazon EBS
+  - Amazon EFS
+  - Amazon FSx
+  - AWS Storage Gateway
+  - AWS DataSync
+  - AWS Transfer Family
+  - S3 Glacier
+  - AWS Backup
+
+keyConcepts:
+  - S3 storage classes and lifecycle policies
+  - EBS volume types (gp3, io2, st1, sc1)
+  - EFS performance modes
+  - FSx for Windows and Lustre
+  - Storage Gateway modes
+  - Cross-region replication
+  - S3 performance optimization
+  - Storage cost optimization
+
+awsDocLinks:
+  - title: Amazon S3 User Guide
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/
+    type: doc
+  - title: Amazon EBS Volume Types
+    url: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html
+    type: doc
+  - title: Amazon EFS User Guide
+    url: https://docs.aws.amazon.com/efs/latest/ug/
+    type: doc
+  - title: Storage Best Practices
+    url: https://docs.aws.amazon.com/wellarchitected/latest/framework/a-storage.html
+    type: doc

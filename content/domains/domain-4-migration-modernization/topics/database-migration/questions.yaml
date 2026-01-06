@@ -1,0 +1,413 @@
+questions:
+  - id: dbmig-001
+    type: single
+    text: >
+      A company needs to migrate a 15 TB Oracle database to Aurora PostgreSQL with less than 1 hour of downtime.
+      The database has 5,000 transactions per minute during business hours. The migration must maintain data
+      integrity and capture all changes during the migration process. What is the MOST appropriate solution?
+    options:
+      - id: A
+        text: Use AWS DMS with Full Load only during a maintenance window, then manually sync changes
+      - id: B
+        text: Use AWS SCT to convert the schema, then use DMS with Full Load + CDC for data migration
+      - id: C
+        text: Use AWS Snowball Edge to transfer the data, then use native PostgreSQL replication
+      - id: D
+        text: Use Oracle Data Pump to export data to S3, then import into Aurora PostgreSQL
+    correctAnswer: B
+    explanation: >
+      AWS SCT is required to convert Oracle schemas to PostgreSQL (heterogeneous migration). DMS with Full Load + CDC
+      allows continuous replication during migration - full load handles the initial 15 TB, while CDC captures ongoing
+      changes. This enables minimal downtime cutover (when CDC lag is minimal). Option A doesn't capture changes during
+      full load. Option C requires separate CDC mechanism. Option D is a one-time transfer without change capture.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html
+    services: [AWS DMS, AWS SCT, Amazon Aurora]
+    concepts: [heterogeneous-migration, change-data-capture, schema-conversion]
+
+  - id: dbmig-002
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is planning a database migration from on-premises MySQL to Aurora MySQL using AWS DMS.
+      The source database is 8 TB with 2,000 transactions per second during peak hours. Which THREE actions will
+      optimize migration performance and minimize downtime?
+    options:
+      - id: A
+        text: Disable foreign key constraints and triggers on the target Aurora database during initial load
+      - id: B
+        text: Enable Multi-AZ deployment for the DMS replication instance
+      - id: C
+        text: Configure the DMS task with ParallelLoadThreads to enable parallel table loading
+      - id: D
+        text: Use a C5 replication instance type for compute-intensive conversions
+      - id: E
+        text: Enable DMS data validation during the initial full load phase
+      - id: F
+        text: Use AWS Direct Connect for the network path between on-premises and AWS
+    correctAnswer: [A, C, F]
+    explanation: >
+      Disabling foreign keys and triggers (A) during initial load significantly improves write performance on the target.
+      ParallelLoadThreads (C) enables concurrent table loading, leveraging multiple cores. Direct Connect (F) provides
+      reliable, high-bandwidth connectivity essential for 8 TB transfers. Multi-AZ (B) adds HA but doesn't improve performance.
+      C5 instances (D) are for heterogeneous migrations; MySQL to Aurora MySQL is homogeneous. Validation during load (E)
+      adds overhead; run validation after initial load completes.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_BestPractices.html
+    services: [AWS DMS, Amazon Aurora, AWS Direct Connect]
+    concepts: [migration-optimization, parallel-loading, network-connectivity]
+
+  - id: dbmig-003
+    type: single
+    text: >
+      A company is migrating a 50 TB SQL Server database from on-premises to RDS SQL Server. The network bandwidth
+      between on-premises and AWS is 100 Mbps, and the database must remain operational during migration. At 100 Mbps,
+      the network transfer would take approximately 46 days. What is the MOST efficient migration strategy?
+    options:
+      - id: A
+        text: Use AWS DMS with Full Load + CDC over VPN connection, compress data to reduce transfer time
+      - id: B
+        text: Use AWS Snowball Edge with SCT data extraction agents, then use DMS CDC to catch up ongoing changes
+      - id: C
+        text: Upgrade network connection to 1 Gbps, then use native SQL Server backup and restore
+      - id: D
+        text: Use AWS DataSync to transfer database files, then attach to RDS SQL Server
+    correctAnswer: B
+    explanation: >
+      With a 50 TB database and 100 Mbps connection, network-based migration would take too long. Snowball Edge with
+      SCT extraction agents transfers the bulk data physically (3-5 days shipping + 1-2 days upload). DMS CDC task
+      handles ongoing changes accumulated during shipping and load. This combination provides the fastest migration
+      for large databases with limited bandwidth. Option A would take 46 days. Option C requires infrastructure investment.
+      Option D doesn't work - can't attach external files to RDS.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_LargeDBs.html
+    services: [AWS Snowball Edge, AWS DMS, AWS SCT, Amazon RDS]
+    concepts: [large-database-migration, snowball-edge, offline-transfer]
+
+  - id: dbmig-004
+    type: single
+    text: >
+      During an Oracle to Aurora PostgreSQL migration using DMS, the CDCLatencySource metric shows 300 seconds
+      (5 minutes) and is increasing. The replication instance metrics show CPU at 45% and memory at 60%. What is
+      the MOST likely cause and solution?
+    options:
+      - id: A
+        text: The replication instance is undersized - scale up to a larger instance type
+      - id: B
+        text: The source database transaction log is being overwritten before DMS can read it - increase log retention
+      - id: C
+        text: The target database write throughput is insufficient - increase Aurora IOPS
+      - id: D
+        text: Network bandwidth is saturated - increase VPN or Direct Connect capacity
+    correctAnswer: B
+    explanation: >
+      CDCLatencySource measures the time between when a change occurs on the source and when DMS reads it from the
+      transaction log. Increasing latency with moderate CPU/memory indicates DMS is falling behind reading the source
+      logs, likely because logs are being overwritten or archived before DMS reads them. Solution is to increase Oracle
+      archive log retention. Option A is wrong - CPU/memory are not saturated. Option C would affect CDCLatencyTarget
+      (apply lag), not source lag. Option D would show in network metrics, not CDC source latency.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html
+    services: [AWS DMS, Oracle, Amazon Aurora]
+    concepts: [cdc-latency, transaction-logs, troubleshooting]
+
+  - id: dbmig-005
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is using AWS Schema Conversion Tool (SCT) to migrate from Oracle to Aurora PostgreSQL.
+      The assessment report shows several stored procedures marked as "Actions Needed" due to Oracle-specific features.
+      Which TWO approaches can address these conversion issues?
+    options:
+      - id: A
+        text: Install the SCT extension pack on Aurora PostgreSQL to emulate Oracle functions
+      - id: B
+        text: Configure DMS to automatically convert stored procedures during migration
+      - id: C
+        text: Manually rewrite the stored procedures using PL/pgSQL and PostgreSQL-native functions
+      - id: D
+        text: Use AWS Lambda functions to replace stored procedure logic
+      - id: E
+        text: Enable Oracle compatibility mode in Aurora PostgreSQL
+    correctAnswer: [A, C]
+    explanation: >
+      The SCT extension pack (A) provides emulation of Oracle-specific features (like DBMS packages) that don't exist
+      natively in PostgreSQL. This can handle many common Oracle functions. For complex or custom logic (C), manual
+      rewriting in PL/pgSQL is often required. DMS (B) doesn't convert stored procedures - that's SCT's job. Lambda (D)
+      changes the architecture significantly. Aurora PostgreSQL (E) doesn't have an "Oracle compatibility mode" - you're
+      thinking of Aurora MySQL with MySQL compatibility.
+    awsDocLink: https://docs.aws.amazon.com/SchemaConversionTool/latest/userguide/CHAP_ExtensionPack.html
+    services: [AWS SCT, Amazon Aurora, Oracle]
+    concepts: [schema-conversion, extension-packs, stored-procedures]
+
+  - id: dbmig-006
+    type: single
+    text: >
+      A company wants to migrate an on-premises MySQL database to Aurora MySQL with zero downtime. The database is
+      500 GB with moderate transaction volume (100 TPS). The application can tolerate a few seconds of read-only mode
+      during cutover but cannot afford any data loss. What is the BEST migration approach?
+    options:
+      - id: A
+        text: Use mysqldump to export data, import to Aurora, then manually apply binary logs for changes
+      - id: B
+        text: Create an Aurora read replica from the on-premises MySQL database, then promote it to standalone
+      - id: C
+        text: Use DMS with Full Load + CDC, monitor replication lag, cutover when lag is <10 seconds
+      - id: D
+        text: Set up MySQL native replication from on-premises to Aurora, then promote Aurora when synchronized
+    correctAnswer: C
+    explanation: >
+      DMS with Full Load + CDC is the recommended AWS-native approach for zero-downtime migrations. It captures all
+      changes during migration via CDC, allowing you to cutover when replication lag is minimal (under 10 seconds).
+      This meets the "few seconds read-only" requirement. Option A risks data loss during manual binary log application.
+      Option B (Aurora read replica from external MySQL) is possible but limited to specific MySQL versions and configurations.
+      Option D (native replication) works but requires more manual setup and monitoring than DMS, which provides
+      built-in monitoring and validation.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html
+    services: [AWS DMS, Amazon Aurora, MySQL]
+    concepts: [zero-downtime-migration, homogeneous-migration, cdc-replication]
+
+  - id: dbmig-007
+    type: single
+    text: >
+      A DMS migration task is running with Full Load + CDC enabled. The FullLoadThroughputRowsSource metric shows
+      10,000 rows/second during full load, but after full load completes, CDCIncomingChanges continues to grow and
+      never decreases. What is the MOST likely issue?
+    options:
+      - id: A
+        text: The replication instance does not have enough CPU to process CDC changes
+      - id: B
+        text: The target database cannot apply changes as fast as they are occurring on the source
+      - id: C
+        text: The DMS task is configured with BatchApplyEnabled=false, causing slow individual transactions
+      - id: D
+        text: Network bandwidth between source and target is insufficient
+    correctAnswer: B
+    explanation: >
+      CDCIncomingChanges represents the backlog of changes waiting to be applied to the target. If this continuously
+      grows and never decreases, the target database cannot keep up with the rate of changes. This is a target write
+      throughput issue, not a DMS processing issue. Solutions include increasing target database IOPS, enabling batch
+      apply, or reducing source transaction volume. Option A would show high CPU metrics. Option C might cause slowness
+      but BatchApply affects how changes are applied, not the root cause. Option D would affect CDC capture rate, not
+      apply rate.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html
+    services: [AWS DMS]
+    concepts: [cdc-monitoring, performance-troubleshooting, throughput-tuning]
+
+  - id: dbmig-008
+    type: multi
+    correctCount: 2
+    text: >
+      A company is performing a heterogeneous migration from SQL Server to Aurora PostgreSQL. The source database
+      contains several tables with large BLOB columns (medical images, avg 5 MB each). Which TWO DMS task settings
+      should be configured for optimal LOB (Large Object) handling?
+    options:
+      - id: A
+        text: Set LOB mode to "Limited LOB mode" with max LOB size of 32 KB
+      - id: B
+        text: Set LOB mode to "Full LOB mode" to handle LOBs of any size
+      - id: C
+        text: Enable "Inline LOB max size" parameter set to 5120 KB (5 MB)
+      - id: D
+        text: Disable LOB columns from migration and handle separately via application
+      - id: E
+        text: Use "Don't include LOB columns" to skip BLOB data entirely
+    correctAnswer: [B, C]
+    explanation: >
+      For large LOBs (5 MB images), Full LOB mode (B) is required because Limited LOB mode only handles LOBs up to the
+      max size setting (typically 32 KB by default). However, full LOB mode can be slow. Setting inline LOB max size (C)
+      to 5120 KB tells DMS to fetch LOBs that fit within 5 MB in a single operation, improving performance. Option A
+      won't work - 32 KB is too small for 5 MB images. Option D/E would lose data. The combination of Full LOB mode
+      with appropriate inline max size provides both correctness and performance.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.LOBSupport.html
+    services: [AWS DMS, SQL Server, Amazon Aurora]
+    concepts: [lob-handling, binary-data-migration, task-settings]
+
+  - id: dbmig-009
+    type: single
+    text: >
+      A financial services company requires data validation after migrating from Oracle to Aurora PostgreSQL using DMS.
+      The validation must prove that row counts and data values match between source and target. However, enabling DMS
+      data validation significantly slowed the initial migration. What is the BEST approach?
+    options:
+      - id: A
+        text: Enable validation only during CDC phase after full load completes
+      - id: B
+        text: Use a larger replication instance type to handle validation overhead
+      - id: C
+        text: Disable DMS validation and write custom validation queries to compare source and target
+      - id: D
+        text: Run DMS validation as a separate task after the migration completes
+    correctAnswer: A
+    explanation: >
+      DMS data validation compares source and target data at the row level, which adds significant overhead during
+      full load. The optimal approach is to disable validation during full load (for performance) and enable it only
+      during the CDC phase when change volume is lower. Validation will then verify both the initial data and ongoing
+      changes. Option B addresses symptoms, not root cause - validation overhead exists regardless of instance size.
+      Option C loses DMS's built-in validation capabilities. Option D doesn't work - validation must run during active
+      replication to be effective.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Validating.html
+    services: [AWS DMS]
+    concepts: [data-validation, migration-performance, validation-timing]
+
+  - id: dbmig-010
+    type: single
+    text: >
+      A company has migrated their database to Aurora using DMS and wants to perform cutover during a maintenance window.
+      Before cutover, they need to ensure CDC has caught up completely. Which metric should be at zero to confirm the
+      target is fully synchronized with the source?
+    options:
+      - id: A
+        text: CDCLatencySource
+      - id: B
+        text: CDCLatencyTarget
+      - id: C
+        text: CDCIncomingChanges
+      - id: D
+        text: FullLoadThroughputRowsSource
+    correctAnswer: C
+    explanation: >
+      CDCIncomingChanges represents the number of change events waiting to be applied to the target. When this metric
+      is zero, all changes from the source have been applied to the target, indicating full synchronization. This is
+      the key metric for cutover readiness. CDCLatencySource (A) measures read lag from source logs. CDCLatencyTarget (B)
+      measures apply lag, but can be non-zero even when caught up due to timing of last transaction.
+      FullLoadThroughputRowsSource (D) is only relevant during initial load, not CDC. Wait for CDCIncomingChanges = 0
+      before cutover.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html
+    services: [AWS DMS, Amazon Aurora]
+    concepts: [cutover-readiness, cdc-metrics, synchronization]
+
+  - id: dbmig-011
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing a migration from on-premises PostgreSQL to Amazon RDS PostgreSQL. The database
+      is 2 TB and the company wants to minimize downtime while maintaining data integrity. Which THREE components are
+      required for this migration?
+    options:
+      - id: A
+        text: AWS Schema Conversion Tool (SCT) for schema conversion
+      - id: B
+        text: DMS replication instance in a VPC with connectivity to both source and target
+      - id: C
+        text: Source endpoint configured with the on-premises PostgreSQL connection details
+      - id: D
+        text: Target endpoint configured with the RDS PostgreSQL connection details
+      - id: E
+        text: AWS Snowball Edge for initial data transfer
+      - id: F
+        text: DMS extension pack installed on target database
+    correctAnswer: [B, C, D]
+    explanation: >
+      For a PostgreSQL to PostgreSQL migration (homogeneous), you need: a DMS replication instance (B) to run the
+      migration task, a source endpoint (C) pointing to on-premises PostgreSQL, and a target endpoint (D) pointing to
+      RDS PostgreSQL. SCT (A) is NOT needed for homogeneous migrations (same database engine). Snowball Edge (E) is
+      unnecessary for 2 TB with reasonable network bandwidth. Extension packs (F) are only for heterogeneous migrations
+      requiring feature emulation. DMS handles homogeneous PostgreSQL migrations natively.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_GettingStarted.html
+    services: [AWS DMS, Amazon RDS, PostgreSQL]
+    concepts: [homogeneous-migration, dms-components, replication-setup]
+
+  - id: dbmig-012
+    type: single
+    text: >
+      A company completed a database migration to Aurora PostgreSQL and kept the DMS task running for 30 days as a
+      safety measure. They are now ready to decommission the source database. What is the correct sequence of actions
+      to properly clean up DMS resources and minimize costs?
+    options:
+      - id: A
+        text: Delete the DMS task, delete endpoints, stop the replication instance, then delete it after backup
+      - id: B
+        text: Stop the DMS task, delete the task, delete the replication instance, then delete endpoints
+      - id: C
+        text: Delete the replication instance first, which automatically cleans up associated tasks and endpoints
+      - id: D
+        text: Stop the replication instance to save costs, keep task and endpoints for potential future use
+    correctAnswer: A
+    explanation: >
+      The correct cleanup sequence is: (1) Delete the DMS task (can't delete while running), (2) Delete endpoints
+      (no longer needed), (3) Stop the replication instance (to verify no issues before deletion), (4) Delete the
+      replication instance. This sequence allows you to maintain a backup of the task configuration briefly before
+      final deletion. Option B deletes the instance while endpoints still reference it. Option C doesn't work - you
+      must delete tasks before deleting the instance. Option D wastes money on a stopped instance that's no longer needed.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.html
+    services: [AWS DMS]
+    concepts: [resource-cleanup, cost-optimization, decommissioning]
+
+  - id: dbmig-013
+    type: single
+    text: >
+      A company is migrating multiple databases from different source systems to AWS. They have: (1) SQL Server to
+      RDS SQL Server, (2) Oracle to Aurora PostgreSQL, (3) MySQL to Aurora MySQL. To minimize operational overhead,
+      what DMS architecture should they implement?
+    options:
+      - id: A
+        text: Use a single large replication instance with multiple tasks for all migrations
+      - id: B
+        text: Use separate replication instances for each migration task for isolation
+      - id: C
+        text: Use one replication instance for homogeneous migrations and one for heterogeneous migrations
+      - id: D
+        text: Use AWS Database Migration Service Fleet Advisor to automate instance provisioning
+    correctAnswer: C
+    explanation: >
+      Grouping homogeneous migrations (SQL Server to SQL Server, MySQL to Aurora MySQL) on one instance and heterogeneous
+      migrations (Oracle to Aurora PostgreSQL) on another balances resource efficiency with isolation. Heterogeneous
+      migrations require more CPU for transformations, while homogeneous migrations are primarily I/O intensive. Option A
+      creates a single point of failure and resource contention. Option B maximizes isolation but increases cost and
+      management overhead. Option D (Fleet Advisor) is for discovery and assessment, not migration execution.
+    awsDocLink: https://docs.aws.amazon.com/dms/latest/userguide/CHAP_ReplicationInstance.html
+    services: [AWS DMS]
+    concepts: [multi-database-migration, resource-optimization, migration-architecture]
+
+  - id: dbmig-014
+    type: multi
+    correctCount: 2
+    text: >
+      A company is planning to use AWS SCT for heterogeneous database migration assessment. The source databases include
+      Oracle, SQL Server, and Teradata data warehouse. Which TWO statements are true about SCT assessment reports?
+    options:
+      - id: A
+        text: Assessment reports identify database objects that cannot be automatically converted and require manual intervention
+      - id: B
+        text: Assessment reports automatically convert all stored procedures and functions to target database syntax
+      - id: C
+        text: Assessment reports provide effort estimates for manual conversion work required
+      - id: D
+        text: Assessment reports execute on the DMS replication instance
+      - id: E
+        text: Assessment reports can assess data warehouse migrations from Teradata to Redshift
+    correctAnswer: [A, C]
+    explanation: >
+      SCT assessment reports identify conversion complexity (A) by flagging objects that cannot be automatically converted,
+      requiring manual intervention. They also provide effort estimates (C) categorized by complexity level (simple,
+      medium, complex). Option B is wrong - reports identify what needs conversion but don't automatically convert everything
+      (that's the conversion phase, after assessment). Option D is wrong - SCT is a desktop application, not part of DMS.
+      Option E is partially true (SCT can assess Teradata) but doesn't make it a "true" statement about assessment reports
+      in general - SCT does support DW migrations though.
+    awsDocLink: https://docs.aws.amazon.com/SchemaConversionTool/latest/userguide/CHAP_AssessmentReport.html
+    services: [AWS SCT]
+    concepts: [migration-assessment, conversion-complexity, effort-estimation]
+
+  - id: dbmig-015
+    type: single
+    text: >
+      A solutions architect needs to migrate a 40 TB Oracle database to Aurora PostgreSQL. The company has a 500 Mbps
+      Direct Connect connection and requires minimal downtime. The migration includes complex PL/SQL stored procedures.
+      What is the MOST comprehensive migration strategy?
+    options:
+      - id: A
+        text: Use SCT for schema conversion, DMS with Full Load + CDC for data migration, manual testing and cutover
+      - id: B
+        text: Use Snowball Edge for initial data transfer, then DMS CDC for ongoing changes, skip schema conversion
+      - id: C
+        text: Use Oracle GoldenGate to replicate to Aurora PostgreSQL, use SCT for validation
+      - id: D
+        text: Export Oracle data to S3 using Data Pump, use SCT to convert and load into Aurora PostgreSQL
+    correctAnswer: A
+    explanation: >
+      This comprehensive heterogeneous migration requires: (1) SCT to convert Oracle schemas and PL/SQL to PostgreSQL
+      (identify manual conversion needs), (2) DMS Full Load + CDC for data migration with minimal downtime, (3) Testing
+      converted procedures, (4) Cutover when CDC lag is minimal. At 500 Mbps, network-based migration is feasible for
+      40 TB (approximately 7-10 days for full load, then CDC catches up). Option B skips schema conversion (critical for
+      heterogeneous). Option C (GoldenGate) doesn't support Oracle to PostgreSQL heterogeneous migration. Option D is
+      one-time transfer without CDC, resulting in significant downtime.
+    awsDocLink: https://docs.aws.amazon.com/SchemaConversionTool/latest/userguide/CHAP_Welcome.html
+    services: [AWS SCT, AWS DMS, Amazon Aurora, Oracle]
+    concepts: [heterogeneous-migration, comprehensive-strategy, minimal-downtime]

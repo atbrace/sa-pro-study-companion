@@ -1,0 +1,57 @@
+id: serverless-architectures
+name: Serverless Architectures and Event-Driven Design
+shortName: Serverless Architectures
+examTask: task-2-1
+description: >
+  Design and implement serverless architectures using Lambda, API Gateway, DynamoDB, and Step Functions.
+  Create event-driven solutions with EventBridge, implement serverless API patterns, and apply serverless
+  best practices for scalable, cost-effective solutions.
+
+estimatedStudyTime: 150
+difficulty: advanced
+
+keyServices:
+  - AWS Lambda
+  - Amazon API Gateway
+  - Amazon DynamoDB
+  - Amazon S3
+  - Amazon EventBridge
+  - AWS Step Functions
+  - Amazon SQS
+  - Amazon SNS
+  - AWS AppSync
+  - Amazon Kinesis
+
+keyConcepts:
+  - Event-driven architecture patterns
+  - API Gateway integration types
+  - Lambda execution model and optimization
+  - DynamoDB access patterns and design
+  - Step Functions orchestration
+  - Asynchronous processing patterns
+  - Serverless authentication (Cognito, IAM)
+  - Cold start optimization
+  - Serverless observability
+  - Cost optimization strategies
+
+awsDocLinks:
+  - title: AWS Lambda Developer Guide
+    url: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+    type: doc
+  - title: Amazon API Gateway Developer Guide
+    url: https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html
+    type: doc
+  - title: Amazon DynamoDB Developer Guide
+    url: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
+    type: doc
+  - title: AWS Step Functions Developer Guide
+    url: https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+    type: doc
+  - title: Serverless Application Lens
+    url: https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html
+    type: whitepaper
+
+relatedExperiments:
+  - lab-api-gateway-lambda
+  - lab-event-driven-architecture
+  - lab-step-functions-workflow

@@ -1,0 +1,46 @@
+id: database-solutions
+name: Database Solutions and Data Stores
+shortName: Database Solutions
+examTask: task-2-1
+description: >
+  Select and implement appropriate database solutions including RDS, Aurora, DynamoDB,
+  ElastiCache, and specialized databases. Design for performance, scalability, and cost.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - Amazon RDS
+  - Amazon Aurora
+  - Amazon DynamoDB
+  - Amazon ElastiCache
+  - Amazon MemoryDB for Redis
+  - Amazon Neptune
+  - Amazon QLDB
+  - Amazon Timestream
+  - Amazon DocumentDB
+  - Amazon Keyspaces
+
+keyConcepts:
+  - RDS vs Aurora selection
+  - DynamoDB capacity modes and indexes
+  - Caching strategies (ElastiCache, DAX)
+  - Graph databases (Neptune)
+  - Time-series data (Timestream)
+  - Read replicas and Multi-AZ
+  - Database migration strategies
+  - Performance optimization
+
+awsDocLinks:
+  - title: Amazon RDS User Guide
+    url: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/
+    type: doc
+  - title: Amazon DynamoDB Developer Guide
+    url: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/
+    type: doc
+  - title: Amazon Aurora User Guide
+    url: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/
+    type: doc
+  - title: Database Services on AWS
+    url: https://aws.amazon.com/products/databases/
+    type: doc

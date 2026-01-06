@@ -1,0 +1,415 @@
+questions:
+  - id: mod-001
+    type: single
+    text: >
+      A company is modernizing a legacy monolithic e-commerce application running on EC2 instances. They want to
+      incrementally migrate functionality to microservices without disrupting existing users. The solution must allow
+      routing traffic to either the legacy application or new microservices based on feature flags. What is the MOST
+      effective approach using the strangler fig pattern?
+    options:
+      - id: A
+        text: Use Amazon API Gateway with Lambda authorizers to route requests based on feature flags stored in DynamoDB
+      - id: B
+        text: Deploy an Application Load Balancer with path-based routing and weighted target groups to gradually shift traffic between legacy and new services
+      - id: C
+        text: Implement Amazon CloudFront with Lambda@Edge to evaluate feature flags and route to different origins (legacy or microservices)
+      - id: D
+        text: Use AWS App Mesh with virtual routers to control traffic distribution between legacy and microservices based on headers
+    correctAnswer: B
+    explanation: >
+      ALB with path-based routing and weighted target groups is the classic implementation of the strangler fig pattern.
+      You can route specific paths (e.g., /api/v2/*) to new microservices while keeping legacy paths on the monolith.
+      Weighted target groups allow gradual traffic shifting (10% new, 90% legacy -> 50/50 -> 100% new) for safe migration.
+      This is simpler and more cost-effective than CloudFront with Lambda@Edge (Option C). Option A doesn't provide the
+      gradual migration capability. Option D (App Mesh) is overly complex for this use case and is designed for
+      service-to-service communication, not client-facing traffic.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-guide/strangler-fig.html
+    services: [Application Load Balancer, Amazon API Gateway]
+    concepts: [strangler-fig-pattern, incremental-modernization, traffic-routing]
+
+  - id: mod-002
+    type: multi
+    correctCount: 3
+    text: >
+      A company is breaking a monolithic order management application into microservices. The monolith has a single
+      database with tables for users, orders, products, and payments. Which THREE practices should be implemented to
+      properly decompose the database for microservices architecture?
+    options:
+      - id: A
+        text: Create separate databases for each microservice (users, orders, products, payments) with service-owned schemas
+      - id: B
+        text: Keep all data in the original database but create separate database users with table-level permissions for each service
+      - id: C
+        text: Use Amazon EventBridge or SNS to publish domain events when data changes, allowing services to maintain eventual consistency
+      - id: D
+        text: Implement the Saga pattern using AWS Step Functions for distributed transactions across microservices
+      - id: E
+        text: Use AWS Database Migration Service to continuously replicate the monolith database to each microservice database
+      - id: F
+        text: Create a shared data access layer API that all microservices call to access the central database
+    correctAnswer: [A, C, D]
+    explanation: >
+      Proper microservices decomposition requires: (A) Database per service - each microservice owns its data with a
+      separate database to ensure loose coupling. (C) Event-driven communication - services publish domain events to
+      maintain eventual consistency without tight coupling. (D) Saga pattern for distributed transactions - Step Functions
+      orchestrates multi-service transactions with compensation logic. Option B violates the bounded context principle.
+      Option E creates ongoing dependencies on the monolith. Option F creates a shared database anti-pattern that defeats
+      the purpose of microservices independence.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/microservices-on-aws/distributed-data-management.html
+    services: [Amazon EventBridge, AWS Step Functions, Amazon RDS]
+    concepts: [database-per-service, saga-pattern, eventual-consistency, event-driven-architecture]
+
+  - id: mod-003
+    type: single
+    text: >
+      An organization is containerizing a Java application that currently runs on EC2 instances with minimal code changes.
+      The application needs access to AWS services like S3 and DynamoDB. The solution must follow security best practices
+      for IAM permissions. What is the BEST approach?
+    options:
+      - id: A
+        text: Use AWS App2Container to analyze the application, generate Dockerfile, and create ECS task definitions with IAM task roles
+      - id: B
+        text: Manually create a Dockerfile, embed AWS access keys in environment variables, and deploy to ECS
+      - id: C
+        text: Use Docker to containerize the application, assign IAM instance profile to EC2 instances in the ECS cluster
+      - id: D
+        text: Deploy the application to Amazon EKS and configure IAM users with access keys stored in Kubernetes secrets
+    correctAnswer: A
+    explanation: >
+      AWS App2Container is purpose-built for containerizing existing Java and .NET applications with minimal effort.
+      It analyzes the app, generates a Dockerfile, creates ECS/EKS deployment artifacts, and importantly, creates IAM
+      task roles for secure AWS service access. IAM task roles (not instance profiles) provide least-privilege,
+      temporary credentials to individual tasks. Option B violates security by embedding credentials. Option C uses
+      instance profiles which apply to all tasks on the instance (too broad). Option D uses access keys stored in
+      secrets (security anti-pattern) instead of IAM Roles for Service Accounts (IRSA).
+    awsDocLink: https://docs.aws.amazon.com/app2container/latest/UserGuide/what-is-a2c.html
+    services: [AWS App2Container, Amazon ECS, AWS IAM]
+    concepts: [containerization, iam-task-roles, application-migration]
+
+  - id: mod-004
+    type: single
+    text: >
+      A company is migrating a traditional three-tier web application to AWS and wants to adopt serverless architecture.
+      The application handles user requests, processes business logic, and stores data in a relational database. Which
+      architecture provides the MOST cost-effective and scalable serverless solution?
+    options:
+      - id: A
+        text: Amazon CloudFront + S3 (static content) -> API Gateway + Lambda (business logic) -> Aurora Serverless (database)
+      - id: B
+        text: Amazon CloudFront + S3 -> Application Load Balancer + ECS Fargate -> RDS (database)
+      - id: C
+        text: Elastic Beanstalk with Auto Scaling -> Lambda (business logic) -> DynamoDB
+      - id: D
+        text: Amazon CloudFront + Lambda@Edge (dynamic content) -> Step Functions (orchestration) -> RDS Proxy + RDS
+    correctAnswer: A
+    explanation: >
+      Option A is the classic serverless three-tier architecture: CloudFront and S3 serve static assets (HTML, CSS, JS),
+      API Gateway provides RESTful endpoints that trigger Lambda functions for business logic, and Aurora Serverless
+      automatically scales database capacity based on demand. This is fully serverless and cost-effective (pay only for
+      actual usage). Option B uses Fargate which is not fully serverless (always-on instances). Option C mixes Elastic
+      Beanstalk (not serverless) with Lambda. Option D uses Lambda@Edge unnecessarily (expensive for business logic) and
+      RDS instead of Aurora Serverless (less serverless).
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/applications-tutorial.html
+    services: [Amazon API Gateway, AWS Lambda, Aurora Serverless, Amazon CloudFront]
+    concepts: [serverless-architecture, three-tier-application, api-gateway-pattern]
+
+  - id: mod-005
+    type: single
+    text: >
+      A financial services company needs to implement a distributed transaction across multiple microservices: Order Service,
+      Payment Service, and Inventory Service. If any step fails, all previous steps must be compensated (rolled back).
+      The solution must handle failures gracefully and provide visibility into transaction state. What is the BEST solution?
+    options:
+      - id: A
+        text: Use Amazon SQS FIFO queues to chain service calls with dead letter queues for failed transactions
+      - id: B
+        text: Implement AWS Step Functions with a Saga pattern, defining compensation logic for each step using Catch and Retry
+      - id: C
+        text: Use Amazon RDS with XA distributed transactions across microservice databases
+      - id: D
+        text: Implement two-phase commit using Lambda functions coordinating via DynamoDB for transaction state
+    correctAnswer: B
+    explanation: >
+      AWS Step Functions is designed for orchestrating distributed transactions using the Saga pattern. You define a
+      state machine with sequential steps (Order -> Payment -> Inventory), and for each step, you specify compensation
+      actions in Catch blocks if failures occur. Step Functions provides visibility (execution history), automatic retries,
+      error handling, and can run for up to one year. Option A (SQS) doesn't provide orchestration or compensation logic.
+      Option C (XA transactions) violates microservices principles by coupling databases. Option D requires custom
+      implementation of orchestration logic that Step Functions provides out-of-the-box.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/tutorial-saga-pattern.html
+    services: [AWS Step Functions]
+    concepts: [saga-pattern, distributed-transactions, compensation-logic, microservices-orchestration]
+
+  - id: mod-006
+    type: single
+    text: >
+      A company is deploying microservices on Amazon EKS and needs to ensure that each pod can access AWS services (S3, DynamoDB)
+      using least-privilege IAM permissions without embedding credentials. What is the MOST secure approach?
+    options:
+      - id: A
+        text: Assign an IAM instance profile to the EKS worker nodes with permissions for all required services
+      - id: B
+        text: Configure IAM Roles for Service Accounts (IRSA) with specific IAM roles for each Kubernetes service account
+      - id: C
+        text: Store AWS access keys in Kubernetes secrets and mount them as environment variables in pods
+      - id: D
+        text: Use AWS Systems Manager Parameter Store to retrieve credentials at pod startup via init containers
+    correctAnswer: B
+    explanation: >
+      IAM Roles for Service Accounts (IRSA) is the best practice for EKS security. IRSA allows you to associate an IAM
+      role with a Kubernetes service account, providing pod-level IAM permissions using temporary credentials. Each pod
+      gets only the permissions it needs (least privilege) via the service account it uses. Option A applies permissions
+      at the node level, affecting all pods on that node (too broad). Options C and D involve managing credentials, which
+      violates best practices—you should use IAM roles, not static credentials.
+    awsDocLink: https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+    services: [Amazon EKS, AWS IAM]
+    concepts: [irsa, pod-security, least-privilege, kubernetes-iam-integration]
+
+  - id: mod-007
+    type: multi
+    correctCount: 2
+    text: >
+      A company is migrating a monolithic application to a microservices architecture on AWS. They need to implement
+      service-to-service communication that is resilient to failures and prevents cascading outages. Which TWO patterns
+      should be implemented?
+    options:
+      - id: A
+        text: Implement circuit breaker pattern using API Gateway throttling and Lambda reserved concurrency limits
+      - id: B
+        text: Use synchronous REST API calls with exponential backoff retry logic in each service
+      - id: C
+        text: Implement asynchronous communication using Amazon EventBridge or SNS/SQS for non-critical paths
+      - id: D
+        text: Deploy all services in a single availability zone to minimize network latency
+      - id: E
+        text: Configure AWS App Mesh with circuit breaking, retries, and timeouts for service-to-service traffic
+    correctAnswer: [C, E]
+    explanation: >
+      (C) Asynchronous communication using EventBridge or SNS/SQS decouples services and prevents cascading failures.
+      If a downstream service is slow or unavailable, messages queue up rather than blocking the caller. (E) AWS App Mesh
+      implements service mesh features including circuit breaking, automatic retries, and timeouts at the network layer,
+      protecting services from cascading failures. Option A provides throttling but doesn't implement true circuit breaking.
+      Option B uses synchronous calls which can cause cascading failures. Option D reduces availability (single AZ).
+    awsDocLink: https://docs.aws.amazon.com/app-mesh/latest/userguide/circuit-breakers.html
+    services: [Amazon EventBridge, AWS App Mesh, Amazon SQS, Amazon SNS]
+    concepts: [circuit-breaker-pattern, asynchronous-communication, resilience, service-mesh]
+
+  - id: mod-008
+    type: single
+    text: >
+      An e-commerce company wants to migrate their shopping cart service from a stateful EC2-based application to a
+      serverless architecture. The cart must maintain state across multiple Lambda invocations and support 15-minute
+      shopping sessions. What is the BEST solution?
+    options:
+      - id: A
+        text: Use Lambda with Amazon ElastiCache for Redis to store session state with 15-minute TTL
+      - id: B
+        text: Enable Lambda provisioned concurrency and store session state in /tmp directory
+      - id: C
+        text: Use ECS Fargate instead of Lambda to maintain in-memory session state
+      - id: D
+        text: Store session state in DynamoDB with a TTL attribute set to 15 minutes
+    correctAnswer: A
+    explanation: >
+      Lambda functions are stateless, so session state must be stored externally. ElastiCache for Redis is the best
+      choice for session storage because it provides: (1) sub-millisecond latency for fast access, (2) native TTL support
+      for automatic expiration, (3) in-memory storage for performance. VPC integration allows Lambda to access ElastiCache.
+      Option B won't work because /tmp is cleared between invocations. Option C defeats the purpose of serverless.
+      Option D (DynamoDB with TTL) works but has higher latency than ElastiCache and DynamoDB TTL can take up to 48 hours
+      to delete expired items (not suitable for 15-minute sessions).
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
+    services: [AWS Lambda, Amazon ElastiCache, Amazon DynamoDB]
+    concepts: [session-state, serverless-patterns, elasticache-integration]
+
+  - id: mod-009
+    type: single
+    text: >
+      A company is containerizing microservices and needs to choose between Amazon ECS and Amazon EKS. The team has
+      limited Kubernetes experience, wants minimal operational overhead, and needs integration with ALB for path-based
+      routing to multiple services. What should they choose?
+    options:
+      - id: A
+        text: Amazon EKS with Fargate to eliminate cluster management, using the AWS Load Balancer Controller for ALB integration
+      - id: B
+        text: Amazon ECS with Fargate launch type, using ALB target groups with dynamic port mapping
+      - id: C
+        text: Amazon ECS with EC2 launch type for cost savings, using NLB for Layer 4 load balancing
+      - id: D
+        text: Self-managed Kubernetes on EC2 instances for maximum flexibility and control
+    correctAnswer: B
+    explanation: >
+      Amazon ECS with Fargate is the simplest solution for teams without Kubernetes experience. ECS has native ALB
+      integration with dynamic port mapping, allowing path-based routing to multiple services on the same ALB. Fargate
+      eliminates infrastructure management. Option A (EKS) requires Kubernetes expertise and has more complexity.
+      Option C uses EC2 launch type (more management) and NLB doesn't support path-based routing. Option D (self-managed)
+      has the highest operational overhead.
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/intro.html
+    services: [Amazon ECS, AWS Fargate, Application Load Balancer]
+    concepts: [container-orchestration, ecs-vs-eks, serverless-containers]
+
+  - id: mod-010
+    type: single
+    text: >
+      A media company processes video uploads with a workflow: validate upload, transcode to multiple formats, generate
+      thumbnails, and update metadata. Some steps can run in parallel, and the entire workflow can take up to 2 hours.
+      What is the MOST appropriate serverless solution?
+    options:
+      - id: A
+        text: Use Lambda with SQS for each step, chaining queues together for the workflow
+      - id: B
+        text: Use AWS Step Functions with Parallel state for transcoding and thumbnail generation, calling Lambda or ECS tasks
+      - id: C
+        text: Use Amazon EventBridge rules to chain Lambda functions based on S3 upload events
+      - id: D
+        text: Use a single Lambda function with increased timeout (15 minutes) and loop through all processing steps
+    correctAnswer: B
+    explanation: >
+      AWS Step Functions is purpose-built for orchestrating complex workflows with parallel execution, error handling,
+      and long durations (up to 1 year). You can use a Parallel state to run transcoding and thumbnail generation
+      concurrently, then proceed to metadata update. Step Functions can invoke Lambda (for short tasks) or ECS/Fargate
+      (for long transcoding). Option A (SQS chains) requires custom orchestration logic. Option C (EventBridge) lacks
+      built-in workflow state management. Option D won't work because Lambda has a 15-minute maximum, but transcode
+      can take 2 hours.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-parallel-state.html
+    services: [AWS Step Functions, AWS Lambda, Amazon ECS]
+    concepts: [workflow-orchestration, parallel-processing, long-running-workflows]
+
+  - id: mod-011
+    type: multi
+    correctCount: 2
+    text: >
+      A company is building an event-driven architecture where multiple microservices need to react to order placement
+      events. Different services need different subsets of event data. Which TWO AWS services should be used together?
+    options:
+      - id: A
+        text: Amazon SNS with topic subscriptions for multiple services, using message filtering for selective delivery
+      - id: B
+        text: Amazon SQS FIFO queue with multiple consumers polling for messages
+      - id: C
+        text: Amazon EventBridge with event bus and multiple rules with content-based filtering to route to different targets
+      - id: D
+        text: AWS Step Functions to coordinate delivery to each microservice
+      - id: E
+        text: Amazon Kinesis Data Streams with multiple consumers using different stream positions
+    correctAnswer: [A, C]
+    explanation: >
+      Both SNS and EventBridge are designed for pub/sub event-driven architectures. (A) SNS provides fan-out messaging
+      with message filtering to send only relevant events to each subscriber. (C) EventBridge provides a more sophisticated
+      event bus with content-based filtering, schema registry, and integration with AWS and SaaS services. Both support
+      multiple independent consumers reacting to the same event. Option B (SQS) is point-to-point, not pub/sub. Option D
+      (Step Functions) is for orchestration, not event distribution. Option E (Kinesis) is for stream processing, not
+      discrete event routing.
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html
+    services: [Amazon EventBridge, Amazon SNS]
+    concepts: [event-driven-architecture, pub-sub-pattern, message-filtering]
+
+  - id: mod-012
+    type: single
+    text: >
+      A startup wants to deploy a containerized web application with minimal operational overhead. They don't need
+      orchestration features like service discovery or auto-scaling policies, just automatic scaling based on traffic
+      and a public HTTPS endpoint. What is the SIMPLEST AWS service for this use case?
+    options:
+      - id: A
+        text: Amazon ECS with Fargate and Application Load Balancer
+      - id: B
+        text: Amazon EKS with Fargate and ingress controller
+      - id: C
+        text: AWS App Runner with container image from ECR
+      - id: D
+        text: AWS Elastic Beanstalk with Docker platform
+    correctAnswer: C
+    explanation: >
+      AWS App Runner is the simplest way to run containerized web apps. You provide a container image (or source code),
+      and App Runner automatically builds, deploys, scales (including to zero), load balances, and provides an HTTPS
+      endpoint. No infrastructure configuration needed. Option A (ECS) requires configuring tasks, services, ALB, and
+      auto-scaling. Option B (EKS) has even more complexity. Option D (Elastic Beanstalk) requires platform configuration.
+      App Runner is designed for this "just deploy my container" use case.
+    awsDocLink: https://docs.aws.amazon.com/apprunner/latest/dg/what-is-apprunner.html
+    services: [AWS App Runner, Amazon ECR]
+    concepts: [simplified-deployment, container-as-a-service, automatic-scaling]
+
+  - id: mod-013
+    type: single
+    text: >
+      A company using Amazon ECS with Fargate wants to implement blue/green deployments with traffic shifting for
+      zero-downtime releases. Which AWS service should they integrate with ECS?
+    options:
+      - id: A
+        text: AWS CodeDeploy with ECS deployment type and linear or canary traffic shifting
+      - id: B
+        text: AWS CodePipeline with manual approval stages between environments
+      - id: C
+        text: Application Load Balancer with weighted target groups, manually adjusting weights
+      - id: D
+        text: Amazon Route 53 with weighted routing policy to shift DNS traffic
+    correctAnswer: A
+    explanation: >
+      AWS CodeDeploy has native integration with ECS for blue/green deployments. It creates a new task set (green),
+      gradually shifts traffic from the old task set (blue) using ALB, and automatically rolls back if CloudWatch alarms
+      trigger. You can choose linear (10% every 5 minutes), canary (10% then 100%), or all-at-once shifting. This is
+      fully automated. Option B (CodePipeline) is for CI/CD orchestration, not deployment strategy. Option C requires
+      manual intervention. Option D (Route 53) shifts at the DNS level with caching delays and doesn't provide the
+      fine-grained control of CodeDeploy.
+    awsDocLink: https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-steps-ecs.html
+    services: [AWS CodeDeploy, Amazon ECS, Application Load Balancer]
+    concepts: [blue-green-deployment, traffic-shifting, zero-downtime-deployment]
+
+  - id: mod-014
+    type: single
+    text: >
+      A SaaS company has a multi-tenant application where each tenant's data must be completely isolated. They're
+      modernizing to microservices and need to ensure tenant context flows through all service calls. What is the
+      BEST approach for tenant isolation in a microservices architecture?
+    options:
+      - id: A
+        text: Use separate AWS accounts for each tenant with cross-account service calls
+      - id: B
+        text: Include tenant ID in API Gateway custom authorizer JWT claims, propagate via request headers through all services
+      - id: C
+        text: Deploy separate ECS clusters for each tenant with isolated VPCs
+      - id: D
+        text: Use separate DynamoDB tables per tenant with encryption using tenant-specific KMS keys
+    correctAnswer: B
+    explanation: >
+      The best practice for SaaS multi-tenancy is to include tenant context (tenant ID) in authentication tokens (JWT)
+      and propagate it through service calls via headers. API Gateway custom authorizers validate the JWT, extract the
+      tenant ID, and include it in requests to downstream services. Each service uses the tenant ID to enforce data
+      isolation at the application layer (row-level security, separate database schemas, etc.). Option A (separate
+      accounts) is cost-prohibitive and complex. Option C (separate clusters) doesn't scale. Option D only addresses
+      database isolation, not the broader tenant context propagation problem.
+    awsDocLink: https://docs.aws.amazon.com/prescriptive-guidance/latest/saas-multitenant-api-gateway-lambda-dynamo/welcome.html
+    services: [Amazon API Gateway, AWS Lambda, Amazon DynamoDB]
+    concepts: [multi-tenancy, tenant-isolation, jwt-claims, saas-architecture]
+
+  - id: mod-015
+    type: multi
+    correctCount: 3
+    text: >
+      A company is modernizing a legacy batch processing application that runs nightly jobs processing millions of records.
+      The new solution should be serverless, cost-effective, and handle failures gracefully. Which THREE AWS services should
+      be part of the architecture?
+    options:
+      - id: A
+        text: AWS Lambda with SQS for distributing work items across multiple concurrent executions
+      - id: B
+        text: Amazon EC2 Spot Instances with Auto Scaling for cost-effective batch processing
+      - id: C
+        text: AWS Step Functions to orchestrate the overall batch workflow with error handling
+      - id: D
+        text: Amazon EventBridge scheduled rules to trigger the batch job at specific times
+      - id: E
+        text: AWS Batch with Fargate compute environment for container-based processing
+      - id: F
+        text: Amazon EMR cluster for distributed data processing
+    correctAnswer: [A, C, D]
+    explanation: >
+      The serverless batch processing pattern uses: (D) EventBridge scheduled rules to trigger jobs on a schedule (replacing
+      cron). (C) Step Functions orchestrates the workflow (fan-out work items, aggregate results, error handling). (A) Lambda
+      with SQS distributes processing across many concurrent Lambda executions (up to 1000 concurrent). This is fully serverless
+      and cost-effective (pay only for execution time). Option B (EC2) isn't serverless. Option E (AWS Batch) is good for
+      batch workloads but uses containers/VMs, not fully serverless. Option F (EMR) is for big data analytics, not general
+      batch processing.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+    services: [AWS Lambda, Amazon SQS, AWS Step Functions, Amazon EventBridge]
+    concepts: [serverless-batch-processing, event-driven-scheduling, distributed-processing]

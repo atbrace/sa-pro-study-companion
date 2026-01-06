@@ -1,0 +1,85 @@
+id: domain-2-new-workloads
+name: Design Solutions for New Workloads
+shortName: New Workloads
+weight: 29
+description: >
+  Design and implement solutions for new workloads on AWS, including compute, storage,
+  database, networking, and application integration services. Focus on deployment strategies,
+  performance optimization, reliability, and cost-effectiveness.
+color: purple
+icon: box
+
+examTasks:
+  - id: task-2-1
+    name: Design a deployment strategy to meet business requirements
+    description: >
+      Design deployment strategies using AWS compute, containers, and serverless services
+      to meet business and technical requirements.
+  - id: task-2-2
+    name: Design a solution to ensure business continuity
+    description: >
+      Implement backup, disaster recovery, and high availability solutions for
+      new workloads across AWS services.
+  - id: task-2-3
+    name: Determine security controls based on requirements
+    description: >
+      Design appropriate security controls including encryption, access management,
+      and network security for new workloads.
+  - id: task-2-4
+    name: Design a strategy to meet reliability requirements
+    description: >
+      Implement fault tolerance, auto-scaling, and monitoring strategies to
+      meet reliability objectives.
+  - id: task-2-5
+    name: Design a solution to meet performance objectives
+    description: >
+      Optimize compute, storage, database, and network performance to meet
+      application requirements and SLAs.
+  - id: task-2-6
+    name: Determine a cost optimization strategy for new workloads
+    description: >
+      Select appropriate pricing models, resource sizing, and architectural
+      patterns to optimize costs for new workloads.
+
+topics:
+  - compute-solutions
+  - storage-solutions
+  - database-solutions
+  - networking-solutions
+  - application-integration
+  - serverless-architectures
+
+keyServices:
+  - Amazon EC2
+  - AWS Lambda
+  - Amazon ECS
+  - Amazon EKS
+  - AWS Batch
+  - Amazon S3
+  - Amazon EBS
+  - Amazon EFS
+  - Amazon FSx
+  - Amazon RDS
+  - Amazon Aurora
+  - Amazon DynamoDB
+  - Amazon ElastiCache
+  - Elastic Load Balancing
+  - Amazon CloudFront
+  - Amazon API Gateway
+  - Amazon SQS
+  - Amazon SNS
+  - AWS Step Functions
+
+awsDocLinks:
+  - title: AWS Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
+    type: doc
+  - title: AWS Compute Services Overview
+    url: https://docs.aws.amazon.com/whitepapers/latest/aws-overview/compute-services.html
+    type: whitepaper
+  - title: AWS Storage Services Overview
+    url: https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage-services.html
+    type: whitepaper
+  - title: AWS Database Services
+    url: https://aws.amazon.com/products/databases/
+    type: doc

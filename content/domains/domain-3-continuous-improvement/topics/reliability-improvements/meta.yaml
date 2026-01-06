@@ -1,0 +1,57 @@
+id: reliability-improvements
+name: Reliability Improvements for Existing Solutions
+shortName: Reliability Improvements
+examTask: task-3-4
+description: >
+  Implement strategies to improve system reliability through multi-AZ and cross-region
+  architectures, auto-scaling, self-healing, automated recovery, backup strategies, and
+  chaos engineering using AWS Fault Injection Simulator.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - Amazon EC2 Auto Scaling
+  - AWS Elastic Load Balancing
+  - Amazon CloudWatch
+  - AWS Backup
+  - AWS Fault Injection Simulator
+  - Amazon Route 53
+  - AWS Systems Manager
+  - AWS Lambda
+  - Amazon EventBridge
+  - AWS Resilience Hub
+
+keyConcepts:
+  - Multi-AZ deployment patterns
+  - Cross-region disaster recovery
+  - Auto Scaling policies and lifecycle hooks
+  - Self-healing architectures
+  - CloudWatch alarms and automated actions
+  - Backup strategies and retention policies
+  - Chaos engineering principles
+  - Health checks and failover routing
+  - RTO and RPO optimization
+  - Static stability patterns
+
+awsDocLinks:
+  - title: AWS Well-Architected Framework - Reliability Pillar
+    url: https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/
+    type: whitepaper
+  - title: Amazon EC2 Auto Scaling Documentation
+    url: https://docs.aws.amazon.com/autoscaling/ec2/userguide/
+    type: doc
+  - title: AWS Backup Documentation
+    url: https://docs.aws.amazon.com/aws-backup/latest/devguide/
+    type: doc
+  - title: AWS Fault Injection Simulator Documentation
+    url: https://docs.aws.amazon.com/fis/latest/userguide/
+    type: doc
+  - title: Disaster Recovery of Workloads on AWS
+    url: https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/
+    type: whitepaper
+
+relatedExperiments:
+  - lab-auto-scaling
+  - lab-fault-injection
+  - lab-cross-region-failover

@@ -1,0 +1,59 @@
+id: application-integration
+name: Application Integration
+shortName: App Integration
+examTask: task-2-1
+description: >
+  Design and implement application integration using AWS messaging, event-driven architecture, and workflow orchestration services
+
+estimatedStudyTime: 90
+difficulty: advanced
+
+keyServices:
+  - Amazon SQS
+  - Amazon SNS
+  - Amazon EventBridge
+  - AWS Step Functions
+  - Amazon AppFlow
+  - Amazon API Gateway
+  - Amazon MQ
+  - AWS AppSync
+
+keyConcepts:
+  - Messaging patterns (point-to-point, pub/sub, fan-out)
+  - Event-driven architecture
+  - Workflow orchestration and state machines
+  - Asynchronous processing
+  - Message ordering and deduplication
+  - Dead letter queues
+  - Event filtering and routing
+  - API gateway patterns
+  - Integration with SaaS applications
+
+awsDocLinks:
+  - title: Amazon SQS Developer Guide
+    url: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/
+    type: doc
+  - title: Amazon SNS Developer Guide
+    url: https://docs.aws.amazon.com/sns/latest/dg/
+    type: doc
+  - title: Amazon EventBridge User Guide
+    url: https://docs.aws.amazon.com/eventbridge/latest/userguide/
+    type: doc
+  - title: AWS Step Functions Developer Guide
+    url: https://docs.aws.amazon.com/step-functions/latest/dg/
+    type: doc
+  - title: Amazon API Gateway Developer Guide
+    url: https://docs.aws.amazon.com/apigateway/latest/developerguide/
+    type: doc
+  - title: Amazon AppFlow User Guide
+    url: https://docs.aws.amazon.com/appflow/latest/userguide/
+    type: doc
+  - title: Architecting for Reliable Scalability
+    url: https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/
+    type: whitepaper
+  - title: SQS FAQs
+    url: https://aws.amazon.com/sqs/faqs/
+    type: faq
+  - title: EventBridge FAQs
+    url: https://aws.amazon.com/eventbridge/faqs/
+    type: faq

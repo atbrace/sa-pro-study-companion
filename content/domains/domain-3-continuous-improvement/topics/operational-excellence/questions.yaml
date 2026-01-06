@@ -1,0 +1,569 @@
+questions:
+  - id: opex-001
+    type: single
+    text: >
+      A company's distributed microservices application is experiencing intermittent
+      latency issues that affect only certain user requests. The development team
+      needs to identify which specific microservice calls are causing delays and
+      understand the end-to-end request flow. Which AWS service provides the MOST
+      effective solution for this requirement?
+    options:
+      - id: A
+        text: Use CloudWatch Logs Insights to query application logs across all microservices
+      - id: B
+        text: Implement AWS X-Ray with instrumentation across all microservices to trace request paths
+      - id: C
+        text: Create CloudWatch custom metrics for each microservice and set up composite alarms
+      - id: D
+        text: Deploy CloudWatch Container Insights to monitor ECS task performance metrics
+    correctAnswer: B
+    explanation: >
+      AWS X-Ray is specifically designed for distributed tracing across microservices.
+      It provides service maps showing request flows, identifies performance bottlenecks,
+      and highlights which specific service calls are slow. CloudWatch Logs Insights (A)
+      can analyze logs but doesn't provide visual request tracing or automatic correlation
+      across services. Custom metrics (C) show performance trends but don't trace individual
+      requests. Container Insights (D) monitors resource utilization but doesn't trace
+      application-level request flows.
+    awsDocLink: https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html
+    services:
+      - AWS X-Ray
+    concepts:
+      - Distributed tracing
+      - Service maps
+      - Performance analysis
+      - Microservices monitoring
+
+  - id: opex-002
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is designing an operational excellence strategy for a
+      multi-tier application. The strategy must include comprehensive monitoring,
+      automated remediation, and centralized logging. Which THREE AWS services
+      should be included in the solution?
+    options:
+      - id: A
+        text: CloudWatch for metrics, alarms, and dashboards to monitor application and infrastructure health
+      - id: B
+        text: AWS Config to track resource configuration changes and compliance
+      - id: C
+        text: Amazon EventBridge to trigger automated remediation based on system events
+      - id: D
+        text: AWS CloudTrail for API call logging and security auditing
+      - id: E
+        text: CloudWatch Logs with Logs Insights for centralized log aggregation and analysis
+      - id: F
+        text: AWS Trusted Advisor for cost optimization recommendations
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: >
+      For comprehensive operational excellence: CloudWatch (A) provides metrics, alarms,
+      and dashboards for monitoring. EventBridge (C) enables event-driven automation for
+      remediation based on CloudWatch alarms or other events. CloudWatch Logs with Logs
+      Insights (E) centralizes logs and enables powerful querying. While Config (B),
+      CloudTrail (D), and Trusted Advisor (F) are valuable services, they address
+      configuration tracking, security auditing, and cost optimization respectively,
+      which are outside the core requirements of monitoring, automation, and logging.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/design-principles.html
+    services:
+      - Amazon CloudWatch
+      - Amazon EventBridge
+      - CloudWatch Logs
+    concepts:
+      - Operational excellence
+      - Monitoring strategy
+      - Automated remediation
+      - Centralized logging
+
+  - id: opex-003
+    type: single
+    text: >
+      A company needs to provide developers with secure shell access to hundreds of
+      EC2 instances across multiple AWS accounts without managing SSH keys or deploying
+      bastion hosts. The solution must provide full audit trails of all session activity.
+      Which solution meets these requirements with the LEAST operational overhead?
+    options:
+      - id: A
+        text: Deploy bastion hosts in each account and use AWS Secrets Manager to rotate SSH keys automatically
+      - id: B
+        text: Use AWS Systems Manager Session Manager with IAM policies and CloudTrail logging
+      - id: C
+        text: Configure EC2 Instance Connect with temporary SSH keys generated per session
+      - id: D
+        text: Implement AWS Client VPN with MFA and route SSH traffic through the VPN
+    correctAnswer: B
+    explanation: >
+      Systems Manager Session Manager provides secure shell access without SSH keys or
+      bastion hosts, uses IAM for authentication and authorization, logs all session
+      activity to CloudTrail and optionally CloudWatch Logs or S3, and works across
+      multiple accounts. It requires only the SSM Agent and appropriate IAM roles.
+      Bastion hosts (A) require infrastructure management. EC2 Instance Connect (C)
+      requires public IP addresses and doesn't work cross-account easily. Client VPN
+      (D) adds complexity and cost without providing session-level auditing.
+    awsDocLink: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html
+    services:
+      - AWS Systems Manager
+      - Session Manager
+      - AWS CloudTrail
+    concepts:
+      - Secure access
+      - Session management
+      - Audit logging
+      - Bastion host alternatives
+
+  - id: opex-004
+    type: single
+    text: >
+      An organization needs to automatically patch all EC2 instances across 30 AWS
+      accounts during monthly maintenance windows. Different environments require
+      different patch approval rules, and the solution must report patching compliance
+      centrally. What is the MOST scalable approach?
+    options:
+      - id: A
+        text: Create Lambda functions in each account to apply patches using SSM Run Command during maintenance windows
+      - id: B
+        text: Use AWS Systems Manager Patch Manager with custom patch baselines, maintenance windows, and AWS Organizations integration
+      - id: C
+        text: Deploy AWS OpsWorks stacks in each account with Chef recipes for automated patching
+      - id: D
+        text: Use CloudFormation StackSets to deploy Auto Scaling groups with pre-patched AMIs monthly
+    correctAnswer: B
+    explanation: >
+      Systems Manager Patch Manager is purpose-built for automated patching at scale.
+      It supports custom patch baselines for different approval rules, maintenance
+      windows for scheduled patching, multi-account management through AWS Organizations,
+      and centralized compliance reporting. Lambda solutions (A) require custom code
+      and don't provide patch compliance tracking. OpsWorks (C) is deprecated and
+      more complex. AMI replacement (D) doesn't patch existing instances and requires
+      instance replacement.
+    awsDocLink: https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager.html
+    services:
+      - AWS Systems Manager
+      - Patch Manager
+      - AWS Organizations
+    concepts:
+      - Patch management
+      - Maintenance windows
+      - Compliance reporting
+      - Multi-account operations
+
+  - id: opex-005
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is implementing CloudWatch Logs Insights to analyze
+      application logs. The logs are in JSON format and contain request IDs,
+      timestamps, user IDs, and error codes. Which TWO query capabilities would
+      be MOST useful for analyzing error patterns?
+    options:
+      - id: A
+        text: Automatic field discovery to extract JSON fields without manual parsing
+      - id: B
+        text: Cross-region replication of log data for compliance requirements
+      - id: C
+        text: Statistical aggregation functions like count(), avg(), and percentile operations
+      - id: D
+        text: Real-time streaming of logs to Amazon Kinesis Data Streams
+      - id: E
+        text: Encryption of log data at rest using AWS KMS
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      For analyzing error patterns in JSON logs: Automatic field discovery (A) is
+      critical as it extracts JSON fields automatically, allowing you to query
+      nested fields without manual parsing. Statistical aggregation (C) enables
+      analysis like "count errors by error code" or "calculate average response
+      time per user". Cross-region replication (B) and KMS encryption (E) are
+      storage features, not query capabilities. Kinesis streaming (D) is for
+      real-time processing outside of Logs Insights.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html
+    services:
+      - CloudWatch Logs Insights
+    concepts:
+      - Log analysis
+      - Query language
+      - JSON parsing
+      - Statistical analysis
+
+  - id: opex-006
+    type: single
+    text: >
+      A company wants to implement self-healing infrastructure where unhealthy EC2
+      instances are automatically terminated and replaced. When an instance fails
+      health checks, a snapshot should be created before termination for forensic
+      analysis. What is the MOST automated solution?
+    options:
+      - id: A
+        text: Configure Auto Scaling health checks with a lifecycle hook to trigger a Lambda function that creates snapshots
+      - id: B
+        text: Create a CloudWatch alarm on instance health that triggers an EventBridge rule invoking Systems Manager Automation
+      - id: C
+        text: Use AWS Config rules to detect unhealthy instances and remediate using SSM documents
+      - id: D
+        text: Implement a CloudWatch Logs subscription filter that triggers SNS when health check failures are logged
+    correctAnswer: B
+    explanation: >
+      The correct solution uses CloudWatch alarms to detect unhealthy instances,
+      EventBridge to react to the alarm, and Systems Manager Automation to execute
+      a multi-step remediation (create snapshot, terminate instance, Auto Scaling
+      launches replacement). This is the most native AWS approach for automated
+      remediation workflows. Option A works but lifecycle hooks only trigger during
+      Auto Scaling scaling events, not health check failures. Config rules (C) track
+      configuration compliance, not instance health. Logs subscription (D) requires
+      health check data to be logged and doesn't provide workflow orchestration.
+    awsDocLink: https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-automation.html
+    services:
+      - Amazon CloudWatch
+      - Amazon EventBridge
+      - AWS Systems Manager
+    concepts:
+      - Automated remediation
+      - Self-healing architecture
+      - Event-driven automation
+      - Runbook automation
+
+  - id: opex-007
+    type: multi
+    correctCount: 3
+    text: >
+      An organization is implementing Infrastructure as Code using AWS CDK for a
+      multi-region, multi-account deployment. Which THREE CDK features or best
+      practices should be utilized?
+    options:
+      - id: A
+        text: Use CDK Pipelines for self-mutating CI/CD deployments across environments
+      - id: B
+        text: Implement L3 constructs (patterns) to combine multiple resources with best practices
+      - id: C
+        text: Store CDK code in Lambda functions for dynamic infrastructure provisioning
+      - id: D
+        text: Use CDK context values and environment variables for environment-specific configuration
+      - id: E
+        text: Generate CloudFormation templates and deploy them manually to maintain control
+      - id: F
+        text: Create reusable custom constructs as libraries for standardized infrastructure components
+    correctAnswer:
+      - A
+      - D
+      - F
+    explanation: >
+      Best practices for CDK multi-account deployments: CDK Pipelines (A) provide
+      self-mutating CI/CD with automatic cross-account deployment. Context values and
+      environment variables (D) enable environment-specific configuration while keeping
+      code DRY. Custom construct libraries (F) promote reusability and standardization
+      across teams. L3 constructs (B) are useful but not essential for multi-account
+      deployments. Storing CDK in Lambda (C) is not a standard pattern. Manual
+      CloudFormation deployment (E) defeats the purpose of CDK automation.
+    awsDocLink: https://docs.aws.amazon.com/cdk/latest/guide/home.html
+    services:
+      - AWS CDK
+      - AWS CloudFormation
+    concepts:
+      - Infrastructure as Code
+      - CDK best practices
+      - Multi-account deployment
+      - Reusable constructs
+
+  - id: opex-008
+    type: single
+    text: >
+      A development team needs to analyze CloudWatch Logs to identify the top 10 API
+      endpoints with the highest error rates over the past 24 hours. The logs contain
+      timestamp, endpoint, status code, and response time in JSON format. Which Logs
+      Insights query approach is correct?
+    options:
+      - id: A
+        text: Use filter to select 5xx status codes, then stats count() by endpoint, sorted descending, limited to 10
+      - id: B
+        text: Use parse to extract the endpoint field, then display the top 10 most frequent values
+      - id: C
+        text: Create a metric filter for error status codes and query the resulting CloudWatch metric
+      - id: D
+        text: Use the pattern command to identify common error patterns across all endpoints
+    correctAnswer: A
+    explanation: >
+      The correct query filters for error status codes (5xx), groups by endpoint using
+      stats count(), sorts in descending order, and limits to 10 results. This directly
+      answers the question of "top 10 endpoints by error count". Parse (B) is for
+      unstructured logs, but the logs are JSON with automatic field discovery. Metric
+      filters (C) create CloudWatch metrics but don't provide the query flexibility
+      needed for this analysis. Pattern matching (D) finds patterns but doesn't rank
+      endpoints by error rate.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html
+    services:
+      - CloudWatch Logs Insights
+    concepts:
+      - Log query language
+      - Statistical analysis
+      - Filtering and aggregation
+      - Top-N queries
+
+  - id: opex-009
+    type: single
+    text: >
+      A company uses EventBridge to route events from multiple sources to various
+      targets. They need to ensure that failed event deliveries are not lost and can
+      be analyzed later. Additionally, they want to replay specific events for testing
+      purposes. Which EventBridge features address these requirements?
+    options:
+      - id: A
+        text: Configure SNS as a target to buffer failed events and use S3 for event replay
+      - id: B
+        text: Implement dead-letter queues for failed deliveries and enable event archive with replay capability
+      - id: C
+        text: Use CloudWatch Logs to capture all events and write Lambda functions to retry failed deliveries
+      - id: D
+        text: Configure event bus policies to automatically retry failed events and store them in DynamoDB
+    correctAnswer: B
+    explanation: >
+      EventBridge provides native support for dead-letter queues (SQS or SNS) to
+      capture failed event deliveries, ensuring no events are lost. Event archive
+      allows you to store events for specified time periods and replay them to any
+      target, perfect for testing. Option A requires custom implementation. Option C
+      adds complexity without using native EventBridge features. Option D incorrectly
+      describes EventBridge capabilities (automatic retry exists but DynamoDB storage
+      is not a native feature for event replay).
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-archive-event.html
+    services:
+      - Amazon EventBridge
+      - Amazon SQS
+    concepts:
+      - Event-driven architecture
+      - Dead-letter queues
+      - Event archive and replay
+      - Failure handling
+
+  - id: opex-010
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is designing CloudWatch dashboards for different
+      stakeholder groups. The operations team needs real-time system health metrics,
+      while executives need business KPIs aggregated across multiple regions. Which
+      TWO CloudWatch dashboard capabilities meet these requirements?
+    options:
+      - id: A
+        text: Create cross-region dashboards that aggregate metrics from multiple AWS regions into a single view
+      - id: B
+        text: Use dashboard variables to allow users to dynamically filter metrics by region or environment
+      - id: C
+        text: Implement real-time streaming of dashboard data to external business intelligence tools
+      - id: D
+        text: Configure automatic dashboards that are created based on AWS service usage patterns
+      - id: E
+        text: Share dashboards publicly with stakeholders who don't have AWS accounts
+    correctAnswer:
+      - A
+      - B
+    explanation: >
+      Cross-region dashboards (A) allow aggregation of metrics from multiple regions,
+      perfect for executive views of global business KPIs. Dashboard variables (B)
+      enable dynamic filtering, allowing the same dashboard to serve different purposes
+      (ops team filtering by environment, executives by business unit). Real-time
+      streaming (C) is not a native dashboard feature. Automatic dashboards (D) exist
+      but are service-specific, not customizable for business KPIs. Public sharing (E)
+      exists but is a sharing feature, not a capability for meeting the stated requirements.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Dashboards.html
+    services:
+      - Amazon CloudWatch
+    concepts:
+      - Dashboard design
+      - Cross-region monitoring
+      - Dashboard variables
+      - Stakeholder views
+
+  - id: opex-011
+    type: single
+    text: >
+      A microservices application instrumented with X-Ray is showing high latency.
+      The X-Ray service map reveals that calls to a specific DynamoDB table are slow.
+      The developer needs to identify which specific database operations are causing
+      delays. Which X-Ray feature provides this level of detail?
+    options:
+      - id: A
+        text: Use X-Ray annotations to filter traces and view aggregate statistics
+      - id: B
+        text: Examine subsegments within DynamoDB service segments to see individual API calls and their latency
+      - id: C
+        text: Enable X-Ray sampling rules to capture more detailed traces of slow requests
+      - id: D
+        text: Review X-Ray metadata for detailed information about database query patterns
+    correctAnswer: B
+    explanation: >
+      Subsegments provide granular detail about operations within a service segment.
+      For DynamoDB, subsegments show individual API calls (GetItem, Query, Scan, etc.)
+      with their latency, allowing you to identify which specific operations are slow.
+      Annotations (A) are for filtering and grouping traces, not seeing detailed
+      operations. Sampling rules (C) control which requests are traced, not the level
+      of detail captured. Metadata (D) contains additional information but is not
+      indexed or designed for performance analysis like subsegments are.
+    awsDocLink: https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-subsegments
+    services:
+      - AWS X-Ray
+      - Amazon DynamoDB
+    concepts:
+      - Distributed tracing
+      - Subsegments
+      - Performance analysis
+      - Trace details
+
+  - id: opex-012
+    type: single
+    text: >
+      A company needs to centralize logs from applications running across 20 AWS
+      accounts. The logs must be searchable, retained for 7 years for compliance,
+      and analyzed using SQL queries. What is the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Use CloudWatch Logs with cross-account log data sharing to a central account, set 7-year retention, and use Logs Insights
+      - id: B
+        text: Stream logs via Kinesis Data Firehose to S3 in a central account, use S3 lifecycle policies for retention, and query with Athena
+      - id: C
+        text: Replicate all logs to a central CloudWatch Logs account and export to S3 Glacier for long-term storage
+      - id: D
+        text: Deploy OpenSearch clusters in each account with cross-cluster replication to a central OpenSearch domain
+    correctAnswer: B
+    explanation: >
+      For 7-year retention with SQL querying, storing in S3 and querying with Athena
+      is most cost-effective. Kinesis Data Firehose handles cross-account streaming,
+      S3 provides cheap long-term storage with lifecycle policies, and Athena enables
+      SQL queries without infrastructure. CloudWatch Logs (A) becomes expensive for
+      7-year retention (max is actually indefinite, but costly compared to S3). Option
+      C adds unnecessary complexity with Glacier and doesn't provide SQL querying.
+      OpenSearch (D) is expensive for long-term storage and adds significant operational
+      overhead.
+    awsDocLink: https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html
+    services:
+      - Amazon Kinesis Data Firehose
+      - Amazon S3
+      - Amazon Athena
+      - CloudWatch Logs
+    concepts:
+      - Log aggregation
+      - Long-term retention
+      - Cost optimization
+      - SQL querying
+
+  - id: opex-013
+    type: multi
+    correctCount: 3
+    text: >
+      An organization is implementing Systems Manager Automation to perform routine
+      operational tasks. Which THREE capabilities does Systems Manager Automation
+      provide?
+    options:
+      - id: A
+        text: Execute multi-step workflows using pre-built or custom runbooks
+      - id: B
+        text: Require manual approval steps before executing critical operations
+      - id: C
+        text: Automatically patch operating systems across fleets of servers
+      - id: D
+        text: Trigger automations based on EventBridge events for event-driven remediation
+      - id: E
+        text: Perform blue/green deployments of containerized applications
+      - id: F
+        text: Run scripts (Python, PowerShell) on target instances as part of automation workflows
+    correctAnswer:
+      - A
+      - B
+      - D
+    explanation: >
+      Systems Manager Automation provides: Multi-step workflow execution using runbooks
+      (A), manual approval steps for governance (B), and EventBridge integration for
+      event-driven execution (D). While Automation can invoke Patch Manager, option C
+      describes Patch Manager specifically, not Automation. Blue/green deployments (E)
+      are handled by CodeDeploy. Running scripts (F) is technically possible but is
+      primarily a Run Command feature, not a core Automation capability.
+    awsDocLink: https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-automation.html
+    services:
+      - AWS Systems Manager
+      - Amazon EventBridge
+    concepts:
+      - Automation workflows
+      - Runbooks
+      - Approval workflows
+      - Event-driven automation
+
+  - id: opex-014
+    type: single
+    text: >
+      A company deploys infrastructure using CloudFormation across multiple regions.
+      They need to detect when resources are manually modified outside of CloudFormation
+      and receive notifications when drift is detected. What solution addresses this
+      requirement?
+    options:
+      - id: A
+        text: Enable CloudFormation drift detection and create an EventBridge rule to trigger notifications when drift is detected
+      - id: B
+        text: Use AWS Config rules to monitor resource configurations and compare against CloudFormation templates
+      - id: C
+        text: Implement CloudTrail event monitoring with CloudWatch Logs Insights to detect manual changes
+      - id: D
+        text: Schedule Lambda functions to run drift detection and send SNS notifications on differences
+    correctAnswer: D
+    explanation: >
+      CloudFormation drift detection must be triggered manually or via API/SDK - it's
+      not event-driven. Therefore, scheduling Lambda to run drift detection periodically
+      and send SNS notifications is the correct approach. EventBridge (A) cannot directly
+      trigger on drift detection because CloudFormation doesn't emit drift events
+      automatically. Config rules (B) can track configuration changes but don't
+      integrate directly with CloudFormation stack definitions for drift. CloudTrail
+      monitoring (C) shows API calls but doesn't compare against desired CloudFormation
+      state.
+    awsDocLink: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html
+    services:
+      - AWS CloudFormation
+      - AWS Lambda
+      - Amazon SNS
+    concepts:
+      - Drift detection
+      - Infrastructure as Code
+      - Configuration monitoring
+      - Change detection
+
+  - id: opex-015
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is designing a CI/CD pipeline using AWS CodePipeline
+      for a production application. The pipeline must deploy to a test environment,
+      run integration tests, require manual approval, then deploy to production with
+      automatic rollback on failure. Which TWO AWS services are essential for this
+      pipeline?
+    options:
+      - id: A
+        text: AWS CodeDeploy for automated deployments with rollback capabilities to production
+      - id: B
+        text: AWS CodeBuild for running integration tests after test environment deployment
+      - id: C
+        text: Amazon ECS for container orchestration and blue/green deployments
+      - id: D
+        text: AWS CloudFormation for infrastructure deployment and stack updates
+      - id: E
+        text: AWS Systems Manager for configuration management during deployments
+    correctAnswer:
+      - A
+      - B
+    explanation: >
+      CodeDeploy (A) is essential for production deployments with automatic rollback
+      on failure based on CloudWatch alarms or deployment metrics. CodeBuild (B) is
+      needed to run integration tests as part of the pipeline. CodePipeline has native
+      integration for manual approval steps. While ECS (C) could be the deployment
+      target, it's not essential to the pipeline design. CloudFormation (D) is for
+      infrastructure, not application deployments. Systems Manager (E) can be used
+      but isn't essential for the described pipeline requirements.
+    awsDocLink: https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html
+    services:
+      - AWS CodePipeline
+      - AWS CodeDeploy
+      - AWS CodeBuild
+    concepts:
+      - CI/CD pipelines
+      - Automated testing
+      - Deployment automation
+      - Rollback strategies

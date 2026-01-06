@@ -1,0 +1,64 @@
+id: application-modernization
+name: Application Modernization Strategies
+shortName: App Modernization
+examTask: task-4-3
+description: >
+  Design and implement strategies to modernize legacy applications using containers,
+  serverless, microservices, and managed services. Master incremental modernization
+  patterns like strangler fig and techniques for breaking monoliths.
+
+estimatedStudyTime: 150
+difficulty: advanced
+
+keyServices:
+  - Amazon ECS
+  - Amazon EKS
+  - AWS Fargate
+  - AWS Lambda
+  - Amazon API Gateway
+  - AWS App Runner
+  - AWS Step Functions
+  - Amazon EventBridge
+  - Amazon SQS
+  - Amazon SNS
+  - AWS App2Container
+  - AWS Copilot
+
+keyConcepts:
+  - Strangler fig pattern
+  - Microservices decomposition
+  - Event-driven architecture
+  - Containerization strategies
+  - Serverless transformation
+  - API Gateway patterns
+  - Service mesh (AWS App Mesh)
+  - Container orchestration
+  - Managed service adoption
+  - Incremental modernization
+  - Circuit breaker pattern
+  - Saga pattern for distributed transactions
+
+awsDocLinks:
+  - title: Modernization Strategies Overview
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-guide/
+    type: whitepaper
+  - title: Amazon ECS Best Practices Guide
+    url: https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/
+    type: doc
+  - title: Amazon EKS Best Practices
+    url: https://aws.github.io/aws-eks-best-practices/
+    type: doc
+  - title: Serverless Applications Lens - Well-Architected
+    url: https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/
+    type: whitepaper
+  - title: Microservices on AWS
+    url: https://docs.aws.amazon.com/whitepapers/latest/microservices-on-aws/
+    type: whitepaper
+  - title: Strangler Fig Pattern
+    url: https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-guide/strangler-fig.html
+    type: doc
+
+relatedExperiments:
+  - lab-ecs-fargate-microservices
+  - lab-lambda-api-gateway
+  - lab-eks-deployment

@@ -1,0 +1,68 @@
+id: domain-3-continuous-improvement
+name: Design for Continuous Improvement of Existing Solutions
+shortName: Continuous Improvement
+weight: 25
+description: >
+  Determine strategies to improve overall operational excellence, enhance security posture,
+  improve performance, increase reliability, and optimize costs for existing AWS solutions.
+color: green
+icon: trending-up
+
+examTasks:
+  - id: task-3-1
+    name: Determine a strategy to improve overall operational excellence
+    description: >
+      Implement operational improvements using AWS services for monitoring, logging,
+      automation, and incident response.
+  - id: task-3-2
+    name: Determine a strategy to improve security
+    description: >
+      Enhance security posture through improved controls, compliance, and threat detection
+      for existing solutions.
+  - id: task-3-3
+    name: Determine a strategy to improve performance
+    description: >
+      Optimize application and infrastructure performance through caching, right-sizing,
+      and architectural improvements.
+  - id: task-3-4
+    name: Determine a strategy to improve reliability
+    description: >
+      Increase system reliability through fault tolerance, monitoring, and automated
+      recovery mechanisms.
+  - id: task-3-5
+    name: Identify opportunities for cost optimization
+    description: >
+      Analyze existing solutions and implement cost optimization strategies without
+      compromising performance or reliability.
+
+topics:
+  - operational-excellence
+  - security-improvements
+  - performance-optimization
+  - reliability-improvements
+  - cost-optimization-existing
+
+keyServices:
+  - Amazon CloudWatch
+  - AWS CloudTrail
+  - AWS Config
+  - AWS Systems Manager
+  - AWS X-Ray
+  - AWS Trusted Advisor
+  - AWS Compute Optimizer
+  - AWS Cost Explorer
+  - Amazon GuardDuty
+  - AWS Security Hub
+  - AWS Well-Architected Tool
+  - AWS Service Catalog
+
+awsDocLinks:
+  - title: AWS Well-Architected Framework
+    url: https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
+    type: doc
+  - title: Operational Excellence Pillar
+    url: https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/
+    type: whitepaper
+  - title: AWS Best Practices
+    url: https://aws.amazon.com/architecture/well-architected/
+    type: doc

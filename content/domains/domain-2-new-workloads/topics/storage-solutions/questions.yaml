@@ -1,0 +1,433 @@
+questions:
+  - id: storage-001
+    type: single
+    text: |
+      A company stores 500 TB of media files in S3 Standard. Analytics show that 80% of files are accessed only
+      in the first 30 days, then rarely accessed but must remain immediately retrievable. After 180 days, files
+      are accessed less than once per year. What lifecycle policy minimizes storage costs?
+    options:
+      - id: A
+        text: Transition to S3 Standard-IA after 30 days, then to S3 Glacier after 180 days
+      - id: B
+        text: Transition to S3 Intelligent-Tiering after 30 days
+      - id: C
+        text: Transition to S3 One Zone-IA after 30 days, then to S3 Glacier Deep Archive after 180 days
+      - id: D
+        text: Transition to S3 Standard-IA after 30 days, then to S3 Glacier Flexible Retrieval after 180 days
+    correctAnswer: D
+    explanation: |
+      S3 Standard-IA (Infrequent Access) provides immediate retrieval with lower storage costs for data accessed
+      less frequently. After 180 days, S3 Glacier Flexible Retrieval offers even lower costs for archival data
+      with retrieval times of minutes to hours (vs Deep Archive's 12+ hours).
+
+      S3 Intelligent-Tiering adds monitoring costs and doesn't move to Glacier automatically. One Zone-IA lacks
+      multi-AZ durability (risky for 500 TB). Glacier Deep Archive is cheaper but has 12-hour retrieval, which
+      may be too slow if "immediate retrievability" is needed occasionally.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html
+    services: [Amazon S3]
+
+  - id: storage-002
+    type: multi
+    correctCount: 3
+    text: |
+      An application requires a shared file system accessible from multiple EC2 instances running in different
+      Availability Zones. The application performs random I/O with high IOPS requirements and needs sub-millisecond
+      latencies. Which THREE storage options meet these requirements?
+    options:
+      - id: A
+        text: Amazon EFS with Max I/O performance mode
+      - id: B
+        text: Amazon FSx for Lustre with persistent SSD storage
+      - id: C
+        text: Amazon FSx for NetApp ONTAP with All-Flash configuration
+      - id: D
+        text: Amazon EBS io2 Block Express volumes with Multi-Attach enabled
+      - id: E
+        text: Amazon EFS with Bursting Throughput mode
+    correctAnswer: [B, C, D]
+    explanation: |
+      FSx for Lustre with SSD provides sub-millisecond latencies and high IOPS for parallel workloads, accessible
+      from multiple instances across AZs.
+
+      FSx for NetApp ONTAP All-Flash delivers low latency, high IOPS, and supports NFS/SMB for multi-instance access.
+
+      EBS io2 Block Express with Multi-Attach allows multiple instances to access the same volume simultaneously
+      (up to 16 instances), providing sub-millisecond latency.
+
+      EFS Max I/O optimizes for scale at the cost of latency (higher than sub-millisecond). EFS Bursting provides
+      lower baseline performance than needed for high IOPS.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html
+    services: [Amazon FSx for Lustre, Amazon FSx for NetApp ONTAP, Amazon EBS]
+
+  - id: storage-003
+    type: single
+    text: |
+      A financial services application requires 100,000 IOPS with single-digit millisecond latency and 99.999%
+      durability. The application stores 16 TB of data that must survive Availability Zone failures. Which
+      EBS volume type is most appropriate?
+    options:
+      - id: A
+        text: gp3 with 16,000 IOPS provisioned
+      - id: B
+        text: io2 with 100,000 IOPS provisioned
+      - id: C
+        text: io2 Block Express with 100,000 IOPS
+      - id: D
+        text: st1 throughput optimized HDD
+    correctAnswer: B
+    explanation: |
+      io2 volumes provide up to 64,000 IOPS per volume (or 256,000 with Block Express) and 99.999% durability,
+      making them ideal for mission-critical workloads. Standard io2 can deliver 100,000 IOPS and provides
+      multi-AZ durability through EBS replication.
+
+      gp3 maxes out at 16,000 IOPS per volume (insufficient). io2 Block Express is overkill for 100K IOPS
+      (supports up to 256K but more expensive). st1 is throughput-optimized for sequential workloads, not
+      high IOPS random I/O.
+    awsDocLink: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+    services: [Amazon EBS]
+
+  - id: storage-004
+    type: single
+    text: |
+      A media company needs to cache frequently accessed S3 objects on-premises for video editing workflows.
+      They need low-latency local access while retaining all data durably in S3. Which Storage Gateway
+      configuration is appropriate?
+    options:
+      - id: A
+        text: File Gateway with NFS protocol
+      - id: B
+        text: Volume Gateway in cached mode
+      - id: C
+        text: Volume Gateway in stored mode
+      - id: D
+        text: Tape Gateway with VTL interface
+    correctAnswer: A
+    explanation: |
+      File Gateway presents S3 objects as files through NFS/SMB, caching frequently accessed files locally.
+      All data is stored durably in S3. This is ideal for file-based workflows like video editing that need
+      low-latency local access with S3 as the authoritative source.
+
+      Volume Gateway (cached mode) provides iSCSI block storage, not file access. Stored mode keeps primary
+      data on-premises (not S3-first). Tape Gateway is for backup/archival workflows using VTL, not active
+      editing workflows.
+    awsDocLink: https://docs.aws.amazon.com/filegateway/latest/files3/what-is-file-s3.html
+    services: [AWS Storage Gateway, Amazon S3]
+
+  - id: storage-005
+    type: multi
+    correctCount: 2
+    text: |
+      An application uploads objects to S3 at 5,000 requests per second with key names based on timestamps
+      (e.g., 2026-01-05-12-00-00-file.jpg). Performance is degrading. Which TWO changes improve S3 performance?
+    options:
+      - id: A
+        text: Add a random hash prefix to object keys (e.g., a3f2-2026-01-05-12-00-00-file.jpg)
+      - id: B
+        text: Enable S3 Transfer Acceleration
+      - id: C
+        text: Use S3 multipart upload for all objects
+      - id: D
+        text: Distribute requests across multiple S3 buckets
+      - id: E
+        text: Enable S3 Intelligent-Tiering
+    correctAnswer: [A, C]
+    explanation: |
+      Random hash prefixes ensure objects are distributed across multiple S3 partitions, avoiding hot spots.
+      Sequential keys (timestamps) can create hot partitions, limiting performance. Hash prefixing randomizes
+      distribution across partitions.
+
+      Multipart upload improves upload performance for large files and allows parallel uploads of parts,
+      increasing throughput. S3 supports 3,500 PUT/COPY/POST/DELETE and 5,500 GET/HEAD per prefix per second.
+
+      Transfer Acceleration optimizes uploads over long distances but doesn't solve partition hot spots.
+      Multiple buckets add complexity without addressing the root cause. Intelligent-Tiering is for cost
+      optimization, not performance.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+    services: [Amazon S3]
+
+  - id: storage-006
+    type: single
+    text: |
+      A company runs a Windows-based application requiring SMB file shares with Active Directory integration
+      and support for DFS namespaces. The application needs sub-millisecond latencies and automatic daily backups.
+      Which solution meets these requirements?
+    options:
+      - id: A
+        text: Amazon EFS with Windows instances
+      - id: B
+        text: Amazon FSx for Windows File Server
+      - id: C
+        text: Amazon FSx for NetApp ONTAP with SMB protocol
+      - id: D
+        text: Amazon S3 with File Gateway in SMB mode
+    correctAnswer: B
+    explanation: |
+      FSx for Windows File Server is purpose-built for Windows workloads, providing native SMB protocol,
+      Active Directory integration, DFS namespace support, and automatic daily backups. It delivers
+      sub-millisecond latencies with SSD storage.
+
+      EFS is primarily for Linux (NFS), not optimized for Windows/SMB. FSx for NetApp ONTAP supports SMB
+      but is better for multi-protocol or NetApp-specific features. S3 with File Gateway adds latency and
+      doesn't provide full Windows file system features like DFS.
+    awsDocLink: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/what-is.html
+    services: [Amazon FSx for Windows File Server]
+
+  - id: storage-007
+    type: single
+    text: |
+      A research team needs a high-performance file system for machine learning training workloads. They process
+      petabyte-scale datasets stored in S3, requiring hundreds of GB/s throughput and millions of IOPS. Which
+      solution provides optimal performance?
+    options:
+      - id: A
+        text: Amazon EFS with Max I/O performance mode
+      - id: B
+        text: Amazon FSx for Lustre with data repository association to S3
+      - id: C
+        text: Amazon FSx for NetApp ONTAP with FlexCache
+      - id: D
+        text: Amazon EBS io2 Block Express RAID array
+    correctAnswer: B
+    explanation: |
+      FSx for Lustre is designed for high-performance computing (HPC) and ML workloads, delivering hundreds
+      of GB/s throughput and millions of IOPS. Data repository associations allow seamless access to S3 data
+      as if it were local files, with automatic lazy-loading and optional write-back to S3.
+
+      EFS Max I/O doesn't provide the extreme performance needed (tens vs hundreds of GB/s). FSx for NetApp
+      ONTAP is enterprise file storage but not optimized for this scale. EBS RAID requires complex management
+      and doesn't integrate with S3.
+    awsDocLink: https://docs.aws.amazon.com/fsx/latest/LustreGuide/what-is.html
+    services: [Amazon FSx for Lustre, Amazon S3]
+
+  - id: storage-008
+    type: multi
+    correctCount: 2
+    text: |
+      A company needs to replicate 100 TB of S3 data from us-east-1 to eu-west-1 for disaster recovery.
+      Objects must be replicated within 15 minutes, and they need to replicate existing objects as well
+      as new uploads. Which TWO configurations are required?
+    options:
+      - id: A
+        text: Enable S3 Cross-Region Replication (CRR) with S3 Replication Time Control (S3 RTC)
+      - id: B
+        text: Create a replication rule with S3 Batch Replication for existing objects
+      - id: C
+        text: Enable S3 Transfer Acceleration on both buckets
+      - id: D
+        text: Use AWS DataSync to replicate objects
+      - id: E
+        text: Enable versioning on source bucket only
+    correctAnswer: [A, B]
+    explanation: |
+      S3 Replication Time Control (RTC) guarantees 99.99% of objects replicate within 15 minutes, meeting
+      the SLA requirement. CRR handles ongoing replication of new objects.
+
+      S3 Batch Replication is specifically designed to replicate existing objects (backfill). Standard CRR
+      only replicates new objects uploaded after the rule is enabled.
+
+      Transfer Acceleration improves upload speed but doesn't provide replication. DataSync could work but
+      S3 RTC is purpose-built for this use case. Versioning must be enabled on BOTH source and destination
+      buckets for replication.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-time-control.html
+    services: [Amazon S3]
+
+  - id: storage-009
+    type: single
+    text: |
+      An application writes sequential log files totaling 10 TB per day to EBS volumes. Logs are processed
+      once, then archived to S3. Throughput requirements are 500 MB/s, and cost optimization is important.
+      Which EBS volume type is most cost-effective?
+    options:
+      - id: A
+        text: gp3 general purpose SSD
+      - id: B
+        text: io2 provisioned IOPS SSD
+      - id: C
+        text: st1 throughput optimized HDD
+      - id: D
+        text: sc1 cold HDD
+    correctAnswer: C
+    explanation: |
+      st1 (throughput optimized HDD) is designed for sequential workloads like log processing, data warehouses,
+      and ETL. It provides up to 500 MB/s throughput per volume at the lowest cost for high-throughput workloads.
+
+      gp3 and io2 are SSD-based (more expensive) and optimized for random I/O, not sequential writes. sc1
+      (cold HDD) is even cheaper but limited to 250 MB/s throughput (insufficient for 500 MB/s requirement).
+      st1 is the optimal balance of throughput and cost for sequential workloads.
+    awsDocLink: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+    services: [Amazon EBS]
+
+  - id: storage-010
+    type: single
+    text: |
+      A company stores sensitive data in S3 and needs to prevent accidental deletion. Objects must be immutable
+      for 7 years to meet regulatory compliance. Even the root account should not be able to delete or modify
+      objects during this period. What should you configure?
+    options:
+      - id: A
+        text: Enable S3 Versioning with MFA Delete
+      - id: B
+        text: Enable S3 Object Lock in governance mode with 7-year retention
+      - id: C
+        text: Enable S3 Object Lock in compliance mode with 7-year retention
+      - id: D
+        text: Create a bucket policy denying s3:DeleteObject for all principals
+    correctAnswer: C
+    explanation: |
+      S3 Object Lock in compliance mode provides WORM (write-once-read-many) protection. In compliance mode,
+      objects cannot be overwritten or deleted by any user, including the root account, for the retention period.
+      This meets strict regulatory requirements like SEC Rule 17a-4.
+
+      Governance mode allows users with special permissions to bypass retention. MFA Delete prevents deletion
+      but doesn't provide true WORM. Bucket policies can be changed by administrators. Only compliance mode
+      provides immutability that even root cannot override.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html
+    services: [Amazon S3]
+
+  - id: storage-011
+    type: multi
+    correctCount: 2
+    text: |
+      An application uses Amazon EFS for shared storage across multiple EC2 instances in two Availability Zones.
+      The file system stores 50 TB of data with inconsistent access patterns. Which TWO configurations optimize
+      costs without impacting performance?
+    options:
+      - id: A
+        text: Enable EFS Lifecycle Management to transition to Infrequent Access storage class
+      - id: B
+        text: Enable EFS Intelligent-Tiering
+      - id: C
+        text: Change to One Zone storage class
+      - id: D
+        text: Enable EFS Bursting Throughput mode
+      - id: E
+        text: Use Provisioned Throughput mode
+    correctAnswer: [A, B]
+    explanation: |
+      EFS Lifecycle Management automatically moves files not accessed for a specified period (e.g., 30 days)
+      to the Infrequent Access (IA) storage class, reducing costs by up to 92% for infrequently accessed files.
+
+      EFS Intelligent-Tiering automatically optimizes costs by moving files between Standard and IA based on
+      access patterns, similar to S3 Intelligent-Tiering.
+
+      One Zone reduces durability (single AZ) and the question requires two AZs. Bursting vs Provisioned
+      Throughput affects performance/cost tradeoff but doesn't optimize storage costs. Lifecycle + Intelligent-
+      Tiering both optimize storage costs.
+    awsDocLink: https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html
+    services: [Amazon EFS]
+
+  - id: storage-012
+    type: single
+    text: |
+      A SaaS application serves static assets (images, CSS, JS) to users globally. Files are stored in S3 in
+      us-east-1. Users in Asia report slow load times. Uploads from application servers happen infrequently
+      from us-east-1 only. How do you improve performance for global reads?
+    options:
+      - id: A
+        text: Enable S3 Transfer Acceleration for faster uploads and downloads
+      - id: B
+        text: Configure S3 Cross-Region Replication to buckets in multiple regions
+      - id: C
+        text: Use CloudFront distribution with S3 as the origin
+      - id: D
+        text: Enable S3 Intelligent-Tiering for automatic access optimization
+    correctAnswer: C
+    explanation: |
+      CloudFront CDN caches content at edge locations globally, providing low-latency access for users worldwide.
+      This is the standard solution for serving static assets from S3 to global users. CloudFront automatically
+      caches objects at edges closest to users.
+
+      Transfer Acceleration helps with uploads over long distances (not needed here - uploads are from us-east-1).
+      CRR would require application changes to read from multiple buckets. Intelligent-Tiering optimizes costs,
+      not performance. CloudFront is purpose-built for this use case.
+    awsDocLink: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html
+    services: [Amazon CloudFront, Amazon S3]
+
+  - id: storage-013
+    type: single
+    text: |
+      A database application requires consistent 50,000 IOPS with volumes up to 64 TB. The workload is I/O
+      intensive with random access patterns. Cost optimization is important. Which EBS volume configuration
+      provides the best price-performance?
+    options:
+      - id: A
+        text: gp3 with 16,000 IOPS provisioned per volume, using 4 volumes in RAID 0
+      - id: B
+        text: io2 with 50,000 IOPS provisioned on a single volume
+      - id: C
+        text: io2 Block Express with 50,000 IOPS provisioned
+      - id: D
+        text: gp3 with baseline performance, using 10 volumes in RAID 0
+    correctAnswer: B
+    explanation: |
+      io2 volumes can deliver up to 64,000 IOPS per volume and support up to 64 TB volume size. A single
+      io2 volume with 50,000 IOPS provisioned is simpler and more cost-effective than managing RAID arrays.
+      io2 also provides 99.999% durability.
+
+      gp3 maxes at 16,000 IOPS per volume, requiring RAID for 50K IOPS (complex management, more cost).
+      io2 Block Express supports up to 256,000 IOPS but is more expensive and unnecessary for 50K IOPS.
+      Multiple gp3 volumes in RAID would work but increases complexity and cost vs single io2.
+    awsDocLink: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+    services: [Amazon EBS]
+
+  - id: storage-014
+    type: multi
+    correctCount: 3
+    text: |
+      A company is implementing a backup strategy for 500 TB of data currently in S3 Standard. Backups must
+      be retained for 10 years, rarely accessed, and cost-optimized. If needed, retrieval within 12 hours is
+      acceptable. Which THREE actions reduce storage costs?
+    options:
+      - id: A
+        text: Transition backup data to S3 Glacier Deep Archive immediately
+      - id: B
+        text: Enable S3 Intelligent-Tiering on backup data
+      - id: C
+        text: Use S3 Lifecycle policy to delete objects after 10 years automatically
+      - id: D
+        text: Enable S3 Object Lock to prevent accidental deletion
+      - id: E
+        text: Configure S3 Glacier Deep Archive with bulk retrieval as default
+    correctAnswer: [A, C, E]
+    explanation: |
+      S3 Glacier Deep Archive is the lowest-cost S3 storage class (up to 95% cheaper than S3 Standard),
+      designed for long-term archival with 12-48 hour retrieval times. Perfect for 10-year retention with
+      rare access.
+
+      S3 Lifecycle policies can automatically delete objects after 10 years, eliminating manual cleanup and
+      ensuring compliance with retention policies.
+
+      Bulk retrieval (12-48 hours) is the cheapest Glacier Deep Archive retrieval option, acceptable given
+      the 12-hour requirement.
+
+      Intelligent-Tiering adds monitoring costs and doesn't move to Deep Archive. Object Lock prevents
+      deletion (doesn't reduce costs, may increase them by preventing cleanup).
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html
+    services: [Amazon S3, S3 Glacier]
+
+  - id: storage-015
+    type: single
+    text: |
+      An application running on EC2 instances in eu-west-1 needs to access objects in an S3 bucket in us-east-1.
+      Data transfer costs are high. Security requirements mandate that traffic should not traverse the public
+      internet. What is the most cost-effective solution?
+    options:
+      - id: A
+        text: Enable S3 Transfer Acceleration on the bucket
+      - id: B
+        text: Create a VPC endpoint for S3 in eu-west-1 and use AWS PrivateLink
+      - id: C
+        text: Replicate the bucket to eu-west-1 using S3 Cross-Region Replication
+      - id: D
+        text: Use AWS Direct Connect between regions
+    correctAnswer: C
+    explanation: |
+      S3 Cross-Region Replication creates a local copy in eu-west-1, eliminating cross-region data transfer
+      costs for reads (only pay once for replication). Traffic between EC2 and S3 in the same region is free
+      and stays on AWS backbone, not public internet.
+
+      S3 VPC endpoints keep traffic private but don't eliminate cross-region transfer costs (still paying
+      for us-east-1 to eu-west-1). Transfer Acceleration uses public internet and adds costs. Direct Connect
+      is expensive and complex for this use case. CRR is most cost-effective for ongoing access.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html
+    services: [Amazon S3]

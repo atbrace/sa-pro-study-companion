@@ -1,0 +1,413 @@
+questions:
+  - id: serverless-001
+    type: single
+    text: |
+      A company is building a REST API that will have unpredictable traffic patterns with occasional spikes.
+      The API needs JWT authentication, request throttling, and caching. Cost optimization is a priority.
+      Which API Gateway type should you choose?
+    options:
+      - id: A
+        text: REST API with Lambda proxy integration
+      - id: B
+        text: HTTP API with JWT authorizer
+      - id: C
+        text: WebSocket API with Lambda authorizer
+      - id: D
+        text: REST API with AWS_PROXY integration
+    correctAnswer: B
+    explanation: |
+      HTTP API is the best choice because it's 70% cheaper than REST API and has native JWT authentication support.
+      It includes built-in throttling and supports caching (though with less features than REST API).
+
+      REST APIs have more features (API keys, usage plans, advanced caching) but cost significantly more. Since
+      the requirements are met by HTTP API's capabilities, the cost-optimized choice is HTTP API. WebSocket API
+      is for persistent connections, not REST. AWS_PROXY is an integration type, not an API type.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-vs-rest.html
+    services: [Amazon API Gateway]
+
+  - id: serverless-002
+    type: multi
+    correctCount: 2
+    text: |
+      A Lambda function processes images uploaded to S3. Processing takes 5 seconds on average but occasionally
+      experiences cold starts of 3 seconds. The function runs 10,000 times per day with random timing. You need
+      to reduce latency. Which TWO optimizations provide the most benefit?
+    options:
+      - id: A
+        text: Enable Provisioned Concurrency with 10 instances
+      - id: B
+        text: Increase memory from 512 MB to 3008 MB
+      - id: C
+        text: Use ARM architecture (Graviton2)
+      - id: D
+        text: Reduce deployment package size by removing unused dependencies
+      - id: E
+        text: Change from Python to compiled language like Go or Rust
+    correctAnswer: [C, D]
+    explanation: |
+      ARM architecture provides better performance and is 20% cheaper, often reducing cold starts. Reducing
+      deployment package size directly reduces cold start time since Lambda must download and initialize the package.
+
+      Provisioned Concurrency would work but is expensive for 10,000 random invocations per day. Increasing memory
+      helps execution speed but doesn't significantly impact cold start time. Changing language would help cold
+      starts (compiled languages start faster) but is a major refactor, while ARM and package size are simple changes.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html
+    services: [AWS Lambda]
+
+  - id: serverless-003
+    type: single
+    text: |
+      You're designing a DynamoDB table for an e-commerce application. You need to support these access patterns:
+      1) Get user profile by user ID
+      2) Get all orders for a user
+      3) Get order details by order ID
+      What is the most efficient single-table design?
+    options:
+      - id: A
+        text: "PK: USER#123, SK: PROFILE | PK: USER#123, SK: ORDER#456 | PK: ORDER#456, SK: DETAILS"
+      - id: B
+        text: "PK: USER#123, SK: METADATA | PK: ORDER#456, SK: USER#123"
+      - id: C
+        text: "Create three separate tables: Users, Orders, OrderDetails"
+      - id: D
+        text: "PK: USER#123 | PK: ORDER#456 with GSI on user_id"
+    correctAnswer: A
+    explanation: |
+      Option A uses single-table design effectively:
+      - User profile: PK = USER#123, SK = PROFILE (GetItem)
+      - All user orders: PK = USER#123, SK begins_with ORDER# (Query)
+      - Order details: PK = ORDER#456, SK = DETAILS (GetItem via GSI or duplicate with PK = ORDER#456)
+
+      This design allows efficient queries for all access patterns. Single-table design reduces costs, improves
+      performance, and is a DynamoDB best practice. Multiple tables increase cost and complexity.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-general-nosql-design.html
+    services: [Amazon DynamoDB]
+
+  - id: serverless-004
+    type: single
+    text: |
+      A microservices architecture needs to react to multiple AWS service events (EC2 state changes, S3 uploads,
+      custom application events) and route them to different Lambda functions based on event content. You also
+      need to archive events for compliance. Which service is most appropriate?
+    options:
+      - id: A
+        text: Amazon SNS with topic filters
+      - id: B
+        text: Amazon EventBridge with event patterns and archive
+      - id: C
+        text: Amazon SQS with message attributes
+      - id: D
+        text: AWS Step Functions with event triggers
+    correctAnswer: B
+    explanation: |
+      EventBridge is the best choice for this event-driven architecture because it:
+      - Integrates with 100+ AWS services as event sources
+      - Supports complex event pattern matching for routing
+      - Has built-in archive and replay capabilities
+      - Supports schema registry for event discovery
+      - Can route to multiple targets based on rules
+
+      SNS is simpler pub/sub without advanced filtering. SQS is a queue, not an event router. Step Functions
+      orchestrates workflows but isn't designed for event routing.
+    awsDocLink: https://docs.aws.amazon.com/eventbridge/latest/userguide/what-is-amazon-eventbridge.html
+    services: [Amazon EventBridge]
+
+  - id: serverless-005
+    type: multi
+    correctCount: 3
+    text: |
+      You're building a serverless order processing workflow: validate order, check inventory, charge payment,
+      ship order. Each step can fail and requires retry logic. The workflow can take up to 30 minutes. Which
+      THREE components should you use?
+    options:
+      - id: A
+        text: AWS Step Functions Standard Workflow for orchestration
+      - id: B
+        text: Lambda functions for each processing step
+      - id: C
+        text: API Gateway for workflow initiation
+      - id: D
+        text: Step Functions Express Workflow for faster execution
+      - id: E
+        text: EventBridge for workflow orchestration
+    correctAnswer: [A, B, C]
+    explanation: |
+      Standard Workflow can run up to 1 year (Express limited to 5 minutes), has built-in retry/catch error
+      handling, and provides execution history for auditing. Lambda functions implement each business logic step.
+      API Gateway provides the HTTP endpoint to initiate the workflow.
+
+      Express Workflow is limited to 5 minutes (won't support 30-minute workflows). EventBridge routes events
+      but doesn't orchestrate multi-step workflows with retry logic like Step Functions does.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html
+    services: [AWS Step Functions, AWS Lambda, Amazon API Gateway]
+
+  - id: serverless-006
+    type: single
+    text: |
+      A Lambda function needs to process SQS messages containing customer data. Each message takes 2 seconds to
+      process. The queue receives 1000 messages per hour. How should you configure the Lambda trigger for optimal
+      cost and performance?
+    options:
+      - id: A
+        text: Batch size 1, concurrency limit 1
+      - id: B
+        text: Batch size 10, no concurrency limit
+      - id: C
+        text: Batch size 1, concurrency limit 100
+      - id: D
+        text: Batch size 10,000, no concurrency limit
+    correctAnswer: B
+    explanation: |
+      Batch size 10 allows Lambda to process multiple messages per invocation, reducing the number of invocations
+      and thus cost. With 1000 messages/hour and 10 per batch, you need 100 invocations vs 1000 with batch size 1.
+
+      No concurrency limit allows Lambda to scale automatically based on queue depth. Batch size 1 increases cost
+      unnecessarily. Batch size 10,000 is the maximum but overkill for this volume. Concurrency limit 1 would
+      bottleneck processing.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+    services: [AWS Lambda, Amazon SQS]
+
+  - id: serverless-007
+    type: single
+    text: |
+      An application uses DynamoDB with on-demand capacity mode. Daily traffic is steady at 100 RCU/WCU but spikes
+      to 1000 RCU/WCU for 1 hour each month during sales events. Monthly cost with on-demand is $150. How can
+      you optimize costs while supporting the spikes?
+    options:
+      - id: A
+        text: Switch to provisioned capacity with 1000 RCU/WCU
+      - id: B
+        text: Switch to provisioned capacity with 100 RCU/WCU and Auto Scaling up to 1000
+      - id: C
+        text: Keep on-demand mode but enable DynamoDB Accelerator (DAX)
+      - id: D
+        text: Use provisioned capacity with Reserved Capacity for 1000 RCU/WCU
+    correctAnswer: B
+    explanation: |
+      Provisioned capacity with Auto Scaling is more cost-effective for predictable baseline traffic with
+      occasional spikes. Set baseline at 100 RCU/WCU (much cheaper than on-demand for sustained traffic) and
+      Auto Scaling handles the monthly spike by scaling up to 1000 when needed.
+
+      Provisioned at 1000 continuously would waste capacity 99% of the time. On-demand is more expensive for
+      sustained traffic. DAX is a cache and doesn't reduce DynamoDB costs. Reserved Capacity at 1000 would be
+      expensive and underutilized.
+    awsDocLink: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html
+    services: [Amazon DynamoDB, Application Auto Scaling]
+
+  - id: serverless-008
+    type: multi
+    correctCount: 2
+    text: |
+      A Lambda function authenticated with Cognito User Pools experiences inconsistent latency. Some requests
+      return in 200ms, others take 5 seconds. The function queries DynamoDB and has 1024 MB memory. What are
+      TWO likely causes of the latency spikes?
+    options:
+      - id: A
+        text: Cold starts when Lambda creates new execution environments
+      - id: B
+        text: Cognito JWT token validation delay
+      - id: C
+        text: DynamoDB initialization inside the Lambda handler
+      - id: D
+        text: Insufficient memory allocation causing CPU throttling
+      - id: E
+        text: API Gateway timeout is too low
+    correctAnswer: [A, C]
+    explanation: |
+      Cold starts occur when Lambda creates new execution environments, adding 3-10 seconds of latency. This
+      matches the 5-second spike pattern. DynamoDB initialization inside the handler (instead of outside) means
+      every invocation creates a new connection, adding latency.
+
+      Solution: Initialize DynamoDB client outside the handler for connection reuse. Use Provisioned Concurrency
+      for cold start elimination. Cognito validation is cached by API Gateway (fast). 1024 MB provides adequate
+      CPU. API Gateway timeout doesn't cause variable latency.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html
+    services: [AWS Lambda, Amazon DynamoDB]
+
+  - id: serverless-009
+    type: single
+    text: |
+      An API receives file uploads up to 10 MB. The API Gateway REST API has a 10 MB payload limit, but you're
+      experiencing timeout errors for large files. What is the most scalable solution?
+    options:
+      - id: A
+        text: Increase API Gateway timeout to 29 seconds (maximum)
+      - id: B
+        text: Use S3 presigned URLs for direct upload, API just returns the URL
+      - id: C
+        text: Split files into chunks client-side and upload sequentially
+      - id: D
+        text: Use API Gateway with binary media type and increase Lambda timeout
+    correctAnswer: B
+    explanation: |
+      S3 presigned URLs allow clients to upload directly to S3, bypassing API Gateway and Lambda entirely. The
+      API generates a signed URL, client uploads to S3, then optionally notifies the API. This:
+      - Eliminates API Gateway 10 MB limit concerns
+      - Eliminates Lambda timeout issues
+      - Reduces Lambda execution time (cost savings)
+      - Scales to any file size
+      - Better performance (direct S3 upload)
+
+      Increasing timeout doesn't solve the root problem. Chunking is complex client-side. Binary media types
+      help but don't address the timeout issue.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html
+    services: [Amazon S3, Amazon API Gateway]
+
+  - id: serverless-010
+    type: single
+    text: |
+      A Step Functions workflow orchestrates 5 Lambda functions. Each function can fail transiently due to API
+      rate limits. You need automatic retry with exponential backoff. Where should you configure retry logic?
+    options:
+      - id: A
+        text: In each Lambda function's code with try/catch blocks
+      - id: B
+        text: In the Step Functions state machine using Retry fields
+      - id: C
+        text: In API Gateway using stage variables
+      - id: D
+        text: Using SQS Dead Letter Queues for failed invocations
+    correctAnswer: B
+    explanation: |
+      Step Functions has built-in retry and error handling capabilities in the state machine definition. You can
+      specify which errors to retry, max attempts, interval, and backoff rate. This centralizes retry logic and
+      makes it declarative and visible.
+
+      Implementing retry in Lambda code duplicates logic across functions and mixes business logic with error
+      handling. API Gateway doesn't handle Step Functions retries. DLQs capture failed events but don't retry.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+    services: [AWS Step Functions]
+
+  - id: serverless-011
+    type: single
+    text: |
+      A real-time chat application needs persistent WebSocket connections for instant message delivery to
+      thousands of users. Messages must be delivered to specific user connections. Which architecture is
+      most appropriate?
+    options:
+      - id: A
+        text: API Gateway WebSocket API with Lambda and DynamoDB for connection management
+      - id: B
+        text: API Gateway HTTP API with long polling
+      - id: C
+        text: AWS AppSync with GraphQL subscriptions
+      - id: D
+        text: ALB with Lambda targets using HTTP keep-alive
+    correctAnswer: A
+    explanation: |
+      API Gateway WebSocket API is purpose-built for persistent connections. It maintains connections and routes
+      messages to Lambda for processing. Store connection IDs in DynamoDB to map users to connections. Lambda can
+      post back to specific connections using API Gateway Management API.
+
+      HTTP API doesn't support WebSockets (HTTP is stateless). AppSync is good for GraphQL real-time but the
+      question specifies chat, making WebSocket API more direct. ALB doesn't support WebSocket in the same way.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api.html
+    services: [Amazon API Gateway, AWS Lambda, Amazon DynamoDB]
+
+  - id: serverless-012
+    type: multi
+    correctCount: 2
+    text: |
+      You're implementing authentication for a public-facing serverless API. Users should be able to register,
+      login, reset passwords, and use MFA. The API uses API Gateway with Lambda. Which TWO AWS services should
+      you use?
+    options:
+      - id: A
+        text: AWS IAM for user authentication
+      - id: B
+        text: Amazon Cognito User Pools for user management and authentication
+      - id: C
+        text: AWS Secrets Manager for password storage
+      - id: D
+        text: API Gateway with Cognito User Pool Authorizer
+      - id: E
+        text: Lambda Authorizer with custom JWT validation
+    correctAnswer: [B, D]
+    explanation: |
+      Cognito User Pools provides fully managed user registration, authentication, password reset, and MFA out
+      of the box. API Gateway Cognito User Pool Authorizer validates JWT tokens from Cognito automatically,
+      requiring no custom code.
+
+      This combination provides enterprise-grade authentication with minimal implementation effort. IAM is for
+      AWS service access, not user authentication. Secrets Manager is for application secrets, not user passwords.
+      Lambda Authorizer would require custom implementation of all auth features Cognito provides.
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html
+    services: [Amazon Cognito, Amazon API Gateway]
+
+  - id: serverless-013
+    type: single
+    text: |
+      A Lambda function processes DynamoDB Streams events. During high traffic, you notice events being processed
+      out of order. What is the cause and solution?
+    options:
+      - id: A
+        text: "Cause: Lambda concurrent executions. Solution: Set reserved concurrency to 1"
+      - id: B
+        text: "Cause: Multiple shards in stream. Solution: Use ParallelizationFactor = 1"
+      - id: C
+        text: "Cause: Async invocation. Solution: Use synchronous invocation"
+      - id: D
+        text: "Cause: DynamoDB stream retention. Solution: Increase retention period"
+    correctAnswer: A
+    explanation: |
+      DynamoDB Streams guarantee ordering per partition key, but Lambda processes shards concurrently by default.
+      If you need strict global ordering (across all items), set reserved concurrency to 1 so only one Lambda
+      execution processes the stream at a time.
+
+      Note: This reduces throughput significantly. Better approach is to accept per-partition-key ordering (which
+      is guaranteed) rather than forcing global ordering. ParallelizationFactor controls parallel processing
+      within a shard. DynamoDB Streams invocations are already synchronous (poll-based).
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/with-ddb.html
+    services: [AWS Lambda, Amazon DynamoDB]
+
+  - id: serverless-014
+    type: single
+    text: |
+      An e-commerce application uses API Gateway, Lambda, and DynamoDB. During a sale, the API receives 10,000
+      requests/second. Lambda concurrent execution limit is 1000. What happens and how do you fix it?
+    options:
+      - id: A
+        text: "Throttling errors. Fix: Request service quota increase for Lambda concurrency"
+      - id: B
+        text: "DynamoDB throttling. Fix: Switch to on-demand capacity mode"
+      - id: C
+        text: "API Gateway timeout. Fix: Increase integration timeout"
+      - id: D
+        text: "Lambda cold starts. Fix: Enable Provisioned Concurrency"
+    correctAnswer: A
+    explanation: |
+      Lambda has a default concurrent execution limit of 1000 per region. When exceeded, new invocations are
+      throttled with 429 errors. The solution is to request a service quota increase from AWS Support.
+
+      This is a soft limit that can be increased. DynamoDB might also throttle separately (depends on capacity
+      mode). API Gateway and cold starts are separate concerns not directly related to the 1000 concurrency limit.
+      For very high scale, also consider reserved concurrency per function and monitoring burst capacity.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
+    services: [AWS Lambda, Amazon API Gateway]
+
+  - id: serverless-015
+    type: single
+    text: |
+      You need to integrate API Gateway with an on-premises HTTP endpoint for legacy system integration. The
+      endpoint is accessible via VPN. The API needs request/response transformation. Which integration type
+      should you use?
+    options:
+      - id: A
+        text: HTTP proxy integration to the on-premises endpoint
+      - id: B
+        text: HTTP integration with VTL mapping templates
+      - id: C
+        text: Lambda proxy integration with Lambda calling the HTTP endpoint
+      - id: D
+        text: VPC Link integration with Network Load Balancer
+    correctAnswer: B
+    explanation: |
+      HTTP integration (non-proxy) with VTL (Velocity Template Language) mapping templates allows API Gateway to
+      transform requests and responses while integrating with HTTP endpoints. Since the endpoint is accessible
+      via VPN, API Gateway can reach it directly.
+
+      HTTP proxy doesn't support transformation. Lambda proxy would work but adds unnecessary Lambda cost and
+      latency when transformation can happen at API Gateway. VPC Link is for private integrations within VPC,
+      but the question states VPN access (not VPC Link requirement).
+    awsDocLink: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-integration-types.html
+    services: [Amazon API Gateway]

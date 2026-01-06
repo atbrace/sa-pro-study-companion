@@ -1,0 +1,564 @@
+questions:
+  - id: cost-opt-001
+    type: single
+    text: >
+      A company has 200 EC2 instances running across multiple regions with varying
+      utilization patterns. The solutions architect needs to identify instances that
+      are over-provisioned and could be downsized. The solution must analyze at least
+      3 months of historical data to account for monthly usage patterns. Which
+      approach provides the MOST comprehensive rightsizing recommendations?
+    options:
+      - id: A
+        text: Use AWS Trusted Advisor to identify low utilization EC2 instances and manually review CloudWatch metrics
+      - id: B
+        text: Enable AWS Compute Optimizer with Enhanced Infrastructure Metrics for 3-month lookback analysis
+      - id: C
+        text: Use AWS Cost Explorer rightsizing recommendations with default settings
+      - id: D
+        text: Create CloudWatch dashboards to monitor CPU and memory utilization over 90 days
+    correctAnswer: B
+    explanation: >
+      AWS Compute Optimizer with Enhanced Infrastructure Metrics provides the most
+      comprehensive solution. It uses machine learning to analyze up to 3 months of
+      CloudWatch metrics (vs 14 days with standard settings), considers CPU, memory,
+      network, and disk metrics, and provides specific instance type recommendations.
+      Trusted Advisor (A) only checks 14 days and uses simpler threshold-based logic.
+      Cost Explorer rightsizing (C) uses 14-day lookback by default. CloudWatch
+      dashboards (D) require manual analysis without ML-powered recommendations.
+    awsDocLink: https://docs.aws.amazon.com/compute-optimizer/latest/ug/enhanced-infrastructure-metrics.html
+    services:
+      - AWS Compute Optimizer
+      - Amazon CloudWatch
+    concepts:
+      - Right-sizing
+      - Cost optimization
+      - Machine learning analysis
+
+  - id: cost-opt-002
+    type: multi
+    correctCount: 3
+    text: >
+      A financial services company needs to identify and remove unused resources
+      across their AWS environment to reduce costs. Which THREE types of resources
+      commonly incur costs when unused and should be prioritized for cleanup?
+    options:
+      - id: A
+        text: Unattached EBS volumes that are not attached to any EC2 instance
+      - id: B
+        text: Stopped EC2 instances that retain their instance store data
+      - id: C
+        text: Elastic IP addresses that are not associated with running instances
+      - id: D
+        text: Unused security groups with no attached resources
+      - id: E
+        text: Elastic Load Balancers with no registered targets
+      - id: F
+        text: IAM roles that are not currently assumed by any service
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: >
+      Options A, C, and E are correct. Unattached EBS volumes (A) incur storage costs
+      even when not in use. Unassociated Elastic IPs (C) incur hourly charges to
+      discourage IP hoarding. Idle load balancers (E) incur hourly charges regardless
+      of traffic. Option B is incorrect because stopped instances don't retain instance
+      store data (it's ephemeral), though stopped instances do incur EBS storage costs.
+      Options D and F (security groups and IAM roles) do not incur costs.
+    awsDocLink: https://docs.aws.amazon.com/awssupport/latest/user/cost-optimization-checks.html
+    services:
+      - Amazon EBS
+      - Amazon EC2
+      - Elastic Load Balancing
+    concepts:
+      - Unused resources
+      - Cost optimization
+      - Resource cleanup
+
+  - id: cost-opt-003
+    type: single
+    text: >
+      An e-commerce company stores product images in S3. Images are frequently accessed
+      during the first month after upload, accessed occasionally for the next 6 months,
+      and rarely accessed after that. Access patterns vary unpredictably by product
+      category. Which storage strategy provides the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Use S3 Lifecycle policies to transition objects from S3 Standard to S3 Standard-IA after 30 days, then to Glacier after 180 days
+      - id: B
+        text: Store all objects in S3 Intelligent-Tiering to automatically optimize costs based on access patterns
+      - id: C
+        text: Use S3 Standard for all objects and enable S3 Analytics to monitor access patterns for manual optimization
+      - id: D
+        text: Store objects in S3 One Zone-IA initially and transition to Glacier Flexible Retrieval after 6 months
+    correctAnswer: B
+    explanation: >
+      S3 Intelligent-Tiering (B) is the best solution for unpredictable access patterns.
+      It automatically moves objects between access tiers based on actual usage without
+      lifecycle policies, has no retrieval fees, and includes Archive tiers for
+      long-term storage. Option A assumes predictable patterns (objects transition
+      based on time, not actual access). Option C requires manual intervention and
+      keeps everything in expensive Standard class. Option D uses One Zone-IA which
+      provides lower durability and doesn't adapt to access patterns.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering.html
+    services:
+      - Amazon S3
+      - S3 Intelligent-Tiering
+    concepts:
+      - Storage optimization
+      - Access patterns
+      - Automatic tiering
+
+  - id: cost-opt-004
+    type: single
+    text: >
+      A company is migrating from gp2 to gp3 EBS volumes to reduce costs. They have
+      a 1 TB database volume currently using gp2 with baseline 3,000 IOPS. The
+      database typically uses 2,500 IOPS with occasional spikes to 4,000 IOPS.
+      What is the MOST cost-effective gp3 configuration?
+    options:
+      - id: A
+        text: 1 TB gp3 with default settings (3,000 IOPS, 125 MB/s)
+      - id: B
+        text: 1 TB gp3 with 4,000 provisioned IOPS and 250 MB/s throughput
+      - id: C
+        text: 1 TB gp3 with 4,000 provisioned IOPS and default 125 MB/s throughput
+      - id: D
+        text: 750 GB gp3 with 4,000 provisioned IOPS to reduce storage costs
+    correctAnswer: C
+    explanation: >
+      Option C provides the most cost-effective solution. gp3 allows independent
+      provisioning of IOPS and throughput. Since the workload needs up to 4,000 IOPS
+      but the throughput requirement isn't specified, provisioning 4,000 IOPS with
+      default 125 MB/s throughput meets requirements at lowest cost. Option A (default
+      3,000 IOPS) won't handle spikes. Option B provisions unnecessary throughput,
+      increasing costs. Option D reduces storage below requirements and might cause
+      capacity issues. With gp3, you pay separately for storage and any IOPS above
+      3,000, making it cheaper than gp2 for most workloads.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html
+    services:
+      - Amazon EBS
+    concepts:
+      - EBS volume types
+      - IOPS provisioning
+      - Cost optimization
+
+  - id: cost-opt-005
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect needs to optimize compute costs for a workload that runs
+      24/7 on EC2 with predictable baseline usage but occasional spikes. The company
+      wants maximum savings while maintaining flexibility to change instance types as
+      technology evolves. Which TWO approaches provide the BEST balance of savings
+      and flexibility?
+    options:
+      - id: A
+        text: Purchase 3-year Standard Reserved Instances with All Upfront payment for maximum savings
+      - id: B
+        text: Purchase Compute Savings Plans for the baseline workload with 1-year commitment
+      - id: C
+        text: Use 3-year Convertible Reserved Instances to allow instance family changes
+      - id: D
+        text: Combine Compute Savings Plans with On-Demand Capacity Reservations for spike capacity
+      - id: E
+        text: Use Spot Instances for baseline workload with On-Demand as fallback
+    correctAnswer:
+      - B
+      - D
+    explanation: >
+      Options B and D together provide the best solution. Compute Savings Plans (B)
+      offer up to 66% savings with maximum flexibility across instance families,
+      sizes, regions, and even services (EC2, Fargate, Lambda). Using 1-year commitment
+      provides good savings with reasonable flexibility. Option D correctly identifies
+      that On-Demand Capacity Reservations can handle spikes while allowing the
+      Savings Plan to cover baseline. Option A (Standard RIs) locks you into specific
+      instance type with no flexibility. Option C (Convertible RIs) offers less
+      savings than Savings Plans with more restrictions. Option E (Spot) is unsuitable
+      for 24/7 predictable workloads due to interruption risk.
+    awsDocLink: https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html
+    services:
+      - AWS Savings Plans
+      - Amazon EC2
+    concepts:
+      - Savings Plans
+      - Reserved capacity
+      - Cost optimization
+
+  - id: cost-opt-006
+    type: single
+    text: >
+      An organization with 50 AWS accounts wants to track costs by department,
+      project, and environment across all accounts. They need this data available
+      in AWS Cost Explorer for analysis and chargebacks. What is the MOST effective
+      approach to implement this requirement?
+    options:
+      - id: A
+        text: Create AWS Cost Categories in the management account to group costs by department, then use tags for project and environment
+      - id: B
+        text: Use AWS Organizations tag policies to enforce required tags, then activate cost allocation tags in the management account
+      - id: C
+        text: Configure AWS Budgets in each account with custom filters for department, project, and environment
+      - id: D
+        text: Export AWS Cost and Usage Reports to S3 and use Athena queries to group costs by tags
+    correctAnswer: B
+    explanation: >
+      Option B is the most effective solution. AWS Organizations tag policies enforce
+      consistent tagging across all accounts, ensuring resources are properly tagged
+      with department, project, and environment. Activating cost allocation tags in
+      the management account makes these tags available as dimensions in Cost Explorer
+      for filtering and grouping. Option A uses Cost Categories which are useful but
+      should be combined with tag policies for enforcement. Option C (Budgets) is for
+      alerting, not cost analysis and reporting. Option D works but requires more
+      effort than using built-in Cost Explorer functionality with activated tags.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies.html
+    services:
+      - AWS Organizations
+      - AWS Cost Explorer
+      - Cost Allocation Tags
+    concepts:
+      - Cost allocation
+      - Tagging strategy
+      - Multi-account cost tracking
+
+  - id: cost-opt-007
+    type: single
+    text: >
+      A company's AWS bill increased by 40% last month. The solutions architect needs
+      to implement a solution that automatically detects and alerts on unusual spending
+      patterns as they occur. Which AWS service provides this capability?
+    options:
+      - id: A
+        text: AWS Budgets with budget actions to send notifications when thresholds are exceeded
+      - id: B
+        text: AWS Cost Anomaly Detection with monitors configured by service and alerting via SNS
+      - id: C
+        text: AWS Trusted Advisor with weekly email notifications for cost optimization checks
+      - id: D
+        text: CloudWatch alarms monitoring Estimated Charges metric with SNS notifications
+    correctAnswer: B
+    explanation: >
+      AWS Cost Anomaly Detection (B) is specifically designed to identify unusual
+      spending patterns using machine learning. It evaluates spending daily, detects
+      anomalies automatically, and sends alerts via SNS or email. It can identify
+      unexpected patterns that would be missed by static thresholds. AWS Budgets (A)
+      alerts on budget thresholds but doesn't detect anomalies. Trusted Advisor (C)
+      provides recommendations but doesn't detect spending anomalies in real-time.
+      CloudWatch alarms (D) require manual threshold configuration and don't adapt
+      to spending patterns.
+    awsDocLink: https://docs.aws.amazon.com/cost-management/latest/userguide/manage-ad.html
+    services:
+      - AWS Cost Anomaly Detection
+      - AWS Cost Explorer
+    concepts:
+      - Anomaly detection
+      - Cost monitoring
+      - Machine learning
+
+  - id: cost-opt-008
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is reviewing AWS Trusted Advisor cost optimization
+      recommendations. Which THREE checks are available ONLY with Business or
+      Enterprise Support plans?
+    options:
+      - id: A
+        text: Low utilization Amazon EC2 instances
+      - id: B
+        text: MFA on root account
+      - id: C
+        text: Idle load balancers with no active connections
+      - id: D
+        text: Service limits approaching thresholds
+      - id: E
+        text: Underutilized Amazon EBS volumes
+      - id: F
+        text: Amazon RDS idle database instances
+    correctAnswer:
+      - A
+      - E
+      - F
+    explanation: >
+      Options A, E, and F are cost optimization checks available only with Business
+      or Enterprise Support. Low utilization EC2 instances (A), underutilized EBS
+      volumes (E), and idle RDS instances (F) all require higher support tiers.
+      Options B and D (MFA on root account and service limits) are available to all
+      customers in the security and service limits categories. Option C (idle load
+      balancers) is a cost optimization check but is actually available to all support
+      levels. The key distinction is that most cost optimization checks require
+      Business/Enterprise Support, while basic security and service limit checks are
+      universally available.
+    awsDocLink: https://docs.aws.amazon.com/awssupport/latest/user/trusted-advisor.html
+    services:
+      - AWS Trusted Advisor
+      - AWS Support
+    concepts:
+      - Trusted Advisor
+      - Support plans
+      - Cost optimization checks
+
+  - id: cost-opt-009
+    type: single
+    text: >
+      A company has analyzed their EC2 usage and determined they need consistent
+      compute capacity equivalent to 100 m5.xlarge instances running 24/7. However,
+      they occasionally need to change instance families as newer generations are
+      released. What purchasing option provides the BEST combination of cost savings
+      and flexibility?
+    options:
+      - id: A
+        text: 100 Standard Reserved Instances (3-year, All Upfront) for m5.xlarge
+      - id: B
+        text: 100 Convertible Reserved Instances (3-year, All Upfront) for m5.xlarge
+      - id: C
+        text: Compute Savings Plan with $X/hour commitment (3-year, All Upfront)
+      - id: D
+        text: EC2 Instance Savings Plan with $X/hour commitment for m5 family (3-year, All Upfront)
+    correctAnswer: C
+    explanation: >
+      Compute Savings Plan (C) provides the best combination of savings and flexibility.
+      It applies to any instance family, size, region, OS, or tenancy, and even covers
+      Fargate and Lambda. This allows changing from m5 to m6i or other families as
+      technology evolves. Standard RIs (A) lock you into m5.xlarge with no flexibility
+      (72% savings but rigid). Convertible RIs (B) allow family changes but offer
+      lower savings (54%) and require explicit conversion. EC2 Instance Savings Plan
+      (D) locks you into the m5 family in a specific region, offering less flexibility
+      than Compute Savings Plans while providing similar savings.
+    awsDocLink: https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html
+    services:
+      - AWS Savings Plans
+      - Amazon EC2
+    concepts:
+      - Savings Plans types
+      - Reserved capacity
+      - Flexibility vs savings tradeoff
+
+  - id: cost-opt-010
+    type: single
+    text: >
+      A media company stores video files in S3. Files are accessed frequently during
+      the first week, then access drops to near zero. However, occasionally an old
+      video goes viral and requires immediate access. Total storage is 500 TB with
+      unpredictable access patterns. Which solution optimizes costs while ensuring
+      immediate access when needed?
+    options:
+      - id: A
+        text: S3 Standard for 7 days, then S3 Standard-IA, then Glacier Flexible Retrieval after 90 days
+      - id: B
+        text: S3 Intelligent-Tiering with Archive Access and Deep Archive Access tiers enabled
+      - id: C
+        text: S3 Standard with S3 Analytics to monitor access patterns and manually adjust storage classes
+      - id: D
+        text: S3 One Zone-IA for all objects with lifecycle policy to Glacier Deep Archive after 90 days
+    correctAnswer: B
+    explanation: >
+      S3 Intelligent-Tiering with Archive tiers (B) is optimal for this unpredictable
+      access pattern. It automatically moves objects between access tiers based on
+      actual access patterns (no retrieval fees), provides immediate access when
+      needed (no restore delay for frequent/infrequent tiers), and includes Archive
+      Access and Deep Archive Access tiers for long-term storage of rarely accessed
+      objects. Option A uses time-based lifecycle policies that don't adapt to viral
+      videos. Option C requires manual intervention. Option D uses Glacier Deep Archive
+      which requires 12-hour restore time, unacceptable for viral content. Intelligent-
+      Tiering's monitoring fee (~$0.0025 per 1,000 objects) is offset by storage savings.
+    awsDocLink: https://aws.amazon.com/s3/storage-classes/intelligent-tiering/
+    services:
+      - Amazon S3
+      - S3 Intelligent-Tiering
+    concepts:
+      - Storage optimization
+      - Unpredictable access patterns
+      - Automatic tiering
+
+  - id: cost-opt-011
+    type: multi
+    correctCount: 2
+    text: >
+      A solutions architect is analyzing Reserved Instance utilization using AWS Cost
+      Explorer. The report shows RI Utilization of 95% but RI Coverage of only 45%.
+      Which TWO actions would improve cost optimization?
+    options:
+      - id: A
+        text: Purchase additional Reserved Instances to increase coverage from 45% to 80%
+      - id: B
+        text: Sell unused Reserved Instances on the Reserved Instance Marketplace
+      - id: C
+        text: Modify existing Reserved Instances to match actual instance usage patterns
+      - id: D
+        text: Convert Standard RIs to Convertible RIs for more flexibility
+      - id: E
+        text: Reduce the number of On-Demand instances by terminating underutilized instances
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Options A and C are correct. High utilization (95%) with low coverage (45%)
+      means existing RIs are being fully used, but only 45% of instance hours are
+      covered by RIs - the remaining 55% run as expensive On-Demand. Purchasing
+      additional RIs (A) increases coverage and savings. Modifying RIs (C) ensures
+      they match actual usage patterns for maximum utilization. Option B is wrong
+      because RIs are already highly utilized (95%). Option D (converting to
+      Convertible) would decrease savings without solving the coverage problem. Option
+      E might reduce costs but doesn't address the RI coverage gap - the goal is to
+      cover existing workloads with RIs, not reduce workloads.
+    awsDocLink: https://docs.aws.amazon.com/cost-management/latest/userguide/ce-ri.html
+    services:
+      - AWS Cost Explorer
+      - Amazon EC2 Reserved Instances
+    concepts:
+      - RI utilization vs coverage
+      - Reserved Instance optimization
+      - Cost metrics
+
+  - id: cost-opt-012
+    type: single
+    text: >
+      A company wants to implement automated remediation when AWS Cost Anomaly
+      Detection identifies spending anomalies exceeding $1,000. The solution should
+      notify the security team and automatically create a support case. What is the
+      MOST effective implementation?
+    options:
+      - id: A
+        text: Configure Cost Anomaly Detection to send alerts to SNS topic, use EventBridge rule to trigger Lambda function that creates support case
+      - id: B
+        text: Configure Cost Anomaly Detection with SNS topic, use SNS subscription to trigger Lambda directly to create support case
+      - id: C
+        text: Use CloudWatch alarm on EstimatedCharges metric to trigger Lambda function via SNS
+      - id: D
+        text: Configure AWS Budgets with budget actions to automatically create support cases when thresholds are exceeded
+    correctAnswer: B
+    explanation: >
+      Option B is the most effective and direct solution. AWS Cost Anomaly Detection
+      can publish alerts to an SNS topic when anomalies are detected. SNS can directly
+      trigger a Lambda function subscribed to the topic, which then creates a support
+      case via the AWS Support API. This is simpler than using EventBridge (A) which
+      adds an unnecessary layer. CloudWatch alarms (C) don't detect anomalies, only
+      threshold breaches. AWS Budgets (D) doesn't automatically create support cases
+      and is based on static thresholds, not anomaly detection. The SNS -> Lambda
+      pattern is standard for event-driven automation in AWS.
+    awsDocLink: https://docs.aws.amazon.com/cost-management/latest/userguide/manage-ad.html
+    services:
+      - AWS Cost Anomaly Detection
+      - Amazon SNS
+      - AWS Lambda
+    concepts:
+      - Automated remediation
+      - Event-driven architecture
+      - Cost monitoring
+
+  - id: cost-opt-013
+    type: single
+    text: >
+      A company has 2,000 EBS volumes across multiple accounts. Many volumes were
+      created for testing and are no longer attached to instances. The solutions
+      architect needs to identify and report on all unattached volumes across the
+      organization. Which approach provides the MOST scalable solution?
+    options:
+      - id: A
+        text: Use AWS Config aggregator with ec2-volume-inuse-check rule across all accounts
+      - id: B
+        text: Write a Lambda function that uses EC2 DescribeVolumes API in each account to identify unattached volumes
+      - id: C
+        text: Use AWS Systems Manager Inventory to collect EBS volume data across accounts
+      - id: D
+        text: Enable AWS Trusted Advisor and export cost optimization check results for unattached volumes
+    correctAnswer: A
+    explanation: >
+      AWS Config aggregator with ec2-volume-inuse-check (A) is the most scalable
+      solution. Config aggregator collects configuration data across multiple accounts
+      and regions. The managed rule ec2-volume-inuse-check automatically identifies
+      non-compliant (unattached) volumes and provides compliance reporting. This is
+      continuous monitoring without custom code. Option B requires maintaining Lambda
+      code and doesn't provide compliance tracking. Option C (Systems Manager Inventory)
+      tracks EC2 instances and installed software, not EBS volume attachment status.
+      Option D (Trusted Advisor) works but is limited to accounts with Business/
+      Enterprise Support and doesn't aggregate across organizations as effectively
+      as Config.
+    awsDocLink: https://docs.aws.amazon.com/config/latest/developerguide/aggregate-data.html
+    services:
+      - AWS Config
+      - Amazon EBS
+    concepts:
+      - Multi-account governance
+      - Compliance monitoring
+      - Resource optimization
+
+  - id: cost-opt-014
+    type: multi
+    correctCount: 3
+    text: >
+      A solutions architect is optimizing EBS volume costs for a data warehouse using
+      multiple large volumes. Current configuration uses ten 2 TB gp2 volumes (20 TB
+      total) with average utilization of 5,000 IOPS total. Which THREE optimizations
+      would reduce costs?
+    options:
+      - id: A
+        text: Consolidate into fewer larger gp3 volumes to reduce per-volume costs
+      - id: B
+        text: Migrate from gp2 to gp3 volumes for 20% baseline cost savings
+      - id: C
+        text: Take frequent snapshots and delete the original volumes
+      - id: D
+        text: Enable EBS encryption to optimize storage efficiency
+      - id: E
+        text: Use gp3 with baseline 3,000 IOPS per volume instead of gp2's size-based IOPS
+      - id: F
+        text: Migrate to provisioned IOPS (io2) volumes for better performance per dollar
+    correctAnswer:
+      - A
+      - B
+      - E
+    explanation: >
+      Options A, B, and E are correct optimizations. Consolidating into fewer volumes
+      (A) reduces overhead as each volume has associated costs. Migrating from gp2 to
+      gp3 (B) provides immediate 20% savings on storage costs. Using gp3 baseline IOPS
+      (E) eliminates the need to provision based on size - gp3 provides 3,000 IOPS
+      regardless of size, whereas gp2 provides 3 IOPS per GB. For 5,000 total IOPS
+      across 20TB, gp3 would only need to provision 2,000 additional IOPS above the
+      baseline. Option C is incorrect - snapshots are incremental but storing snapshots
+      while deleting volumes defeats the purpose of having the volumes. Option D
+      (encryption) doesn't reduce costs. Option F (io2) is more expensive than gp3,
+      not more cost-effective.
+    awsDocLink: https://aws.amazon.com/ebs/pricing/
+    services:
+      - Amazon EBS
+    concepts:
+      - EBS volume optimization
+      - gp2 vs gp3 comparison
+      - IOPS provisioning
+
+  - id: cost-opt-015
+    type: single
+    text: >
+      An organization has successfully implemented cost allocation tags across all
+      accounts in AWS Organizations. However, the tags are not appearing as dimensions
+      in AWS Cost Explorer after one week. What is the MOST likely cause?
+    options:
+      - id: A
+        text: Cost allocation tags must be activated in the management account billing preferences before appearing in Cost Explorer
+      - id: B
+        text: AWS Organizations tag policies must be set to enforcement mode to appear in Cost Explorer
+      - id: C
+        text: Cost Explorer only shows tags from the past 12 months, and new tags require time to aggregate
+      - id: D
+        text: Tags must be applied using AWS Resource Groups Tagging API to appear in billing reports
+    correctAnswer: A
+    explanation: >
+      Option A is correct. Cost allocation tags must be explicitly activated in the
+      AWS Billing console (in the management/payer account) before they appear as
+      dimensions in Cost Explorer. Even if tags are consistently applied across
+      resources, they won't show in cost reports until activated. After activation,
+      it can take up to 24 hours for tags to appear. Option B is incorrect - tag
+      policies enforce tagging compliance but don't control Cost Explorer visibility.
+      Option C is incorrect - Cost Explorer shows historical data but new tags appear
+      within 24 hours once activated. Option D is incorrect - tags can be applied
+      through any method (console, CLI, API, IaC) and will appear once activated.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/activating-tags.html
+    services:
+      - AWS Cost Explorer
+      - Cost Allocation Tags
+    concepts:
+      - Cost allocation tag activation
+      - Billing configuration
+      - Tag visibility

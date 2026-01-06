@@ -1,0 +1,62 @@
+id: performance-optimization
+name: Performance Optimization
+shortName: Performance
+examTask: task-3-3
+description: >
+  Design and implement performance optimization strategies for existing AWS solutions,
+  including caching mechanisms, database optimization, compute right-sizing, and network
+  performance improvements to meet evolving application requirements.
+
+estimatedStudyTime: 150
+difficulty: advanced
+
+keyServices:
+  - Amazon CloudFront
+  - Amazon ElastiCache
+  - Amazon DynamoDB Accelerator (DAX)
+  - Amazon RDS
+  - Amazon DynamoDB
+  - AWS Compute Optimizer
+  - AWS Global Accelerator
+  - VPC Endpoints
+  - AWS X-Ray
+  - Amazon CloudWatch
+
+keyConcepts:
+  - CloudFront caching strategies and behaviors
+  - Cache invalidation patterns
+  - ElastiCache for Redis and Memcached
+  - DynamoDB DAX integration
+  - RDS read replicas and query optimization
+  - DynamoDB optimization (GSI, LSI, partition keys)
+  - Compute Optimizer recommendations
+  - Global Accelerator for global applications
+  - VPC interface and gateway endpoints
+  - Application performance monitoring with X-Ray
+  - CloudWatch metrics and alarms
+  - Database connection pooling
+
+awsDocLinks:
+  - title: Amazon CloudFront Developer Guide
+    url: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/
+    type: doc
+  - title: Amazon ElastiCache User Guide
+    url: https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/
+    type: doc
+  - title: DynamoDB DAX
+    url: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html
+    type: doc
+  - title: Performance Efficiency Pillar - AWS Well-Architected
+    url: https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/
+    type: whitepaper
+  - title: AWS Compute Optimizer
+    url: https://docs.aws.amazon.com/compute-optimizer/latest/ug/
+    type: doc
+  - title: AWS Global Accelerator
+    url: https://docs.aws.amazon.com/global-accelerator/latest/dg/
+    type: doc
+
+relatedExperiments:
+  - lab-cloudfront-optimization
+  - lab-elasticache-redis
+  - lab-dax-dynamodb

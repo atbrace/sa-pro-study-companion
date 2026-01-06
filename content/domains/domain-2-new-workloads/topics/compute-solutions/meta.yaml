@@ -1,0 +1,54 @@
+id: compute-solutions
+name: Compute Solutions and Deployment Strategies
+shortName: Compute Solutions
+examTask: task-2-1
+description: >
+  Design and implement compute solutions using EC2, Lambda, containers (ECS/EKS),
+  and AWS Batch. Select appropriate compute services based on workload characteristics,
+  performance requirements, and cost considerations.
+
+estimatedStudyTime: 120
+difficulty: advanced
+
+keyServices:
+  - Amazon EC2
+  - AWS Lambda
+  - Amazon ECS
+  - Amazon EKS
+  - AWS Fargate
+  - AWS Batch
+  - AWS App Runner
+  - AWS Elastic Beanstalk
+  - EC2 Auto Scaling
+  - Application Auto Scaling
+
+keyConcepts:
+  - EC2 instance types and families
+  - Lambda execution model and optimization
+  - Container orchestration (ECS vs EKS)
+  - Serverless compute patterns
+  - Batch processing architectures
+  - Auto Scaling strategies
+  - Deployment strategies (blue/green, canary)
+  - Spot Instances and Spot Fleet
+  - Placement groups
+  - Enhanced networking
+
+awsDocLinks:
+  - title: Amazon EC2 Instance Types
+    url: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html
+    type: doc
+  - title: AWS Lambda Developer Guide
+    url: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+    type: doc
+  - title: Amazon ECS Developer Guide
+    url: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/
+    type: doc
+  - title: Amazon EKS User Guide
+    url: https://docs.aws.amazon.com/eks/latest/userguide/
+    type: doc
+
+relatedExperiments:
+  - lab-ecs-fargate
+  - lab-lambda-optimization
+  - lab-auto-scaling

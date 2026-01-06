@@ -1,0 +1,412 @@
+questions:
+  - id: compute-001
+    type: single
+    text: |
+      A company is migrating a high-performance computing (HPC) application that requires extremely low network latency
+      between compute instances. The application performs tightly coupled parallel processing across 20 instances.
+      Which EC2 deployment strategy provides the lowest network latency?
+    options:
+      - id: A
+        text: Deploy instances across multiple Availability Zones using a spread placement group
+      - id: B
+        text: Deploy all instances in a single Availability Zone using a cluster placement group
+      - id: C
+        text: Deploy instances using a partition placement group with 7 partitions
+      - id: D
+        text: Deploy instances with enhanced networking enabled across multiple regions
+    correctAnswer: B
+    explanation: |
+      Cluster placement groups pack instances close together within a single Availability Zone, providing the lowest
+      network latency and highest throughput. This is ideal for HPC applications with tightly coupled workloads.
+      
+      Spread placement groups distribute instances across different hardware (max 7 per AZ), increasing reliability
+      but not optimized for low latency. Partition placement groups are for distributed systems like Hadoop, not
+      for lowest latency. Multi-region deployment would have the highest latency.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+    services: [Amazon EC2]
+
+  - id: compute-002
+    type: single
+    text: |
+      An application running on Lambda processes S3 uploads and stores results in DynamoDB. The function occasionally
+      times out, and you notice cold starts taking 8-10 seconds. The function runs 1000+ times per day with unpredictable
+      timing. Memory is set to 512 MB. How can you reduce cold start latency?
+    options:
+      - id: A
+        text: Increase memory allocation to 3008 MB to get more CPU
+      - id: B
+        text: Enable Provisioned Concurrency to pre-warm function instances
+      - id: C
+        text: Use Lambda SnapStart to cache initialization state
+      - id: D
+        text: Schedule a CloudWatch Event every 5 minutes to keep the function warm
+    correctAnswer: B
+    explanation: |
+      Provisioned Concurrency keeps a specified number of function instances initialized and ready to respond,
+      eliminating cold starts for those instances. This is the AWS-recommended solution for reducing cold start latency.
+      
+      Increasing memory helps execution speed but doesn't eliminate cold starts. SnapStart only works for Java functions.
+      Scheduled warming events are a workaround but waste invocations and aren't cost-effective compared to Provisioned
+      Concurrency.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html
+    services: [AWS Lambda]
+
+  - id: compute-003
+    type: multi
+    correctCount: 2
+    text: |
+      A startup wants to deploy containerized microservices on AWS. They have no Kubernetes experience but need
+      auto-scaling, load balancing, and service discovery. Cost optimization is important, and they want minimal
+      operational overhead. Which TWO solutions meet these requirements?
+    options:
+      - id: A
+        text: Amazon ECS with Fargate launch type and AWS Cloud Map for service discovery
+      - id: B
+        text: Amazon EKS with managed node groups and Application Load Balancer
+      - id: C
+        text: Amazon ECS with EC2 launch type using Spot Instances
+      - id: D
+        text: AWS App Runner with automatic scaling and built-in load balancing
+      - id: E
+        text: Self-managed Kubernetes on EC2 with cluster autoscaler
+    correctAnswer: [A, D]
+    explanation: |
+      ECS with Fargate provides serverless containers with minimal operational overhead. Fargate eliminates instance
+      management, and Cloud Map provides service discovery. Auto-scaling and ALB integration are native.
+      
+      AWS App Runner is even simpler - a fully managed service for containerized web apps with automatic scaling,
+      load balancing, and HTTPS built-in. Perfect for startups wanting minimal operations.
+      
+      EKS requires Kubernetes knowledge (they have none). Self-managed K8s has maximum operational overhead.
+      ECS with EC2 requires instance management (more overhead than Fargate).
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/
+    services: [Amazon ECS, AWS Fargate, AWS App Runner]
+
+  - id: compute-004
+    type: single
+    text: |
+      A data processing pipeline needs to transcode thousands of video files daily. Jobs can take 2-6 hours each,
+      and the workload can tolerate interruptions. Processing can be retried if interrupted. Which solution is
+      most cost-effective?
+    options:
+      - id: A
+        text: AWS Lambda with increased timeout and memory
+      - id: B
+        text: Amazon ECS with Fargate Spot
+      - id: C
+        text: AWS Batch with EC2 Spot Instances in a managed compute environment
+      - id: D
+        text: EC2 Reserved Instances with Auto Scaling
+    correctAnswer: C
+    explanation: |
+      AWS Batch is designed for batch processing workloads that can run for hours. Using Spot Instances in the
+      compute environment provides up to 90% cost savings. Batch automatically retries jobs if Spot instances
+      are interrupted, making it ideal for fault-tolerant workloads.
+      
+      Lambda has a 15-minute maximum timeout (too short for 2-6 hour jobs). Fargate Spot could work but Batch
+      provides better orchestration for batch jobs. Reserved Instances aren't cost-effective for variable batch
+      workloads.
+    awsDocLink: https://docs.aws.amazon.com/batch/latest/userguide/what-is-batch.html
+    services: [AWS Batch, Amazon EC2 Spot]
+
+  - id: compute-005
+    type: single
+    text: |
+      An application uses Lambda functions that access resources in a VPC (RDS database). You're experiencing
+      high cold start latency. What is the PRIMARY cause of VPC-related cold starts?
+    options:
+      - id: A
+        text: Lambda must create an ENI in each subnet during cold start
+      - id: B
+        text: VPC functions have reduced CPU allocation
+      - id: C
+        text: Security group rules must be evaluated on each invocation
+      - id: D
+        text: VPC DNS resolution adds latency to all function calls
+    correctAnswer: A
+    explanation: |
+      Historical issue: Lambda used to create Elastic Network Interfaces (ENIs) during cold starts, causing
+      delays of 10-30 seconds. However, AWS now uses Hyperplane ENIs which eliminate this penalty.
+      
+      Note: This question tests knowledge of the historical VPC cold start issue. In practice, modern Lambda
+      functions using Hyperplane ENIs have minimal VPC cold start penalty. However, VPC functions still have
+      slightly higher latency than non-VPC functions.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/foundation-networking.html
+    services: [AWS Lambda, Amazon VPC]
+
+  - id: compute-006
+    type: single
+    text: |
+      A company runs a memory-intensive in-memory analytics application. The application requires 512 GB of RAM
+      and benefits from high memory bandwidth. Which EC2 instance type is most appropriate?
+    options:
+      - id: A
+        text: m6i.16xlarge (256 GB RAM)
+      - id: B
+        text: c6i.32xlarge (256 GB RAM)
+      - id: C
+        text: r6i.16xlarge (512 GB RAM)
+      - id: D
+        text: x2idn.16xlarge (1024 GB RAM)
+    correctAnswer: C
+    explanation: |
+      R-family instances (r6i) are memory-optimized with a high memory-to-vCPU ratio, specifically designed for
+      memory-intensive applications like in-memory analytics, databases, and caching. r6i.16xlarge provides
+      exactly 512 GB RAM.
+      
+      M-family is general purpose (balanced, but not enough memory). C-family is compute-optimized (wrong ratio).
+      X2idn has too much memory (1 TB) and would be more expensive than needed.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/memory-optimized-instances.html
+    services: [Amazon EC2]
+
+  - id: compute-007
+    type: multi
+    correctCount: 3
+    text: |
+      You're designing auto-scaling for an ECS service running web application containers. The service experiences
+      predictable traffic patterns with spikes during business hours and steady load otherwise. Which THREE scaling
+      configurations should you implement?
+    options:
+      - id: A
+        text: Target tracking scaling policy based on ALB request count per target
+      - id: B
+        text: Step scaling policy to add capacity in increments based on CPU thresholds
+      - id: C
+        text: Scheduled scaling to increase capacity before business hours begin
+      - id: D
+        text: Simple scaling with 5-minute cooldown period
+      - id: E
+        text: Enable cluster auto-scaling to ensure sufficient EC2 capacity
+    correctAnswer: [A, C, E]
+    explanation: |
+      Target tracking is the recommended approach for most auto-scaling scenarios - it automatically adjusts
+      capacity to maintain the metric at the target value (e.g., 1000 requests per target).
+      
+      Scheduled scaling proactively adds capacity before predictable spikes, ensuring capacity is ready when
+      traffic increases.
+      
+      Cluster auto-scaling (for ECS EC2 launch type) ensures the underlying EC2 instances scale with task demand,
+      preventing task placement failures.
+      
+      Step scaling is more complex than target tracking and typically unnecessary. Simple scaling is deprecated
+      in favor of target tracking.
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html
+    services: [Amazon ECS, Application Auto Scaling]
+
+  - id: compute-008
+    type: single
+    text: |
+      A financial services company is migrating existing Kubernetes workloads to AWS. They need Windows container
+      support, compliance logging, and want AWS to manage the Kubernetes control plane. Which solution meets
+      these requirements?
+    options:
+      - id: A
+        text: Amazon ECS with Windows containers on EC2
+      - id: B
+        text: Amazon EKS with Windows worker nodes
+      - id: C
+        text: AWS Fargate with Windows containers
+      - id: D
+        text: Self-managed Kubernetes on EC2 Windows instances
+    correctAnswer: B
+    explanation: |
+      Amazon EKS provides a managed Kubernetes control plane and supports Windows worker nodes. This allows
+      migration of existing Kubernetes workloads (K8s compatibility) while getting AWS-managed control plane.
+      EKS integrates with CloudTrail for compliance logging.
+      
+      ECS isn't Kubernetes (migration would require rewriting). Fargate doesn't support Windows containers.
+      Self-managed K8s doesn't provide managed control plane (increases operational burden).
+    awsDocLink: https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html
+    services: [Amazon EKS]
+
+  - id: compute-009
+    type: single
+    text: |
+      An application uses Lambda functions with the following characteristics: 200 MB deployment package,
+      executes for 30 seconds, runs 10 million times per month. You want to optimize costs. What should you do?
+    options:
+      - id: A
+        text: Reduce memory allocation to 128 MB
+      - id: B
+        text: Use ARM-based Graviton2 architecture
+      - id: C
+        text: Enable Provisioned Concurrency
+      - id: D
+        text: Increase memory to reduce execution time
+    correctAnswer: B
+    explanation: |
+      ARM architecture (Graviton2) for Lambda is up to 20% cheaper than x86 while providing better performance.
+      This is a simple configuration change (architecture: arm64) with no code changes required for most runtimes.
+      
+      Reducing memory might slow execution and could cost more (GB-seconds could increase). Provisioned Concurrency
+      costs extra and is for reducing latency, not cost. Increasing memory increases cost per invocation.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/foundation-arch.html
+    services: [AWS Lambda]
+
+  - id: compute-010
+    type: single
+    text: |
+      You're deploying a new version of an API using Lambda with an alias. You want to test the new version with
+      10% of traffic before full deployment. How do you implement this canary deployment?
+    options:
+      - id: A
+        text: Create two Lambda functions and use API Gateway stage variables
+      - id: B
+        text: Use Lambda weighted aliases to route 10% to new version, 90% to current
+      - id: C
+        text: Deploy via AWS CodeDeploy with canary traffic shifting
+      - id: D
+        text: Use ALB target groups with weighted routing
+    correctAnswer: B
+    explanation: |
+      Lambda weighted aliases allow you to route a percentage of traffic to different versions of your function.
+      You can set the alias to route 10% to version 2 and 90% to version 1, implementing a canary deployment.
+      
+      CodeDeploy also supports canary deployments for Lambda and is a valid automation approach, but weighted
+      aliases are the direct Lambda feature for traffic shifting. Two separate functions would complicate management.
+      ALB can target Lambda but weighted aliases are simpler for this use case.
+    awsDocLink: https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html
+    services: [AWS Lambda]
+
+  - id: compute-011
+    type: multi
+    correctCount: 2
+    text: |
+      A company runs containerized microservices that must communicate with each other using service names
+      (e.g., auth-service, user-service). They're using ECS with Fargate. Which TWO capabilities enable
+      service-to-service communication by name?
+    options:
+      - id: A
+        text: AWS Cloud Map for service discovery
+      - id: B
+        text: ECS Service Connect
+      - id: C
+        text: Route 53 private hosted zones
+      - id: D
+        text: Application Load Balancer target groups
+      - id: E
+        text: VPC peering connections
+    correctAnswer: [A, B]
+    explanation: |
+      AWS Cloud Map is the AWS service discovery solution that automatically creates and maintains DNS records
+      for your services. When integrated with ECS, it creates DNS names like service-name.namespace.
+      
+      ECS Service Connect is a newer feature that provides service-to-service communication with built-in
+      service mesh capabilities, including service discovery, traffic management, and observability.
+      
+      Route 53 private hosted zones could work but require manual management. ALB provides external access,
+      not service-to-service discovery. VPC peering is for network connectivity, not service discovery.
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html
+    services: [AWS Cloud Map, Amazon ECS]
+
+  - id: compute-012
+    type: single
+    text: |
+      A startup is deploying their first containerized application. They have a single web application container
+      that needs automatic scaling, HTTPS, and want the simplest possible solution with minimal configuration.
+      Which service is most appropriate?
+    options:
+      - id: A
+        text: Amazon ECS with Fargate
+      - id: B
+        text: Amazon EKS with Fargate
+      - id: C
+        text: AWS App Runner
+      - id: D
+        text: AWS Elastic Beanstalk with Docker
+    correctAnswer: C
+    explanation: |
+      AWS App Runner is the simplest option for deploying containerized web applications. It provides:
+      - Automatic scaling based on traffic
+      - Built-in HTTPS with managed certificates
+      - Load balancing built-in
+      - Minimal configuration required (just point to container image or source code)
+      
+      ECS/EKS require more configuration (task definitions, services, load balancers). Elastic Beanstalk is
+      good but App Runner is even simpler for container-based web apps.
+    awsDocLink: https://docs.aws.amazon.com/apprunner/latest/dg/what-is-apprunner.html
+    services: [AWS App Runner]
+
+  - id: compute-013
+    type: single
+    text: |
+      An Auto Scaling group uses target tracking to maintain average CPU at 50%. Instances are being added and
+      removed too frequently, causing instability. What should you adjust?
+    options:
+      - id: A
+        text: Increase the target CPU value to 70%
+      - id: B
+        text: Increase the warmup time for new instances
+      - id: C
+        text: Change to step scaling instead of target tracking
+      - id: D
+        text: Disable scale-in protection
+    correctAnswer: B
+    explanation: |
+      Instance warmup time tells Auto Scaling to wait before including a new instance's metrics in the aggregate.
+      Without sufficient warmup, new instances still starting up might report low CPU, triggering premature
+      scale-down. Increasing warmup time stabilizes the scaling behavior.
+      
+      Increasing target CPU would change the operating point but not address the instability. Step scaling is
+      more complex and typically not necessary. Scale-in protection prevents termination entirely (opposite of
+      what's needed).
+    awsDocLink: https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-target-tracking-metric-math.html
+    services: [EC2 Auto Scaling]
+
+  - id: compute-014
+    type: multi
+    correctCount: 2
+    text: |
+      You're running ECS tasks with the EC2 launch type. Your tasks are failing to launch with "RESOURCE:MEMORY"
+      errors despite having running instances in the cluster. What are TWO likely causes?
+    options:
+      - id: A
+        text: Task memory reservation exceeds available memory on instances
+      - id: B
+        text: ECS agent is not running on the instances
+      - id: C
+        text: Container instances are not in the correct VPC subnets
+      - id: D
+        text: ECS service is not configured with the correct IAM role
+      - id: E
+        text: Too many tasks are already running and consuming available memory
+    correctAnswer: [A, E]
+    explanation: |
+      "RESOURCE:MEMORY" specifically means the cluster doesn't have enough available memory to place the task.
+      This occurs when:
+      1. Task memory reservation is higher than the largest available memory on any instance
+      2. Existing tasks have consumed most of the memory, leaving insufficient capacity
+      
+      Solution: Either add more/larger instances to the cluster, or reduce task memory reservation.
+      
+      ECS agent issues would cause different errors. VPC subnet issues would prevent instance registration.
+      IAM role issues would cause permission errors, not resource errors.
+    awsDocLink: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-placement.html
+    services: [Amazon ECS]
+
+  - id: compute-015
+    type: single
+    text: |
+      A company needs to run a distributed Apache Kafka cluster on EC2. The cluster has 9 brokers that must be
+      protected from correlated hardware failures while staying within a single region. What placement strategy
+      should you use?
+    options:
+      - id: A
+        text: Cluster placement group for high network throughput
+      - id: B
+        text: Spread placement group across 3 Availability Zones
+      - id: C
+        text: Partition placement group with 3 partitions across 3 Availability Zones
+      - id: D
+        text: No placement group, deploy across multiple Availability Zones
+    correctAnswer: C
+    explanation: |
+      Partition placement groups are specifically designed for distributed systems like Kafka, Hadoop, and
+      Cassandra. Each partition is isolated from hardware failures in other partitions. With 3 AZs and 3 partitions,
+      you get 9 failure domains (3 partitions per AZ), ideal for 9 brokers.
+      
+      Spread placement groups are limited to 7 instances per AZ (wouldn't fit 9 brokers in one region properly).
+      Cluster placement groups are for low latency, not distributed system resilience. No placement group doesn't
+      provide the partition isolation.
+    awsDocLink: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+    services: [Amazon EC2]

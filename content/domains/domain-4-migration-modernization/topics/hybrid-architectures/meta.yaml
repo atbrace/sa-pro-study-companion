@@ -1,0 +1,54 @@
+id: hybrid-architectures
+name: Hybrid Cloud Architectures
+shortName: Hybrid Cloud
+examTask: task-4-2
+description: >
+  Design and implement hybrid cloud solutions connecting on-premises infrastructure with AWS,
+  including networking, storage, compute, and data transfer services for seamless integration.
+
+estimatedStudyTime: 90
+difficulty: advanced
+keyServices:
+  - AWS Direct Connect
+  - AWS VPN
+  - AWS Storage Gateway
+  - AWS DataSync
+  - AWS Snow Family
+  - AWS Outposts
+  - VMware Cloud on AWS
+  - AWS Transit Gateway
+learningObjectives:
+  - Design resilient hybrid network architectures using Direct Connect and VPN
+  - Select appropriate Storage Gateway modes for different use cases
+  - Implement efficient data transfer strategies using DataSync and Snow Family
+  - Architect on-premises AWS extensions with Outposts and VMware Cloud
+  - Apply hybrid networking patterns for multi-region and multi-account scenarios
+awsDocLinks:
+  - title: AWS Direct Connect Documentation
+    url: https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html
+    type: doc
+  - title: AWS Storage Gateway Documentation
+    url: https://docs.aws.amazon.com/storagegateway/latest/userguide/WhatIsStorageGateway.html
+    type: doc
+  - title: AWS DataSync Documentation
+    url: https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html
+    type: doc
+  - title: AWS Snow Family Documentation
+    url: https://docs.aws.amazon.com/snowball/latest/developer-guide/whatissnowball.html
+    type: doc
+  - title: AWS Outposts Documentation
+    url: https://docs.aws.amazon.com/outposts/latest/userguide/what-is-outposts.html
+    type: doc
+  - title: VMware Cloud on AWS
+    url: https://docs.aws.amazon.com/vmware-cloud/latest/userguide/what-is-vmware-cloud.html
+    type: doc
+  - title: Hybrid Cloud with AWS Whitepaper
+    url: https://docs.aws.amazon.com/whitepapers/latest/hybrid-cloud-with-aws/hybrid-cloud-with-aws.html
+    type: whitepaper
+  - title: AWS Direct Connect FAQs
+    url: https://aws.amazon.com/directconnect/faqs/
+    type: faq
+prerequisites:
+  - network-connectivity
+  - storage-solutions
+  - compute-optimization
