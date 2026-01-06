@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Clock, Target, ExternalLink, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDomainById, getTopicById } from "@/lib/content/loader";
-import ReactMarkdown from "react-markdown";
+import { StudyContent } from "@/components/study/StudyContent";
 
 interface PageProps {
   params: Promise<{ domain: string; topic: string }>;
@@ -121,8 +121,8 @@ export default async function TopicPage({ params }: PageProps) {
 
       {/* Content */}
       {topic.content ? (
-        <div className="prose prose-sm lg:prose-base dark:prose-invert max-w-none mb-8">
-          <ReactMarkdown>{topic.content.content}</ReactMarkdown>
+        <div className="mb-8">
+          <StudyContent content={topic.content.content} />
         </div>
       ) : (
         <Card className="mb-8">
