@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getDomainById, getTopicById } from '@/lib/content/loader';
 import { parseTopicSections, getSectionBySlug, getAdjacentSections } from '@/lib/content/parser';
-import { SectionTabs } from '@/components/study/SectionTabs';
 import { SectionNavigation } from '@/components/study/SectionNavigation';
 import { SectionContent } from '@/components/study/SectionContent';
 import { QuestionSection } from '@/components/study/QuestionSection';
@@ -204,14 +203,6 @@ export default async function TopicSectionPage({ params }: PageProps) {
           <p className="text-muted-foreground">{topic.meta.description}</p>
         </div>
 
-        {/* Section Tabs */}
-        <SectionTabs
-          sections={allSections}
-          currentSlug="questions"
-          domainId={domainId}
-          topicId={topicId}
-        />
-
         {/* Questions Section */}
         <QuestionSection topic={topic} domainId={domainId} topicId={topicId} />
 
@@ -309,14 +300,6 @@ export default async function TopicSectionPage({ params }: PageProps) {
         </h1>
         <p className="text-muted-foreground">{topic.meta.description}</p>
       </div>
-
-      {/* Section Tabs */}
-      <SectionTabs
-        sections={allSections}
-        currentSlug={currentSlug}
-        domainId={domainId}
-        topicId={topicId}
-      />
 
       {/* Section Content */}
       <SectionContent

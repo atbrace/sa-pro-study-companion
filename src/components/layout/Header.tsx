@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, MessageSquare } from 'lucide-react';
 import { MobileSidebar } from './MobileSidebar';
+import type { SidebarHierarchy } from '@/types/sidebar';
 import { useState } from 'react';
 
 interface HeaderProps {
   onTutorToggle?: () => void;
+  sidebarHierarchy: SidebarHierarchy;
 }
 
-export function Header({ onTutorToggle }: HeaderProps) {
+export function Header({ onTutorToggle, sidebarHierarchy }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -26,7 +28,10 @@ export function Header({ onTutorToggle }: HeaderProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-              <MobileSidebar onNavigate={() => setMobileMenuOpen(false)} />
+              <MobileSidebar
+                onNavigate={() => setMobileMenuOpen(false)}
+                sidebarHierarchy={sidebarHierarchy}
+              />
             </SheetContent>
           </Sheet>
           <h1 className="text-lg font-semibold">AWS SAP Study</h1>
