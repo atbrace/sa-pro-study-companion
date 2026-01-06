@@ -6,8 +6,8 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    serverComponentsExternalPackages: ['js-yaml'],
   },
-  serverComponentsExternalPackages: ['js-yaml'],
 }
 
 module.exports = nextConfig
