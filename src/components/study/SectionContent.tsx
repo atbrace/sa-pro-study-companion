@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StudyContent } from './StudyContent';
+import { StudyContentWithTutor } from './StudyContentWithTutor';
 import type { ContentSection, Topic } from '@/types/domain';
 import { ExternalLink, ArrowRight } from 'lucide-react';
 
@@ -8,9 +8,11 @@ interface SectionContentProps {
   section: ContentSection;
   topic: Topic;
   isOverview: boolean;
+  domainId: string;
+  domainName: string;
 }
 
-export function SectionContent({ section, topic, isOverview }: SectionContentProps) {
+export function SectionContent({ section, topic, isOverview, domainId, domainName }: SectionContentProps) {
   return (
     <div className="space-y-8">
       {/* Key Info Cards - Only on overview */}
@@ -55,7 +57,15 @@ export function SectionContent({ section, topic, isOverview }: SectionContentPro
       {/* Section Content */}
       <Card>
         <CardContent className="pt-6">
-          <StudyContent content={section.content} />
+          <StudyContentWithTutor
+            content={section.content}
+            sectionTitle={section.title}
+            sectionContent={section.content}
+            domainId={domainId}
+            domainName={domainName}
+            topicId={topic.meta.id}
+            topicName={topic.meta.name}
+          />
         </CardContent>
       </Card>
 

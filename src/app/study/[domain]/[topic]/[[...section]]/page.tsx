@@ -306,6 +306,8 @@ export default async function TopicSectionPage({ params }: PageProps) {
         section={currentSection}
         topic={topic}
         isOverview={currentSection.id === firstSection?.id}
+        domainId={domainId}
+        domainName={domain.meta.name}
       />
 
       {/* Section Navigation */}

@@ -2,6 +2,7 @@
 
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { useTutor } from '@/hooks/useTutor';
+import { TutorProvider } from '@/contexts/TutorContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import type { SidebarHierarchy } from '@/types/sidebar';
@@ -37,7 +38,9 @@ export function AppLayout({ children, sidebarHierarchy }: AppLayoutProps) {
 
         {/* Page content */}
         <main className="flex-1">
-          {children}
+          <TutorProvider value={{ openTutor, closeTutor, isOpen }}>
+            {children}
+          </TutorProvider>
         </main>
       </div>
 
