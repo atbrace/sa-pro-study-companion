@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { getAllDomains } from "@/lib/content/loader";
+import { getDomainBorderColor } from "@/lib/utils/domain-colors";
+import { cn } from "@/lib/utils";
 
 export default function StudyPage() {
   const domains = getAllDomains();
@@ -30,7 +32,7 @@ export default function StudyPage() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Study Materials</h1>
         <p className="text-muted-foreground">
@@ -43,7 +45,7 @@ export default function StudyPage() {
           const questionCount = domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
 
           return (
-            <Card key={domain.meta.id} className={`border-l-4 border-l-${domain.meta.color}-500`}>
+            <Card key={domain.meta.id} className={cn("border-l-4", getDomainBorderColor(domain.meta.color))}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

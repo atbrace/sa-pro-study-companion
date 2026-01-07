@@ -8,39 +8,43 @@ const STORAGE_KEY_STUDY = 'sidebar-expanded-study';
 
 export function useSidebarState(pathname: string) {
   // Study root expansion state
-  const [isStudyExpanded, setIsStudyExpanded] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_STUDY);
-      // Default to expanded if on study page, otherwise use stored value or collapsed
-      if (pathname?.startsWith('/study')) return true;
-      return stored ? JSON.parse(stored) : false;
-    } catch {
-      return false;
-    }
-  });
+  // Always start collapsed on initial render to match server-side rendering
+  // We'll restore from localStorage after hydration in useEffect
+  const [isStudyExpanded, setIsStudyExpanded] = useState<boolean>(false);
 
-  // Expanded domains
-  const [expandedDomains, setExpandedDomains] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_DOMAINS);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  // Expanded domains - start empty to match server
+  const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
 
-  // Expanded topics (stored as "domainId/topicId")
-  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
+  // Expanded topics - start empty to match server
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
+
+  // Restore state from localStorage after hydration
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    if (hasHydrated) return;
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_TOPICS);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      const storedStudy = localStorage.getItem(STORAGE_KEY_STUDY);
+      if (storedStudy) {
+        setIsStudyExpanded(JSON.parse(storedStudy));
+      }
+
+      const storedDomains = localStorage.getItem(STORAGE_KEY_DOMAINS);
+      if (storedDomains) {
+        setExpandedDomains(new Set(JSON.parse(storedDomains)));
+      }
+
+      const storedTopics = localStorage.getItem(STORAGE_KEY_TOPICS);
+      if (storedTopics) {
+        setExpandedTopics(new Set(JSON.parse(storedTopics)));
+      }
     } catch {
-      return new Set();
+      // Fail silently if localStorage is unavailable
     }
-  });
+
+    setHasHydrated(true);
+  }, [hasHydrated]);
 
   // Auto-expand based on current pathname
   useEffect(() => {

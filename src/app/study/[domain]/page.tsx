@@ -24,7 +24,7 @@ export default async function DomainPage({ params }: PageProps) {
   const totalStudyTime = domain.topics.reduce((sum, t) => sum + (t.meta.estimatedStudyTime || 0), 0);
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-5xl mx-auto">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/study" className="hover:text-foreground">

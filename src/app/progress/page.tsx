@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Award, BookOpen, Target, Clock } from "lucide-react";
 import { DomainRadarChart, DomainBarChart } from "@/components/progress/DomainChart";
@@ -32,7 +32,7 @@ export default function ProgressPage() {
   };
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Your Progress</h1>
         <p className="text-muted-foreground">
@@ -51,7 +51,7 @@ export default function ProgressPage() {
             <div className="text-2xl font-bold">
               {Math.round(progress.overall.masteryScore)}%
             </div>
-            <Progress value={progress.overall.masteryScore} className="mt-2 h-2" />
+            <ProgressIndicator value={progress.overall.masteryScore} className="mt-2 h-2" />
             <p className="text-xs text-muted-foreground mt-2">
               Target: 85%+
             </p>
@@ -147,7 +147,7 @@ export default function ProgressPage() {
                   <Badge variant="outline">{domain.weight}%</Badge>
                 </div>
               </div>
-              <Progress value={domain.masteryScore} className="h-2" />
+              <ProgressIndicator value={domain.masteryScore} className="h-2" />
               <p className="text-xs text-muted-foreground">
                 {domain.topicsCompleted}/{domain.totalTopics} topics completed •
                 {' '}{domain.questionsAttempted} questions attempted

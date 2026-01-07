@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Clock, Target, ArrowRight } from "lucide-react";
 import { getAllDomains } from "@/lib/content/loader";
 import { db } from "@/lib/db/client";
+import { getDomainBorderColor } from "@/lib/utils/domain-colors";
+import { cn } from "@/lib/utils";
 
 export default function AssessPage() {
   const domains = getAllDomains();
@@ -22,7 +24,7 @@ export default function AssessPage() {
   `).get() as { count: number };
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Assessments</h1>
         <p className="text-muted-foreground">
@@ -88,7 +90,10 @@ export default function AssessPage() {
               return (
                 <div
                   key={domain.meta.id}
-                  className={`flex items-center justify-between p-4 border-l-4 border-l-${domain.meta.color}-500 rounded-lg hover:bg-muted/50 transition-colors`}
+                  className={cn(
+                    "flex items-center justify-between p-4 border-l-4 rounded-lg hover:bg-muted/50 transition-colors",
+                    getDomainBorderColor(domain.meta.color)
+                  )}
                 >
                   <div>
                     <p className="font-medium">{domain.meta.shortName}</p>

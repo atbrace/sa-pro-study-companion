@@ -14,15 +14,14 @@ export function StudyContent({ content }: StudyContentProps) {
         components={{
           // Headings
           h1: ({ children }) => (
-            <h1 className="text-3xl font-bold tracking-tight mt-8 mb-4 first:mt-0">
+            <h1 className="text-3xl font-bold tracking-tight mt-8 mb-6 first:mt-0">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
             <>
-              {/* Add separator before h2 headings (except first) */}
-              <Separator className="my-8 first:hidden" />
-              <h2 className="text-2xl font-bold tracking-tight mt-8 mb-4 first:mt-0">
+              <Separator className="my-8 [&:first-child]:hidden" />
+              <h2 className="text-2xl font-bold tracking-tight mb-4">
                 {children}
               </h2>
             </>

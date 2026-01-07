@@ -87,7 +87,7 @@ export default function Home() {
               </CardHeader>
             </Card>
 
-            <Card className="border-l-4 border-l-green-500">
+            <Card className="border-l-4 border-l-purple-500">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Domain 2</CardTitle>
@@ -99,7 +99,7 @@ export default function Home() {
               </CardHeader>
             </Card>
 
-            <Card className="border-l-4 border-l-amber-500">
+            <Card className="border-l-4 border-l-green-500">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Domain 3</CardTitle>
@@ -111,7 +111,7 @@ export default function Home() {
               </CardHeader>
             </Card>
 
-            <Card className="border-l-4 border-l-purple-500">
+            <Card className="border-l-4 border-l-orange-500">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Domain 4</CardTitle>

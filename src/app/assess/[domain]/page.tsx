@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { QuestionCard } from '@/components/assess/QuestionCard';
@@ -151,7 +151,7 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
                 </div>
               </div>
 
-              <Progress value={result.score} className="h-3 w-full max-w-md" />
+              <ProgressIndicator value={result.score} className="h-3 w-full max-w-md" />
 
               <Badge variant={result.score >= 85 ? 'default' : result.score >= 60 ? 'secondary' : 'destructive'} className="text-base px-4 py-2">
                 {result.score >= 85 ? 'Excellent!' : result.score >= 60 ? 'Good Progress' : 'Needs Review'}
