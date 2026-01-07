@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Separator } from '@/components/ui/separator';
-import { SectionHeader } from './SectionHeader';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { HeadingWithTutor } from './HeadingWithTutor';
 
 interface StudyContentWithTutorProps {
   content: string;
@@ -36,27 +37,41 @@ export function StudyContentWithTutor({
     h2: ({ children }: any) => (
       <>
         <Separator className="my-8 [&:first-child]:hidden" />
-        <SectionHeader
-          sectionTitle={String(children)}
-          sectionContent={sectionContent}
+        <HeadingWithTutor
+          level={2}
+          fullContent={sectionContent}
           domainId={domainId}
           domainName={domainName}
           topicId={topicId}
           topicName={topicName}
         >
           {children}
-        </SectionHeader>
+        </HeadingWithTutor>
       </>
     ),
     h3: ({ children }: any) => (
-      <h3 className="text-xl font-semibold mt-6 mb-3">
+      <HeadingWithTutor
+        level={3}
+        fullContent={sectionContent}
+        domainId={domainId}
+        domainName={domainName}
+        topicId={topicId}
+        topicName={topicName}
+      >
         {children}
-      </h3>
+      </HeadingWithTutor>
     ),
     h4: ({ children }: any) => (
-      <h4 className="text-lg font-semibold mt-4 mb-2">
+      <HeadingWithTutor
+        level={4}
+        fullContent={sectionContent}
+        domainId={domainId}
+        domainName={domainName}
+        topicId={topicId}
+        topicName={topicName}
+      >
         {children}
-      </h4>
+      </HeadingWithTutor>
     ),
 
     // Paragraphs
@@ -182,13 +197,15 @@ export function StudyContentWithTutor({
   }), [domainId, domainName, topicId, topicName, sectionContent, sectionTitle]);
 
   return (
-    <div className="study-content">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={components}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="study-content">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={components}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    </TooltipProvider>
   );
 }
