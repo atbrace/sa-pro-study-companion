@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Separator } from '@/components/ui/separator';
 
 interface StudyContentProps {
@@ -9,6 +10,7 @@ export function StudyContent({ content }: StudyContentProps) {
   return (
     <div className="study-content">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           // Headings
           h1: ({ children }) => (
