@@ -4,11 +4,11 @@ A local-first study application for AWS Solutions Architect Professional (SAP-C0
 
 ## Features
 
-- **Adaptive Assessments**: Domain-specific quizzes with 65+ questions for Domain 1 (Organizational Complexity)
-- **AI Tutor**: Context-aware tutoring powered by Claude API - ask questions about any AWS topic
-- **Progress Tracking**: Visual dashboards showing mastery levels, weak areas, and study streaks
-- **Study Content**: Comprehensive study guides with links to official AWS docs, whitepapers, and FAQs
-- **Hands-on Labs**: (Coming soon) CDK-based experiments to practice with real AWS resources
+- **Adaptive Assessments**: Domain-specific quizzes with 300+ questions across all 4 SAP-C02 domains
+- **AI Tutor**: Context-aware tutoring powered by Claude API - ask questions about any AWS topic with section-specific help buttons
+- **Progress Tracking**: Visual dashboards showing mastery levels, weak areas, and assessment history
+- **Study Content**: 20+ topics with comprehensive study guides linked to official AWS docs, whitepapers, and FAQs
+- **Hands-on Labs**: 7 CDK-based experiments to practice with real AWS resources (VPC, Lambda, ECS, S3, RDS, DynamoDB, Step Functions)
 
 ## Tech Stack
 
@@ -27,7 +27,29 @@ Before you begin, ensure you have:
 - **Node.js** 18.x or higher ([Download](https://nodejs.org/))
 - **pnpm** 8.x or higher (install via `npm install -g pnpm`)
 - **Claude API Key** from Anthropic ([Get API key](https://console.anthropic.com/))
-- **(Optional) AWS Account** for hands-on experiments (future feature)
+- **(Optional) AWS Account** for hands-on experiments with CDK deployments
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/yourusername/sa-pro-study-companion.git
+cd sa-pro-study-companion
+pnpm install
+
+# Set up environment
+cp .env.example .env.local
+# Edit .env.local and add your ANTHROPIC_API_KEY
+
+# Initialize database
+pnpm db:migrate
+pnpm db:seed
+
+# Start development server
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and start studying!
 
 ## Installation
 
@@ -61,10 +83,10 @@ ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
 # Optional: Database path (defaults to ./data/study.db)
 DATABASE_PATH=./data/study.db
 
-# Optional: AWS credentials for CDK experiments (future feature)
-# AWS_ACCESS_KEY_ID=your-access-key
-# AWS_SECRET_ACCESS_KEY=your-secret-key
-# AWS_REGION=us-east-1
+# Optional: AWS credentials for CDK experiments
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_REGION=us-east-1
 ```
 
 **Getting a Claude API Key:**
@@ -127,8 +149,8 @@ pnpm db:reset         # Reset all user progress (keeps content)
 pnpm content:validate # Validate YAML/MD content files
 pnpm content:stats    # Show content statistics
 
-# AWS Experiments (Coming Soon)
-pnpm cdk:deploy <lab-id>   # Deploy a specific lab
+# AWS Experiments
+pnpm cdk:deploy <lab-id>   # Deploy a specific lab (requires AWS credentials)
 pnpm cdk:destroy <lab-id>  # Destroy a specific lab
 pnpm cdk:cleanup           # Destroy all lab stacks
 ```
@@ -137,47 +159,66 @@ pnpm cdk:cleanup           # Destroy all lab stacks
 
 ### 1. Study Content
 
-Navigate to a domain and topic to access study material:
-- **Domain 1**: Organizational Complexity
-  - Network Connectivity
-  - Security Controls
-  - Resilient Architectures
-  - Multi-Account Environment
-  - Cost Optimization
+Navigate to any domain and topic to access study material across all 4 SAP-C02 domains:
 
-Each topic includes:
-- Comprehensive study notes
-- Key services and concepts
-- Links to official AWS documentation
-- Knowledge check questions
+- **Domain 1**: Design Solutions for Organizational Complexity (26% of exam)
+- **Domain 2**: Design Solutions for New Workloads (29% of exam)
+- **Domain 3**: Continuous Improvement for Existing Solutions (25% of exam)
+- **Domain 4**: Accelerate Workload Migration and Modernization (20% of exam)
+
+Each of the 20+ topics includes:
+- Comprehensive study notes with practical examples
+- Key AWS services and concepts
+- Links to official AWS documentation, whitepapers, and FAQs
+- 15+ knowledge check questions per topic
 
 ### 2. Take Assessments
 
 Click "Assess" in the sidebar to take domain-specific quizzes:
-- 15 questions randomly selected from the topic pool
-- Mix of single-select and multi-select questions
-- Immediate feedback with explanations
-- Results saved to track progress
+- 15 questions per assessment, randomly selected from each domain's topic pool
+- Mix of single-select and multi-select questions matching SAP-C02 exam format
+- Immediate feedback with detailed explanations
+- Links to AWS documentation for further study
+- Results saved to track progress and identify weak areas
 
 ### 3. Ask the AI Tutor
 
-Click the chat icon (bottom right) to open the AI tutor:
-- Ask questions about any AWS topic
-- Get context-aware explanations
-- Request clarification on study material
+Click "Ask AI" buttons throughout the app or use the chat icon (bottom right):
+- Context-aware help based on the section you're viewing
+- Ask questions about any AWS topic or service
+- Get detailed explanations with links to official AWS docs
+- Request clarification on study material or assessment questions
 - Practice with scenario-based questions
 
-The tutor automatically understands which domain/topic you're studying for better context.
+The tutor automatically understands which domain/topic you're studying and provides targeted, relevant answers.
 
 ### 4. Track Your Progress
 
 Visit the Progress page to see:
-- **Mastery Scores**: Radar and bar charts showing performance across domains
-- **Weak Areas**: Topics that need more study based on assessment results
-- **Study Streak**: Recent activity timeline
-- **Readiness Estimate**: Projected exam readiness percentage
+- **Mastery Scores**: Performance breakdown across all domains
+- **Assessment History**: Track your scores over time
+- **Question Statistics**: See which topics you've mastered
+- **Weak Areas**: Identify topics that need more study based on assessment results
 
 Target 85%+ mastery across all domains before attempting the real exam.
+
+### 5. Hands-on Experiments
+
+Navigate to the Experiments page to deploy real AWS infrastructure:
+- **VPC Networking**: Multi-AZ VPC with public/private subnets, NAT gateways, and routing
+- **Lambda + API Gateway**: Serverless REST API with DynamoDB backend
+- **ECS Fargate**: Containerized web application with ALB
+- **S3 + CloudFront**: Static website with global CDN
+- **RDS Multi-AZ**: MySQL database with read replicas and automated backups
+- **DynamoDB + DAX**: NoSQL database with in-memory caching
+- **Step Functions**: Serverless workflow orchestration with Lambda integration
+
+Each lab includes:
+- Detailed guide with objectives and architecture diagrams
+- One-click deployment via AWS CDK
+- Real-time deployment status
+- Console links to deployed resources
+- Cost estimates and cleanup instructions
 
 ## Project Structure
 
@@ -202,13 +243,11 @@ sa-pro-study-companion/
 │   └── hooks/                 # React hooks
 ├── content/
 │   └── domains/               # Study content (YAML/MD)
-│       └── domain-1-organizational-complexity/
-│           └── topics/
-│               ├── network-connectivity/
-│               ├── security-controls/
-│               ├── resilient-architectures/
-│               ├── multi-account-environment/
-│               └── cost-optimization/
+│       ├── domain-1-organizational-complexity/
+│       ├── domain-2-new-workloads/
+│       ├── domain-3-continuous-improvement/
+│       └── domain-4-migration-modernization/
+│           └── topics/ (20+ topics total)
 ├── data/
 │   └── study.db               # SQLite database (auto-created)
 └── public/                    # Static assets
@@ -216,13 +255,17 @@ sa-pro-study-companion/
 
 ## Content Structure
 
-Study content is stored as YAML and Markdown files in `content/domains/`:
+Study content is organized as YAML and Markdown files in `content/domains/`:
 
-- **meta.yaml**: Domain/topic metadata, key services, AWS doc links
-- **content.md**: Study notes in Markdown with code examples
-- **questions.yaml**: Assessment questions with explanations
+- **Domain directories** (domain-1, domain-2, domain-3, domain-4): Each represents one of the 4 SAP-C02 exam domains
+- **meta.yaml**: Domain/topic metadata, exam weight, key services, AWS documentation links
+- **overview.md**: High-level domain introduction
+- **topics/**: Individual topic directories with:
+  - **content.md**: Detailed study notes with code examples and best practices
+  - **questions.yaml**: 15+ practice questions with explanations and AWS doc links
+  - **meta.yaml**: Topic metadata and service mappings
 
-Each topic includes 15+ SAP-C02-level questions mapped to official exam tasks.
+All content is validated on build to ensure quality and consistency.
 
 ## Database Schema
 
@@ -269,15 +312,26 @@ The tutor automatically receives context about:
 
 This context is passed to Claude to provide relevant, targeted responses.
 
-## Roadmap
+## Development Status
 
-- [x] Phase 1: Foundation (Next.js, SQLite, UI)
-- [x] Phase 2: Assessment System & Progress Tracking
-- [x] Phase 3: AI Tutor with Claude API
-- [ ] Phase 4: Domain 2, 3, 4 content expansion
-- [ ] Phase 5: AWS CDK hands-on experiments
-- [ ] Phase 6: Flashcards and spaced repetition
-- [ ] Phase 7: Mobile-responsive improvements
+**Completed:**
+- [x] Foundation: Next.js 14, SQLite, shadcn/ui components
+- [x] Assessment System: 300+ questions across all 4 SAP-C02 domains
+- [x] Progress Tracking: Mastery scores, weak area identification
+- [x] AI Tutor: Context-aware tutoring with Claude API (claude-sonnet-4-20250514)
+- [x] Study Content: 20+ topics with official AWS documentation links
+- [x] Hands-on Labs: 7 CDK-based experiments with real AWS infrastructure
+
+**In Progress:**
+- [ ] Enhanced progress visualizations (charts, timelines)
+- [ ] Spaced repetition and flashcard system
+- [ ] Export/import progress data
+- [ ] Additional experiments for advanced scenarios
+
+**Planned:**
+- [ ] Mobile app companion
+- [ ] Exam simulation mode (timed full-length practice tests)
+- [ ] Community-contributed study notes and tips
 
 ## Contributing
 
@@ -295,17 +349,20 @@ MIT License - see LICENSE file for details
 
 ## Acknowledgments
 
-- Study content based on [AWS SAP-C02 Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-professional/)
-- All AWS documentation links point to official AWS sources
-- AI tutoring powered by [Anthropic's Claude](https://www.anthropic.com/)
+- Study content aligned with [AWS SAP-C02 Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-professional/)
+- All study materials link to official AWS documentation, whitepapers, and FAQs
+- AI tutoring powered by [Anthropic's Claude](https://www.anthropic.com/) (claude-sonnet-4-20250514)
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Infrastructure as Code with [AWS CDK](https://aws.amazon.com/cdk/)
+- Charts and visualizations with [Recharts](https://recharts.org/)
 
 ## Support
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
-- Review the SAP-C02 exam guide for official exam requirements
-- Check the [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
+- Review the [SAP-C02 exam guide](https://aws.amazon.com/certification/certified-solutions-architect-professional/) for official requirements
+- Check the [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/) for best practices
+- Explore [AWS Whitepapers](https://aws.amazon.com/whitepapers/) for in-depth technical content
 
 ---
 
