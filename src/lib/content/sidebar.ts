@@ -8,14 +8,6 @@ import type {
   SidebarHierarchy,
 } from '@/types/sidebar';
 
-// Re-export types for convenience
-export type {
-  SidebarSection,
-  SidebarTopic,
-  SidebarDomain,
-  SidebarHierarchy,
-};
-
 /**
  * Load the full content hierarchy for sidebar navigation
  * Returns domains, topics, and sections in a lightweight format
