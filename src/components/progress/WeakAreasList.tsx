@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, BookOpen, ArrowRight } from "lucide-react";
+import { AlertTriangle, BookOpen } from "lucide-react";
 import type { DomainProgress } from "@/lib/progress/calculator";
 
 interface WeakAreasListProps {
@@ -16,7 +16,6 @@ export function WeakAreasList({ domains }: WeakAreasListProps) {
   const allWeakAreas = domains.flatMap((domain) =>
     domain.weakAreas.map((weakArea) => ({
       topicId: weakArea.topicId,
-      serviceConcept: weakArea.serviceConcept,
       domainId: domain.domainId,
       domainName: domain.domainName,
     }))
@@ -52,30 +51,41 @@ export function WeakAreasList({ domains }: WeakAreasListProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {allWeakAreas.slice(0, 10).map((item, idx) => (
-            <div
-              key={`${item.domainId}-${item.topicId}-${item.serviceConcept}-${idx}`}
-              className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex-1">
-                <p className="font-medium text-sm">{item.serviceConcept}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {item.domainName}
-                </p>
+          {allWeakAreas.slice(0, 10).map((item, idx) => {
+            // Format topic ID for display (convert kebab-case to Title Case)
+            const topicDisplayName = item.topicId
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+            // Build study link with fallback to domain if topic doesn't exist
+            const studyLink = `/study/${item.domainId}/${item.topicId}`;
+
+            return (
+              <div
+                key={`${item.domainId}-${item.topicId}-${idx}`}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{topicDisplayName}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {item.domainName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Review
+                  </Badge>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={studyLink}>
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Study
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  Review
-                </Badge>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/study/${item.domainId}/${item.topicId}`}>
-                    <BookOpen className="h-3 w-3 mr-1" />
-                    Study
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {allWeakAreas.length > 10 && (
