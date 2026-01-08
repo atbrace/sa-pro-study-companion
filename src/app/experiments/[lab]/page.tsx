@@ -115,7 +115,11 @@ export default function LabPage({ params }: LabPageProps) {
 
   // Unwrap params Promise and load lab guide and stack code
   useEffect(() => {
+    let mounted = true;
+
     params.then(({ lab }) => {
+      if (!mounted) return;
+
       setLabId(lab);
       const meta = labsMetadata[lab];
 
@@ -133,16 +137,22 @@ export default function LabPage({ params }: LabPageProps) {
         }),
       ])
         .then(([guide, code]) => {
+          if (!mounted) return;
           setLabGuide(guide);
           setStackCode(code);
           setLoading(false);
         })
         .catch(err => {
+          if (!mounted) return;
           console.error('Failed to load lab:', err);
           setError('Lab not found');
           setLoading(false);
         });
     });
+
+    return () => {
+      mounted = false;
+    };
   }, [params]);
 
   if (loading) {
