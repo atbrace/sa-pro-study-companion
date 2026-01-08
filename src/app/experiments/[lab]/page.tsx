@@ -11,7 +11,7 @@ import { notFound } from 'next/navigation';
 import { StudyContent } from '@/components/study/StudyContent';
 
 interface LabPageProps {
-  params: { lab: string };
+  params: Promise<{ lab: string }>;
 }
 
 // Lab metadata
@@ -105,41 +105,45 @@ function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) 
 }
 
 export default function LabPage({ params }: LabPageProps) {
-  const { lab: labId } = params;
-
+  const [labId, setLabId] = useState<string | null>(null);
   const [labGuide, setLabGuide] = useState<string>('');
   const [stackCode, setStackCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const labMeta = labsMetadata[labId];
+  const labMeta = labId ? labsMetadata[labId] : null;
 
-  // Load lab guide and stack code
+  // Unwrap params Promise and load lab guide and stack code
   useEffect(() => {
-    Promise.all([
-      fetch(`/content/experiments/${labId}/README.md`).then(res => {
-        if (!res.ok) throw new Error('Lab guide not found');
-        return res.text();
-      }),
-      fetch(`/content/experiments/${labId}/stack.ts`).then(async res => {
-        // If stack file doesn't exist in public, we'll show a placeholder
-        if (!res.ok) {
-          return `// Stack code for ${labMeta?.name}\n// See cdk/lib/stacks/${labMeta?.stackFile} in the repository`;
-        }
-        return res.text();
-      }),
-    ])
-      .then(([guide, code]) => {
-        setLabGuide(guide);
-        setStackCode(code);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load lab:', err);
-        setError('Lab not found');
-        setLoading(false);
-      });
-  }, [labId, labMeta]);
+    params.then(({ lab }) => {
+      setLabId(lab);
+      const meta = labsMetadata[lab];
+
+      Promise.all([
+        fetch(`/content/experiments/${lab}/README.md`).then(res => {
+          if (!res.ok) throw new Error('Lab guide not found');
+          return res.text();
+        }),
+        fetch(`/content/experiments/${lab}/stack.ts`).then(async res => {
+          // If stack file doesn't exist in public, we'll show a placeholder
+          if (!res.ok) {
+            return `// Stack code for ${meta?.name}\n// See cdk/lib/stacks/${meta?.stackFile} in the repository`;
+          }
+          return res.text();
+        }),
+      ])
+        .then(([guide, code]) => {
+          setLabGuide(guide);
+          setStackCode(code);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Failed to load lab:', err);
+          setError('Lab not found');
+          setLoading(false);
+        });
+    });
+  }, [params]);
 
   if (loading) {
     return (
@@ -151,7 +155,7 @@ export default function LabPage({ params }: LabPageProps) {
     );
   }
 
-  if (error || !labMeta) {
+  if (error || !labMeta || !labId) {
     notFound();
   }
 
