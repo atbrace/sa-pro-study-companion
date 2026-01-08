@@ -1,159 +1,45 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Copy, Check, Terminal, Code2, Info, ExternalLink } from 'lucide-react';
-import { notFound } from 'next/navigation';
+import { Terminal, Code2, Info, ExternalLink, AlertCircle } from 'lucide-react';
 import { StudyContent } from '@/components/study/StudyContent';
+import { CopyButton } from '@/components/experiments/CopyButton';
+import { getLabById, labExists } from '@/lib/content/experiments';
 
 interface LabPageProps {
-  params: { lab: string };
+  params: Promise<{ lab: string }>;
 }
 
-// Lab metadata
-const labsMetadata: Record<string, {
-  name: string;
-  stackFile: string;
-  stackClass: string;
-  estimatedCost: string;
-  estimatedTime: number;
-}> = {
-  'lab-vpc-networking': {
-    name: 'VPC Networking with Peering',
-    stackFile: 'lab-vpc-networking.ts',
-    stackClass: 'VpcNetworkingLabStack',
-    estimatedCost: '~$0.10/hour',
-    estimatedTime: 45,
-  },
-  'lab-rds-multi-az': {
-    name: 'RDS Multi-AZ with Read Replicas',
-    stackFile: 'lab-rds-multi-az.ts',
-    stackClass: 'RdsMultiAzLabStack',
-    estimatedCost: '~$0.15/hour',
-    estimatedTime: 60,
-  },
-  'lab-lambda-api-gateway': {
-    name: 'Lambda + API Gateway + DynamoDB',
-    stackFile: 'lab-lambda-api-gateway.ts',
-    stackClass: 'LambdaApiGatewayLabStack',
-    estimatedCost: '~$0.01/hour',
-    estimatedTime: 60,
-  },
-  'lab-s3-cloudfront': {
-    name: 'S3 + CloudFront Distribution',
-    stackFile: 'lab-s3-cloudfront.ts',
-    stackClass: 'S3CloudFrontLabStack',
-    estimatedCost: '~$0.05/hour',
-    estimatedTime: 60,
-  },
-  'lab-ecs-fargate': {
-    name: 'ECS Fargate with ALB',
-    stackFile: 'lab-ecs-fargate.ts',
-    stackClass: 'EcsFargateLabStack',
-    estimatedCost: '~$0.20/hour',
-    estimatedTime: 75,
-  },
-  'lab-dynamodb-dax': {
-    name: 'DynamoDB + DAX Caching',
-    stackFile: 'lab-dynamodb-dax.ts',
-    stackClass: 'DynamoDbDaxLabStack',
-    estimatedCost: '~$0.30/hour',
-    estimatedTime: 75,
-  },
-  'lab-step-functions': {
-    name: 'Step Functions Workflow Orchestration',
-    stackFile: 'lab-step-functions.ts',
-    stackClass: 'StepFunctionsLabStack',
-    estimatedCost: '~$0.05/hour',
-    estimatedTime: 90,
-  },
-};
+export default async function LabPage({ params }: LabPageProps) {
+  const { lab: labId } = await params;
 
-function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
+  // Validate lab exists
+  if (!labExists(labId)) {
+    notFound();
+  }
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Load lab data from filesystem
+  const lab = getLabById(labId);
 
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleCopy}
-      className="absolute top-2 right-2"
-    >
-      {copied ? (
-        <>
-          <Check className="h-4 w-4 mr-2" />
-          Copied!
-        </>
-      ) : (
-        <>
-          <Copy className="h-4 w-4 mr-2" />
-          {label}
-        </>
-      )}
-    </Button>
-  );
-}
-
-export default function LabPage({ params }: LabPageProps) {
-  const { lab: labId } = params;
-
-  const [labGuide, setLabGuide] = useState<string>('');
-  const [stackCode, setStackCode] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const labMeta = labsMetadata[labId];
-
-  // Load lab guide and stack code
-  useEffect(() => {
-    Promise.all([
-      fetch(`/content/experiments/${labId}/README.md`).then(res => {
-        if (!res.ok) throw new Error('Lab guide not found');
-        return res.text();
-      }),
-      fetch(`/content/experiments/${labId}/stack.ts`).then(async res => {
-        // If stack file doesn't exist in public, we'll show a placeholder
-        if (!res.ok) {
-          return `// Stack code for ${labMeta?.name}\n// See cdk/lib/stacks/${labMeta?.stackFile} in the repository`;
-        }
-        return res.text();
-      }),
-    ])
-      .then(([guide, code]) => {
-        setLabGuide(guide);
-        setStackCode(code);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load lab:', err);
-        setError('Lab not found');
-        setLoading(false);
-      });
-  }, [labId, labMeta]);
-
-  if (loading) {
+  if (!lab) {
+    // Lab metadata exists but content couldn't be loaded
     return (
-      <div className="container py-8">
-        <div className="flex items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+      <div className="container py-8 max-w-5xl">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Lab</AlertTitle>
+          <AlertDescription>
+            The lab content could not be loaded. This may indicate a problem with the content files.
+            Please check that the lab files exist in the content directory.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  if (error || !labMeta) {
-    notFound();
-  }
+  const { meta, guide, stackCode } = lab;
 
   const setupCommands = `# Clone the repository (if you haven't already)
 git clone https://github.com/atbrace/sa-pro-study-companion.git
@@ -176,10 +62,10 @@ pnpm cdk destroy -c labId=${labId} --force`;
     <div className="container py-8 max-w-5xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">{labMeta.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">{meta.name}</h1>
         <div className="flex items-center gap-3">
-          <Badge variant="outline">{labMeta.estimatedCost}</Badge>
-          <Badge variant="outline">~{labMeta.estimatedTime} min</Badge>
+          <Badge variant="outline">{meta.estimatedCost}</Badge>
+          <Badge variant="outline">~{meta.estimatedTime} min</Badge>
         </div>
       </div>
 
@@ -213,7 +99,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
         <Terminal className="h-4 w-4" />
         <AlertTitle>⚠️ Real AWS Costs</AlertTitle>
         <AlertDescription>
-          This lab deploys real AWS resources that incur charges ({labMeta.estimatedCost}).
+          This lab deploys real AWS resources that incur charges ({meta.estimatedCost}).
           <strong className="block mt-1">Always run <code className="bg-destructive/20 px-1 py-0.5 rounded">cdk destroy</code> when finished to avoid ongoing charges!</strong>
         </AlertDescription>
       </Alert>
@@ -251,7 +137,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
           <CardDescription>
             TypeScript CDK stack that defines the infrastructure
             <span className="block mt-1 text-xs">
-              Location: <code className="bg-muted px-1 py-0.5 rounded">cdk/lib/stacks/{labMeta.stackFile}</code>
+              Location: <code className="bg-muted px-1 py-0.5 rounded">cdk/lib/stacks/{meta.stackFile}</code>
             </span>
           </CardDescription>
         </CardHeader>
@@ -273,7 +159,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
 
       {/* Lab Guide */}
       <div className="max-w-none">
-        <StudyContent content={labGuide} />
+        <StudyContent content={guide} />
       </div>
     </div>
   );
