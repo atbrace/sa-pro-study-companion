@@ -71,7 +71,8 @@ export interface WeakArea {
   id: number;
   domain_id: string;
   topic_id: string;
-  service_or_concept: string;
   identified_at: string;
-  resolved_at: string | null;
+  last_attempt_at: string | null;
+  attempts_since_identification: number;
+  resolved: number; // 0 or 1
 }

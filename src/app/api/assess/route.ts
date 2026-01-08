@@ -131,18 +131,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // TODO: Temporarily disabled - weak areas storage requires topicId in Question type
+    // The identifyWeakAreas function groups by service names, not topic IDs.
+    // Until questions have topicId metadata, storing weak areas would corrupt data.
+    // See: https://github.com/atbrace/sa-pro-study-companion/pull/17#issuecomment-3725721464
+    /*
     // Store weak areas
     for (const weakArea of result.weakAreas) {
       db.prepare(`
-        INSERT INTO weak_areas (domain_id, topic_id, service_or_concept)
-        VALUES (?, ?, ?)
-        ON CONFLICT(domain_id, topic_id, service_or_concept) DO NOTHING
+        INSERT INTO weak_areas (domain_id, topic_id)
+        VALUES (?, ?)
+        ON CONFLICT(domain_id, topic_id) DO UPDATE SET
+          last_attempt_at = CURRENT_TIMESTAMP,
+          attempts_since_identification = attempts_since_identification + 1
       `).run(
         body.domainId || '',
-        body.topicId || weakArea.topicId,
-        weakArea.topicName
+        body.topicId || weakArea.topicId
       );
     }
+    */
 
     return NextResponse.json({
       ...result,

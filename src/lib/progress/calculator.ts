@@ -106,7 +106,7 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
   const weakAreas = db.prepare(`
     SELECT DISTINCT topic_id
     FROM weak_areas
-    WHERE domain_id = ? AND resolved_at IS NULL
+    WHERE domain_id = ? AND resolved = 0
     ORDER BY identified_at DESC
     LIMIT 5
   `).all(domainId) as Array<{ topic_id: string }>;
