@@ -190,19 +190,63 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
                       </div>
                       <p className="text-sm mb-2">{questionResult.question.text}</p>
                       {!questionResult.isCorrect && (
-                        <div className="text-sm space-y-1 mb-2">
-                          <p className="text-muted-foreground">
-                            <span className="font-medium">Your answer:</span>{' '}
-                            {Array.isArray(questionResult.selectedAnswer)
-                              ? questionResult.selectedAnswer.join(', ')
-                              : questionResult.selectedAnswer}
-                          </p>
-                          <p className="text-green-700 dark:text-green-400">
-                            <span className="font-medium">Correct answer:</span>{' '}
-                            {Array.isArray(questionResult.correctAnswer)
-                              ? questionResult.correctAnswer.join(', ')
-                              : questionResult.correctAnswer}
-                          </p>
+                        <div className="text-sm space-y-2 mb-2">
+                          <div className="text-muted-foreground">
+                            <p className="font-medium mb-1">Your answer:</p>
+                            {Array.isArray(questionResult.selectedAnswer) ? (
+                              <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                {questionResult.selectedAnswer.map((answerId) => {
+                                  const option = questionResult.question.options.find(opt => opt.id === answerId);
+                                  return option ? (
+                                    <li key={answerId}>
+                                      <span className="font-medium">{option.id}.</span> {option.text}
+                                    </li>
+                                  ) : null;
+                                })}
+                              </ul>
+                            ) : (
+                              <p className="ml-2">
+                                {(() => {
+                                  const option = questionResult.question.options.find(
+                                    opt => opt.id === questionResult.selectedAnswer
+                                  );
+                                  return option ? (
+                                    <>
+                                      <span className="font-medium">{option.id}.</span> {option.text}
+                                    </>
+                                  ) : questionResult.selectedAnswer;
+                                })()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-green-700 dark:text-green-400">
+                            <p className="font-medium mb-1">Correct answer:</p>
+                            {Array.isArray(questionResult.correctAnswer) ? (
+                              <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                {questionResult.correctAnswer.map((answerId) => {
+                                  const option = questionResult.question.options.find(opt => opt.id === answerId);
+                                  return option ? (
+                                    <li key={answerId}>
+                                      <span className="font-medium">{option.id}.</span> {option.text}
+                                    </li>
+                                  ) : null;
+                                })}
+                              </ul>
+                            ) : (
+                              <p className="ml-2">
+                                {(() => {
+                                  const option = questionResult.question.options.find(
+                                    opt => opt.id === questionResult.correctAnswer
+                                  );
+                                  return option ? (
+                                    <>
+                                      <span className="font-medium">{option.id}.</span> {option.text}
+                                    </>
+                                  ) : questionResult.correctAnswer;
+                                })()}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       )}
                       <div className="mt-3 p-3 bg-muted/50 rounded-md">
