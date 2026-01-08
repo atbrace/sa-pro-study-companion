@@ -134,13 +134,14 @@ export async function POST(request: NextRequest) {
     // Store weak areas
     for (const weakArea of result.weakAreas) {
       db.prepare(`
-        INSERT INTO weak_areas (domain_id, topic_id, service_or_concept)
-        VALUES (?, ?, ?)
-        ON CONFLICT(domain_id, topic_id, service_or_concept) DO NOTHING
+        INSERT INTO weak_areas (domain_id, topic_id)
+        VALUES (?, ?)
+        ON CONFLICT(domain_id, topic_id) DO UPDATE SET
+          last_attempt_at = CURRENT_TIMESTAMP,
+          attempts_since_identification = attempts_since_identification + 1
       `).run(
         body.domainId || '',
-        body.topicId || weakArea.topicId,
-        weakArea.topicName
+        body.topicId || weakArea.topicId
       );
     }
 

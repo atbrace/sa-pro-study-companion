@@ -80,10 +80,11 @@ CREATE TABLE IF NOT EXISTS weak_areas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   domain_id TEXT NOT NULL,
   topic_id TEXT NOT NULL,
-  service_or_concept TEXT NOT NULL,
   identified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  resolved_at DATETIME,
-  UNIQUE(domain_id, topic_id, service_or_concept)
+  last_attempt_at DATETIME,
+  attempts_since_identification INTEGER DEFAULT 0,
+  resolved INTEGER DEFAULT 0 CHECK(resolved IN (0, 1)),
+  UNIQUE(domain_id, topic_id)
 );
 
 -- Indexes for performance
@@ -91,4 +92,4 @@ CREATE INDEX IF NOT EXISTS idx_topic_progress_domain ON topic_progress(domain_id
 CREATE INDEX IF NOT EXISTS idx_question_attempts_question ON question_attempts(question_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_topic ON question_attempts(domain_id, topic_id);
 CREATE INDEX IF NOT EXISTS idx_assessment_sessions_domain ON assessment_sessions(domain_id);
-CREATE INDEX IF NOT EXISTS idx_weak_areas_unresolved ON weak_areas(resolved_at) WHERE resolved_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_weak_areas_unresolved ON weak_areas(resolved) WHERE resolved = 0;
