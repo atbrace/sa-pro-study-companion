@@ -131,6 +131,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // TODO: Temporarily disabled - weak areas storage requires topicId in Question type
+    // The identifyWeakAreas function groups by service names, not topic IDs.
+    // Until questions have topicId metadata, storing weak areas would corrupt data.
+    // See: https://github.com/atbrace/sa-pro-study-companion/pull/17#issuecomment-3725721464
+    /*
     // Store weak areas
     for (const weakArea of result.weakAreas) {
       db.prepare(`
@@ -144,6 +149,7 @@ export async function POST(request: NextRequest) {
         body.topicId || weakArea.topicId
       );
     }
+    */
 
     return NextResponse.json({
       ...result,
