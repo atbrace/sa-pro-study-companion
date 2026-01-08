@@ -1,6 +1,11 @@
 import { db } from "@/lib/db/client";
 import { getAllDomains } from "@/lib/content/loader";
 
+export interface WeakAreaDetail {
+  topicId: string;
+  serviceConcept: string;
+}
+
 export interface DomainProgress {
   domainId: string;
   domainName: string;
@@ -8,7 +13,7 @@ export interface DomainProgress {
   masteryScore: number;
   topicsCompleted: number;
   totalTopics: number;
-  weakAreas: string[];
+  weakAreas: WeakAreaDetail[];
   questionsAttempted: number;
   questionsCorrect: number;
 }
@@ -100,12 +105,12 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
 
   // Get weak areas
   const weakAreas = db.prepare(`
-    SELECT DISTINCT service_or_concept
+    SELECT DISTINCT topic_id, service_or_concept
     FROM weak_areas
     WHERE domain_id = ? AND resolved_at IS NULL
     ORDER BY identified_at DESC
     LIMIT 5
-  `).all(domainId) as Array<{ service_or_concept: string }>;
+  `).all(domainId) as Array<{ topic_id: string; service_or_concept: string }>;
 
   return {
     domainId: domain.meta.id,
@@ -114,7 +119,7 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
     masteryScore: calculateDomainMastery(domainId),
     topicsCompleted: topicStats.completed_topics || 0,
     totalTopics: domain.topics.length,
-    weakAreas: weakAreas.map(w => w.service_or_concept),
+    weakAreas: weakAreas.map(w => ({ topicId: w.topic_id, serviceConcept: w.service_or_concept })),
     questionsAttempted: questionStats.attempted || 0,
     questionsCorrect: questionStats.correct || 0,
   };

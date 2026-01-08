@@ -14,8 +14,9 @@ interface WeakAreasListProps {
 export function WeakAreasList({ domains }: WeakAreasListProps) {
   // Collect all weak areas from all domains
   const allWeakAreas = domains.flatMap((domain) =>
-    domain.weakAreas.map((area) => ({
-      area,
+    domain.weakAreas.map((weakArea) => ({
+      topicId: weakArea.topicId,
+      serviceConcept: weakArea.serviceConcept,
       domainId: domain.domainId,
       domainName: domain.domainName,
     }))
@@ -53,11 +54,11 @@ export function WeakAreasList({ domains }: WeakAreasListProps) {
         <div className="space-y-3">
           {allWeakAreas.slice(0, 10).map((item, idx) => (
             <div
-              key={`${item.domainId}-${item.area}-${idx}`}
+              key={`${item.domainId}-${item.topicId}-${item.serviceConcept}-${idx}`}
               className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex-1">
-                <p className="font-medium text-sm">{item.area}</p>
+                <p className="font-medium text-sm">{item.serviceConcept}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {item.domainName}
                 </p>
@@ -67,7 +68,7 @@ export function WeakAreasList({ domains }: WeakAreasListProps) {
                   Review
                 </Badge>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/study/${item.domainId}`}>
+                  <Link href={`/study/${item.domainId}/${item.topicId}`}>
                     <BookOpen className="h-3 w-3 mr-1" />
                     Study
                   </Link>
