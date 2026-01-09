@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL } from "@/lib/claude/client";
 import { TUTOR_SYSTEM_PROMPT, buildContextPrompt, generateSuggestedQuestions, type TutorContext } from "@/lib/claude/prompts";
+import { TUTOR_TOOLS, type TutorToolName } from "@/lib/claude/tools";
+import { serializeIndexForPrompt } from "@/lib/content/index";
+import { getTutorProgressContext } from "@/lib/progress/tutor-context";
 import { db } from "@/lib/db/client";
+import type { MessageParam, ContentBlock, ToolUseBlock, ToolResultBlockParam } from "@anthropic-ai/sdk/resources/messages";
+
+// Cache the navigation index (static content, doesn't change at runtime)
+let cachedNavigationIndex: string | null = null;
+
+function getNavigationIndex(): string {
+  if (!cachedNavigationIndex) {
+    cachedNavigationIndex = serializeIndexForPrompt();
+  }
+  return cachedNavigationIndex;
+}
 
 export const runtime = 'nodejs';
 
@@ -52,26 +66,96 @@ export async function POST(request: NextRequest) {
       content: message,
     });
 
-    // Build system prompt with context
+    // Build system prompt with context and navigation index
     const contextPrompt = context ? buildContextPrompt(context) : '';
-    const systemPrompt = contextPrompt
-      ? `${TUTOR_SYSTEM_PROMPT}\n\n${contextPrompt}`
-      : TUTOR_SYSTEM_PROMPT;
+    const navigationIndex = getNavigationIndex();
+    const systemPrompt = [
+      TUTOR_SYSTEM_PROMPT,
+      navigationIndex,
+      contextPrompt,
+    ].filter(Boolean).join('\n\n');
 
-    // Call Claude API
-    const response = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-    });
+    // Build API messages from conversation history
+    let apiMessages: MessageParam[] = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content,
+    }));
 
-    const assistantMessage = response.content[0].type === 'text'
-      ? response.content[0].text
-      : 'I apologize, but I encountered an error processing your request.';
+    // Call Claude API with tool support, looping until we get a final text response
+    let assistantMessage = '';
+    const maxToolIterations = 5;
+    let iterations = 0;
+
+    while (iterations < maxToolIterations) {
+      iterations++;
+
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: apiMessages,
+        tools: TUTOR_TOOLS,
+      });
+
+      // Check if we need to handle tool use
+      if (response.stop_reason === 'tool_use') {
+        // Find tool use blocks
+        const toolUseBlocks = response.content.filter(
+          (block): block is ToolUseBlock => block.type === 'tool_use'
+        );
+
+        // Add assistant's response (including tool use) to messages
+        apiMessages.push({
+          role: 'assistant',
+          content: response.content,
+        });
+
+        // Process each tool call and build tool results
+        const toolResults: ToolResultBlockParam[] = [];
+
+        for (const toolUse of toolUseBlocks) {
+          const toolName = toolUse.name as TutorToolName;
+
+          if (toolName === 'get_study_progress') {
+            const progressContext = getTutorProgressContext();
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: progressContext,
+            });
+          } else {
+            // Unknown tool
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: 'Unknown tool',
+              is_error: true,
+            });
+          }
+        }
+
+        // Add tool results to messages
+        apiMessages.push({
+          role: 'user',
+          content: toolResults,
+        });
+
+        // Continue loop to get Claude's response with tool results
+        continue;
+      }
+
+      // Got a final response (end_turn or max_tokens)
+      const textBlock = response.content.find(
+        (block): block is ContentBlock & { type: 'text' } => block.type === 'text'
+      );
+
+      assistantMessage = textBlock?.text || 'I apologize, but I encountered an error processing your request.';
+      break;
+    }
+
+    if (!assistantMessage) {
+      assistantMessage = 'I apologize, but I was unable to complete the response.';
+    }
 
     // Add assistant response to conversation
     messages.push({
