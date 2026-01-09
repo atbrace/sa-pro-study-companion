@@ -78,6 +78,10 @@ export async function POST(request: NextRequest) {
       const questionResult = result.results.find(r => r.questionId === answer.questionId);
       if (!questionResult) continue;
 
+      // Use question's metadata for domain/topic (more accurate than body params for domain-wide assessments)
+      const questionDomainId = questionResult.question.domainId || body.domainId || '';
+      const questionTopicId = questionResult.question.topicId || body.topicId || '';
+
       db.prepare(`
         INSERT INTO question_attempts (
           question_id,
@@ -90,8 +94,8 @@ export async function POST(request: NextRequest) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(
         answer.questionId,
-        body.domainId || '',
-        body.topicId || '',
+        questionDomainId,
+        questionTopicId,
         typeof answer.selectedAnswer === 'string'
           ? answer.selectedAnswer
           : JSON.stringify(answer.selectedAnswer),
@@ -101,11 +105,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update topic progress
-    if (body.topicId && body.domainId) {
-      const topicResults = result.results;
-      const topicCorrect = topicResults.filter(r => r.isCorrect).length;
+    // Update topic progress - group results by topic and update each
+    const topicGroups = new Map<string, { domainId: string; correct: number; total: number }>();
+    for (const r of result.results) {
+      const topicId = r.question.topicId;
+      const domainId = r.question.domainId;
+      if (!topicId || !domainId) continue;
 
+      if (!topicGroups.has(topicId)) {
+        topicGroups.set(topicId, { domainId, correct: 0, total: 0 });
+      }
+      const group = topicGroups.get(topicId)!;
+      group.total++;
+      if (r.isCorrect) group.correct++;
+    }
+
+    for (const [topicId, { domainId, correct, total }] of topicGroups.entries()) {
       db.prepare(`
         INSERT INTO topic_progress (
           domain_id,
@@ -122,34 +137,35 @@ export async function POST(request: NextRequest) {
                          (questions_attempted + excluded.questions_attempted),
           last_studied_at = CURRENT_TIMESTAMP,
           updated_at = CURRENT_TIMESTAMP
-      `).run(
-        body.domainId,
-        body.topicId,
-        topicResults.length,
-        topicCorrect,
-        topicCorrect / topicResults.length
-      );
+      `).run(domainId, topicId, total, correct, correct / total);
     }
 
-    // TODO: Temporarily disabled - weak areas storage requires topicId in Question type
-    // The identifyWeakAreas function groups by service names, not topic IDs.
-    // Until questions have topicId metadata, storing weak areas would corrupt data.
-    // See: https://github.com/atbrace/sa-pro-study-companion/pull/17#issuecomment-3725721464
-    /*
-    // Store weak areas
+    // Store weak areas (topics where user performed below threshold)
     for (const weakArea of result.weakAreas) {
       db.prepare(`
-        INSERT INTO weak_areas (domain_id, topic_id)
-        VALUES (?, ?)
+        INSERT INTO weak_areas (domain_id, topic_id, identified_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(domain_id, topic_id) DO UPDATE SET
           last_attempt_at = CURRENT_TIMESTAMP,
           attempts_since_identification = attempts_since_identification + 1
-      `).run(
-        body.domainId || '',
-        body.topicId || weakArea.topicId
-      );
+      `).run(weakArea.domainId, weakArea.topicId);
     }
-    */
+
+    // Auto-resolve weak areas: if topic mastery is now >= 80%, mark as resolved
+    for (const [topicId, { domainId }] of topicGroups.entries()) {
+      const progress = db.prepare(`
+        SELECT mastery_level FROM topic_progress
+        WHERE domain_id = ? AND topic_id = ?
+      `).get(domainId, topicId) as { mastery_level: number } | undefined;
+
+      if (progress && progress.mastery_level >= 0.8) {
+        db.prepare(`
+          UPDATE weak_areas
+          SET resolved = 1
+          WHERE domain_id = ? AND topic_id = ? AND resolved = 0
+        `).run(domainId, topicId);
+      }
+    }
 
     return NextResponse.json({
       ...result,

@@ -283,18 +283,39 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {result.weakAreas.map((area, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <p className="font-medium">{area.topicName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {area.incorrectCount} incorrect answer{area.incorrectCount !== 1 ? 's' : ''}
-                      </p>
+              <div className="space-y-4">
+                {result.weakAreas.map((area) => (
+                  <div key={area.topicId} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-medium">{area.topicName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {area.incorrectCount} incorrect answer{area.incorrectCount !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/study/${area.domainId}/${area.topicId}`}>Review Topic</a>
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/study/${params.domain}`}>Review</a>
-                    </Button>
+
+                    {/* Missed questions list */}
+                    {area.missedQuestions && area.missedQuestions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Missed Questions:
+                        </p>
+                        <div className="space-y-2">
+                          {area.missedQuestions.map((q) => (
+                            <div
+                              key={q.id}
+                              className="pl-3 border-l-2 border-red-200 text-sm text-muted-foreground"
+                            >
+                              {q.text.length > 150 ? `${q.text.substring(0, 150)}...` : q.text}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -128,6 +128,7 @@ export function getTopicById(domainId: string, topicId: string): Topic | null {
 
 /**
  * Get questions for a specific topic
+ * Injects domainId and topicId into each question for tracking purposes
  */
 export function getTopicQuestions(domainId: string, topicId: string): Question[] {
   const questionsPath = path.join(
@@ -143,7 +144,13 @@ export function getTopicQuestions(domainId: string, topicId: string): Question[]
   }
 
   const data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
-  return data.questions || [];
+
+  // Inject domainId and topicId into each question from the file path
+  return (data.questions || []).map(q => ({
+    ...q,
+    domainId,
+    topicId,
+  }));
 }
 
 /**

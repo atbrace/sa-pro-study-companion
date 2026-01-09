@@ -68,6 +68,8 @@ export interface QuestionOption {
 
 export interface Question {
   id: string;
+  domainId?: string;  // Injected at load time from file path
+  topicId?: string;   // Injected at load time from file path
   type: 'single' | 'multi';
   correctCount?: number;
   text: string;

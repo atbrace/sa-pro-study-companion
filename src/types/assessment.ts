@@ -29,10 +29,12 @@ export interface QuestionResult {
 }
 
 export interface WeakArea {
+  domainId: string;
   topicId: string;
   topicName: string;
   services: string[];
   incorrectCount: number;
+  missedQuestions: Question[];
 }
 
 export interface AssessmentResult {

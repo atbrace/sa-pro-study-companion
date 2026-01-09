@@ -58,63 +58,82 @@ export function calculateScore(results: QuestionResult[]): number {
 }
 
 /**
+ * Format topic ID to display name (convert kebab-case to Title Case)
+ */
+function formatTopicName(topicId: string): string {
+  return topicId
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
  * Identify weak areas from incorrect answers
+ * Groups results by topic (using topicId injected at load time) and identifies
+ * topics where the user scored below the threshold
  */
 export function identifyWeakAreas(
   results: QuestionResult[],
   threshold: number = 0.6
 ): WeakArea[] {
   const topicMap = new Map<string, {
+    domainId: string;
+    topicId: string;
     services: Set<string>;
     total: number;
     incorrect: number;
+    missedQuestions: Question[];
   }>();
 
-  // Group by topic (from question metadata)
+  // Group by topicId (injected from file path at load time)
   for (const result of results) {
-    // For now, we'll group by services since we don't have topic metadata in questions
-    // In a real implementation, questions would have topicId
+    const { topicId, domainId } = result.question;
+
+    // Skip questions without topic metadata (shouldn't happen, but defensive)
+    if (!topicId || !domainId) {
+      console.warn(`Question ${result.questionId} missing topicId or domainId`);
+      continue;
+    }
+
+    if (!topicMap.has(topicId)) {
+      topicMap.set(topicId, {
+        domainId,
+        topicId,
+        services: new Set(),
+        total: 0,
+        incorrect: 0,
+        missedQuestions: [],
+      });
+    }
+
+    const data = topicMap.get(topicId)!;
+    data.total++;
+
+    // Track services for this topic
+    result.question.services.forEach(s => data.services.add(s));
+
     if (!result.isCorrect) {
-      for (const service of result.question.services) {
-        if (!topicMap.has(service)) {
-          topicMap.set(service, {
-            services: new Set([service]),
-            total: 0,
-            incorrect: 0,
-          });
-        }
-        const data = topicMap.get(service)!;
-        data.total++;
-        data.incorrect++;
-      }
-    } else {
-      for (const service of result.question.services) {
-        if (!topicMap.has(service)) {
-          topicMap.set(service, {
-            services: new Set([service]),
-            total: 0,
-            incorrect: 0,
-          });
-        }
-        const data = topicMap.get(service)!;
-        data.total++;
-      }
+      data.incorrect++;
+      data.missedQuestions.push(result.question);
     }
   }
 
-  // Filter topics below threshold
+  // Filter topics below threshold and build weak areas list
   const weakAreas: WeakArea[] = [];
-  Array.from(topicMap.entries()).forEach(([topicId, data]) => {
+
+  for (const [topicId, data] of topicMap.entries()) {
     const score = (data.total - data.incorrect) / data.total;
     if (score < threshold && data.incorrect > 0) {
       weakAreas.push({
+        domainId: data.domainId,
         topicId,
-        topicName: topicId,
+        topicName: formatTopicName(topicId),
         services: Array.from(data.services),
         incorrectCount: data.incorrect,
+        missedQuestions: data.missedQuestions,
       });
     }
-  });
+  }
 
   return weakAreas.sort((a, b) => b.incorrectCount - a.incorrectCount);
 }
