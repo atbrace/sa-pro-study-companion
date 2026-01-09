@@ -1,135 +1,44 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { getProgressSummary } from "@/lib/progress/calculator";
+import { getTipsForState, getAllTipsArray } from "@/lib/dashboard/tips";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { DomainProgressGrid } from "@/components/dashboard/DomainProgressGrid";
+import { WeakAreasSummary } from "@/components/dashboard/WeakAreasSummary";
+import { TipCard } from "@/components/dashboard/TipCard";
 
 export default function Home() {
+  const progress = getProgressSummary();
+  const isNewUser = progress.overall.questionsAttempted === 0;
+
+  // Calculate whether user has any weak areas
+  const hasWeakAreas = progress.domains.some(d => d.weakAreas.length > 0);
+
+  // Get context-appropriate tips for initial display
+  const initialTips = getTipsForState({
+    questionsAttempted: progress.overall.questionsAttempted,
+    masteryScore: progress.overall.masteryScore,
+    hasWeakAreas,
+  });
+
+  // Get all tips for refresh functionality
+  const allTips = getAllTipsArray();
+
   return (
     <div className="container py-8 lg:py-12">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            AWS Solutions Architect Professional
-          </h1>
-          <h2 className="text-2xl text-muted-foreground">
-            Study Companion (SAP-C02)
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Your comprehensive certification preparation tool featuring adaptive assessments,
-            AI-powered tutoring, and hands-on AWS experiments.
-          </p>
-        </div>
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Hero Section with mastery score and adaptive CTA */}
+        <DashboardHero overall={progress.overall} domains={progress.domains} />
 
         <Separator />
 
-        {/* Feature Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Assessment Driven</CardTitle>
-              <CardDescription>
-                Identify weak areas with adaptive quizzes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Domain 1</span>
-                  <span className="font-medium">26%</span>
-                </div>
-                <Progress value={26} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Domain Progress Grid */}
+        <DomainProgressGrid domains={progress.domains} isNewUser={isNewUser} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Tutor</CardTitle>
-              <CardDescription>
-                Context-aware help powered by Claude
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="secondary">Always Available</Badge>
-            </CardContent>
-          </Card>
+        {/* Weak Areas Summary - only shown if user has weak areas */}
+        {!isNewUser && <WeakAreasSummary domains={progress.domains} />}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Hands-on Labs</CardTitle>
-              <CardDescription>
-                Real AWS resources via CDK
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge variant="outline">8-12 Experiments</Badge>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Separator />
-
-        {/* Exam Domains */}
-        <div>
-          <h3 className="text-2xl font-semibold mb-4">SAP-C02 Exam Domains</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-l-4 border-l-blue-500">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Domain 1</CardTitle>
-                  <Badge>26%</Badge>
-                </div>
-                <CardDescription>
-                  Design Solutions for Organizational Complexity
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-l-4 border-l-purple-500">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Domain 2</CardTitle>
-                  <Badge>29%</Badge>
-                </div>
-                <CardDescription>
-                  Design for New Solutions
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-l-4 border-l-green-500">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Domain 3</CardTitle>
-                  <Badge>25%</Badge>
-                </div>
-                <CardDescription>
-                  Continuous Improvement for Existing Solutions
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-l-4 border-l-orange-500">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Domain 4</CardTitle>
-                  <Badge>20%</Badge>
-                </div>
-                <CardDescription>
-                  Accelerate Workload Migration and Modernization
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="flex gap-4 justify-center pt-8">
-          <Button size="lg">Get Started</Button>
-          <Button size="lg" variant="outline">View Documentation</Button>
-        </div>
+        {/* Random Tip */}
+        <TipCard initialTips={initialTips} allTips={allTips} />
       </div>
     </div>
   );
