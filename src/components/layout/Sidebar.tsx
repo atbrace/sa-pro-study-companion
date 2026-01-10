@@ -11,6 +11,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { StudyTreeNav } from './StudyTreeNav';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import type { SidebarHierarchy } from '@/types/sidebar';
 
 interface NavItem {
@@ -53,9 +54,9 @@ export function Sidebar({ sidebarHierarchy }: SidebarProps) {
     <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-50 lg:w-64 lg:border-r lg:bg-card">
       {/* Logo/Brand */}
       <div className="flex h-16 items-center gap-2 border-b px-6">
-        <GraduationCap className="h-6 w-6 text-primary" />
+        <GraduationCap className="h-6 w-6" />
         <div className="flex flex-col">
-          <span className="text-sm font-semibold">AWS SAP</span>
+          <span className="text-sm font-semibold tracking-tight">AWS SAP</span>
           <span className="text-xs text-muted-foreground">Study Companion</span>
         </div>
       </div>
@@ -72,13 +73,13 @@ export function Sidebar({ sidebarHierarchy }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
               {item.label}
             </Link>
           );
@@ -97,13 +98,13 @@ export function Sidebar({ sidebarHierarchy }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
               {item.label}
             </Link>
           );
@@ -111,13 +112,14 @@ export function Sidebar({ sidebarHierarchy }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t p-4">
-        <div className="rounded-lg bg-muted p-3 text-xs">
+      <div className="border-t p-4 space-y-3">
+        <div className="rounded-md bg-muted p-3 text-xs">
           <p className="font-medium">SAP-C02 Exam</p>
           <p className="text-muted-foreground mt-1">
-            4 domains • 85% target mastery
+            4 domains &middot; 85% target mastery
           </p>
         </div>
+        <ThemeToggle />
       </div>
     </aside>
   );

@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { HeadingWithTutor } from './HeadingWithTutor';
+import { ClientCodeBlock } from './ClientCodeBlock';
 
 interface StudyContentWithTutorProps {
   content: string;
@@ -15,6 +16,13 @@ interface StudyContentWithTutorProps {
   domainName: string;
   topicId: string;
   topicName: string;
+}
+
+// Extract language from className like "language-typescript"
+function extractLanguage(className?: string): string {
+  if (!className) return 'text';
+  const match = className.match(/language-(\w+)/);
+  return match ? match[1] : 'text';
 }
 
 export function StudyContentWithTutor({
@@ -98,36 +106,30 @@ export function StudyContentWithTutor({
       </li>
     ),
 
-    // Code blocks
-    code: ({ inline, children, ...props }: any) => {
+    // Code blocks with syntax highlighting
+    code: ({ inline, className, children, ...props }: any) => {
       if (inline) {
         return (
           <code
-            className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono border"
+            className="bg-code px-1.5 py-0.5 rounded text-sm font-mono border border-code-border"
             {...props}
           >
             {children}
           </code>
         );
       }
-      return (
-        <code
-          className="block bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto my-4 border"
-          {...props}
-        >
-          {children}
-        </code>
-      );
+      const language = extractLanguage(className);
+      const code = String(children).replace(/\n$/, '');
+      return <ClientCodeBlock code={code} language={language} />;
     },
-    pre: ({ children }: any) => (
-      <pre className="my-4">
-        {children}
-      </pre>
-    ),
+    pre: ({ children }: any) => {
+      // Just return children - ClientCodeBlock handles the wrapper
+      return <>{children}</>;
+    },
 
     // Blockquotes
     blockquote: ({ children }: any) => (
-      <blockquote className="border-l-4 border-primary pl-4 py-2 my-4 italic text-muted-foreground">
+      <blockquote className="border-l-4 border-muted-foreground/30 pl-4 py-2 my-4 italic text-muted-foreground">
         {children}
       </blockquote>
     ),
@@ -138,7 +140,7 @@ export function StudyContentWithTutor({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary underline hover:text-primary/80 transition-colors"
+        className="text-foreground underline underline-offset-4 hover:text-muted-foreground transition-colors"
       >
         {children}
       </a>

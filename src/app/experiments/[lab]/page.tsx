@@ -5,8 +5,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Terminal, Code2, Info, ExternalLink, AlertCircle } from 'lucide-react';
 import { StudyContent } from '@/components/study/StudyContent';
-import { CopyButton } from '@/components/experiments/CopyButton';
 import { getLabById, labExists } from '@/lib/content/experiments';
+import { LabCodeBlocks } from './LabCodeBlocks';
 
 interface LabPageProps {
   params: Promise<{ lab: string }>;
@@ -76,7 +76,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
         <AlertDescription>
           <ul className="list-disc list-inside space-y-1 mt-2 text-sm">
             <li>AWS Account with administrative access</li>
-            <li>AWS CLI configured with credentials (<code className="text-xs bg-muted px-1 py-0.5 rounded">aws configure</code>)</li>
+            <li>AWS CLI configured with credentials (<code className="text-xs bg-code px-1 py-0.5 rounded border border-code-border">aws configure</code>)</li>
             <li>Node.js 18+ and pnpm installed</li>
             <li>AWS CDK familiarity (recommended)</li>
           </ul>
@@ -86,7 +86,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
               href="https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm underline hover:text-primary"
+              className="text-sm underline hover:text-muted-foreground"
             >
               AWS CDK Getting Started Guide
             </a>
@@ -97,7 +97,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
       {/* Cost Warning */}
       <Alert variant="destructive" className="mb-6">
         <Terminal className="h-4 w-4" />
-        <AlertTitle>⚠️ Real AWS Costs</AlertTitle>
+        <AlertTitle>Real AWS Costs</AlertTitle>
         <AlertDescription>
           This lab deploys real AWS resources that incur charges ({meta.estimatedCost}).
           <strong className="block mt-1">Always run <code className="bg-destructive/20 px-1 py-0.5 rounded">cdk destroy</code> when finished to avoid ongoing charges!</strong>
@@ -118,12 +118,7 @@ pnpm cdk destroy -c labId=${labId} --force`;
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative">
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-              <code>{setupCommands}</code>
-            </pre>
-            <CopyButton text={setupCommands} />
-          </div>
+          <LabCodeBlocks code={setupCommands} language="bash" />
         </CardContent>
       </Card>
 
@@ -137,16 +132,13 @@ pnpm cdk destroy -c labId=${labId} --force`;
           <CardDescription>
             TypeScript CDK stack that defines the infrastructure
             <span className="block mt-1 text-xs">
-              Location: <code className="bg-muted px-1 py-0.5 rounded">cdk/lib/stacks/{meta.stackFile}</code>
+              Location: <code className="bg-code px-1 py-0.5 rounded border border-code-border">cdk/lib/stacks/{meta.stackFile}</code>
             </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative">
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-96">
-              <code className="language-typescript">{stackCode}</code>
-            </pre>
-            <CopyButton text={stackCode} label="Copy Code" />
+          <div className="max-h-96 overflow-y-auto">
+            <LabCodeBlocks code={stackCode} language="typescript" />
           </div>
           <div className="mt-4 text-xs text-muted-foreground">
             <strong>Note:</strong> This code is already included in the repository.
