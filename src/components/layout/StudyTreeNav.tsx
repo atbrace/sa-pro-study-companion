@@ -10,10 +10,11 @@ import { clsx } from 'clsx';
 
 interface StudyTreeNavProps {
   hierarchy: SidebarHierarchy;
+  examId: string;
   onNavigate?: () => void; // For mobile: close drawer after navigation
 }
 
-export function StudyTreeNav({ hierarchy, onNavigate }: StudyTreeNavProps) {
+export function StudyTreeNav({ hierarchy, examId, onNavigate }: StudyTreeNavProps) {
   const pathname = usePathname();
   const { isStudyExpanded, expandedDomains, expandedTopics, toggleStudy, toggleDomain, toggleTopic } =
     useSidebarState(pathname || '');
@@ -37,6 +38,7 @@ export function StudyTreeNav({ hierarchy, onNavigate }: StudyTreeNavProps) {
           <DomainTreeItem
             key={domain.id}
             domain={domain}
+            examId={examId}
             isExpanded={expandedDomains.has(domain.id)}
             onToggle={() => toggleDomain(domain.id)}
             expandedTopics={expandedTopics}
@@ -52,6 +54,7 @@ export function StudyTreeNav({ hierarchy, onNavigate }: StudyTreeNavProps) {
 
 interface DomainTreeItemProps {
   domain: SidebarDomain;
+  examId: string;
   isExpanded: boolean;
   onToggle: () => void;
   expandedTopics: Set<string>;
@@ -62,6 +65,7 @@ interface DomainTreeItemProps {
 
 function DomainTreeItem({
   domain,
+  examId,
   isExpanded,
   onToggle,
   expandedTopics,
@@ -69,7 +73,7 @@ function DomainTreeItem({
   currentPath,
   onNavigate,
 }: DomainTreeItemProps) {
-  const isOnDomain = currentPath.startsWith(`/study/${domain.id}`);
+  const isOnDomain = currentPath.startsWith(`/${examId}/study/${domain.id}`);
 
   return (
     <div className="pl-4">
@@ -94,6 +98,7 @@ function DomainTreeItem({
             <TopicTreeItem
               key={topic.id}
               topic={topic}
+              examId={examId}
               domainId={domain.id}
               isExpanded={expandedTopics.has(`${domain.id}/${topic.id}`)}
               onToggle={() => onToggleTopic(domain.id, topic.id)}
@@ -109,6 +114,7 @@ function DomainTreeItem({
 
 interface TopicTreeItemProps {
   topic: SidebarTopic;
+  examId: string;
   domainId: string;
   isExpanded: boolean;
   onToggle: () => void;
@@ -118,13 +124,14 @@ interface TopicTreeItemProps {
 
 function TopicTreeItem({
   topic,
+  examId,
   domainId,
   isExpanded,
   onToggle,
   currentPath,
   onNavigate,
 }: TopicTreeItemProps) {
-  const isOnTopic = currentPath.startsWith(`/study/${domainId}/${topic.id}`);
+  const isOnTopic = currentPath.startsWith(`/${examId}/study/${domainId}/${topic.id}`);
 
   return (
     <div className="pl-4">
@@ -149,6 +156,7 @@ function TopicTreeItem({
             <SectionLink
               key={section.id}
               section={section}
+              examId={examId}
               domainId={domainId}
               topicId={topic.id}
               currentPath={currentPath}
@@ -163,14 +171,15 @@ function TopicTreeItem({
 
 interface SectionLinkProps {
   section: { id: string; title: string };
+  examId: string;
   domainId: string;
   topicId: string;
   currentPath: string;
   onNavigate?: () => void;
 }
 
-function SectionLink({ section, domainId, topicId, currentPath, onNavigate }: SectionLinkProps) {
-  const href = `/study/${domainId}/${topicId}/${section.id}`;
+function SectionLink({ section, examId, domainId, topicId, currentPath, onNavigate }: SectionLinkProps) {
+  const href = `/${examId}/study/${domainId}/${topicId}/${section.id}`;
   const isActive = currentPath === href;
 
   return (

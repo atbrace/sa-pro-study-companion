@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const examId = searchParams.get('exam') || 'sap-c02';
     const domainId = searchParams.get('domain');
     const topicId = searchParams.get('topic');
     const countParam = searchParams.get('count');
@@ -24,10 +25,10 @@ export async function GET(request: NextRequest) {
     let questions;
     if (topicId) {
       // Get questions for specific topic
-      questions = getTopicQuestions(domainId, topicId);
+      questions = getTopicQuestions(examId, domainId, topicId);
     } else {
       // Get random questions for domain
-      questions = getRandomDomainQuestions(domainId, count);
+      questions = getRandomDomainQuestions(examId, domainId, count);
     }
 
     return NextResponse.json({

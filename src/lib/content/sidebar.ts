@@ -3,8 +3,6 @@ import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
 import type {
   SidebarSection,
-  SidebarTopic,
-  SidebarDomain,
   SidebarHierarchy,
 } from '@/types/sidebar';
 
@@ -13,8 +11,8 @@ import type {
  * Returns domains, topics, and sections in a lightweight format
  * Uses React.cache() to deduplicate requests within the same render pass
  */
-export const getSidebarHierarchy = cache((): SidebarHierarchy => {
-  const domains = getAllDomains();
+export const getSidebarHierarchy = cache((examId: string): SidebarHierarchy => {
+  const domains = getAllDomains(examId);
 
   const hierarchy: SidebarHierarchy = {
     domains: domains.map(domain => ({

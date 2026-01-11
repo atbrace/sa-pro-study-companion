@@ -9,9 +9,10 @@ import type { DomainProgress } from "@/lib/progress/calculator";
 
 interface WeakAreasListProps {
   domains: DomainProgress[];
+  examId: string;
 }
 
-export function WeakAreasList({ domains }: WeakAreasListProps) {
+export function WeakAreasList({ domains, examId }: WeakAreasListProps) {
   // Collect all weak areas from all domains
   const allWeakAreas = domains.flatMap((domain) =>
     domain.weakAreas.map((weakArea) => ({
@@ -59,7 +60,7 @@ export function WeakAreasList({ domains }: WeakAreasListProps) {
               .join(' ');
 
             // Build study link with fallback to domain if topic doesn't exist
-            const studyLink = `/study/${item.domainId}/${item.topicId}`;
+            const studyLink = `/${examId}/study/${item.domainId}/${item.topicId}`;
 
             return (
               <div

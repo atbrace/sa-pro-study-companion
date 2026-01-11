@@ -14,8 +14,8 @@ export interface ContentIndex {
   topics: Map<string, ContentIndexEntry>;
 }
 
-// Cached index - built once on first access
-let cachedIndex: ContentIndex | null = null;
+// Cached indices by exam - built once on first access per exam
+const cachedIndices: Map<string, ContentIndex> = new Map();
 
 /**
  * Normalize service name for matching (strips AWS/Amazon prefix, lowercases)
@@ -29,14 +29,14 @@ function normalizeServiceName(name: string): string {
 }
 
 /**
- * Build the content index from all domains and topics
+ * Build the content index from all domains and topics for a specific exam
  */
-export function buildContentIndex(): ContentIndex {
-  if (cachedIndex) {
-    return cachedIndex;
+export function buildContentIndex(examId: string): ContentIndex {
+  if (cachedIndices.has(examId)) {
+    return cachedIndices.get(examId)!;
   }
 
-  const domains = getAllDomains();
+  const domains = getAllDomains(examId);
   const index: ContentIndex = {
     services: new Map(),
     concepts: new Map(),
@@ -45,7 +45,7 @@ export function buildContentIndex(): ContentIndex {
 
   for (const domain of domains) {
     for (const topic of domain.topics) {
-      const route = `/study/${domain.meta.id}/${topic.meta.id}`;
+      const route = `/${examId}/study/${domain.meta.id}/${topic.meta.id}`;
       const baseEntry = {
         route,
         domainName: domain.meta.shortName,
@@ -89,15 +89,15 @@ export function buildContentIndex(): ContentIndex {
     }
   }
 
-  cachedIndex = index;
+  cachedIndices.set(examId, index);
   return index;
 }
 
 /**
  * Serialize the content index for inclusion in the tutor system prompt
  */
-export function serializeIndexForPrompt(): string {
-  const index = buildContentIndex();
+export function serializeIndexForPrompt(examId: string): string {
+  const index = buildContentIndex(examId);
   const lines: string[] = [];
 
   lines.push('## App Navigation Reference');
@@ -136,8 +136,12 @@ export function serializeIndexForPrompt(): string {
 }
 
 /**
- * Clear the cached index (useful for testing or if content changes)
+ * Clear the cached indices (useful for testing or if content changes)
  */
-export function clearIndexCache(): void {
-  cachedIndex = null;
+export function clearIndexCache(examId?: string): void {
+  if (examId) {
+    cachedIndices.delete(examId);
+  } else {
+    cachedIndices.clear();
+  }
 }

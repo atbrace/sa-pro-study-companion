@@ -2,6 +2,7 @@
 
 export interface TopicProgress {
   id: number;
+  exam_id: string;
   domain_id: string;
   topic_id: string;
   mastery_level: number;
@@ -14,6 +15,7 @@ export interface TopicProgress {
 
 export interface QuestionAttempt {
   id: number;
+  exam_id: string;
   question_id: string;
   domain_id: string;
   topic_id: string;
@@ -26,6 +28,7 @@ export interface QuestionAttempt {
 
 export interface AssessmentSession {
   id: number;
+  exam_id: string;
   domain_id: string | null;
   session_type: 'initial' | 'deep_dive' | 'review';
   total_questions: number;
@@ -49,6 +52,7 @@ export interface ExperimentDeployment {
 
 export interface StudySession {
   id: number;
+  exam_id: string;
   domain_id: string | null;
   topic_id: string | null;
   activity_type: 'study' | 'assess' | 'experiment';
@@ -59,6 +63,7 @@ export interface StudySession {
 
 export interface TutorConversation {
   id: number;
+  context_exam: string | null;
   context_domain: string | null;
   context_topic: string | null;
   context_question_id: string | null;
@@ -69,6 +74,7 @@ export interface TutorConversation {
 
 export interface WeakArea {
   id: number;
+  exam_id: string;
   domain_id: string;
   topic_id: string;
   identified_at: string;

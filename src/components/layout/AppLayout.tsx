@@ -10,9 +10,10 @@ import type { SidebarHierarchy } from '@/types/sidebar';
 interface AppLayoutProps {
   children: React.ReactNode;
   sidebarHierarchy: SidebarHierarchy;
+  examId: string;
 }
 
-export function AppLayout({ children, sidebarHierarchy }: AppLayoutProps) {
+export function AppLayout({ children, sidebarHierarchy, examId }: AppLayoutProps) {
   const { isOpen, context, openTutor, closeTutor } = useTutor();
 
   const handleTutorToggle = () => {
@@ -26,7 +27,7 @@ export function AppLayout({ children, sidebarHierarchy }: AppLayoutProps) {
   return (
     <div className="min-h-screen">
       {/* Sidebar - Desktop only */}
-      <Sidebar sidebarHierarchy={sidebarHierarchy} />
+      <Sidebar sidebarHierarchy={sidebarHierarchy} examId={examId} />
 
       {/* Main content area */}
       <div className="lg:pl-64">
@@ -34,6 +35,7 @@ export function AppLayout({ children, sidebarHierarchy }: AppLayoutProps) {
         <Header
           onTutorToggle={handleTutorToggle}
           sidebarHierarchy={sidebarHierarchy}
+          examId={examId}
         />
 
         {/* Page content */}

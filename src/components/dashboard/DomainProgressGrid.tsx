@@ -3,19 +3,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { getDomainBorderColor } from "@/lib/utils/domain-colors";
 import { getAllDomains } from "@/lib/content/loader";
+import { getExamById } from "@/lib/content/exam-loader";
 import { PlayCircle } from "lucide-react";
 import type { DomainProgress } from "@/lib/progress/calculator";
 
 interface DomainProgressGridProps {
   domains: DomainProgress[];
   isNewUser?: boolean;
+  examId: string;
 }
 
 /**
  * Get domain color from content loader
  */
-function getDomainColor(domainId: string): string {
-  const domains = getAllDomains();
+function getDomainColor(examId: string, domainId: string): string {
+  const domains = getAllDomains(examId);
   const domain = domains.find(d => d.meta.id === domainId);
   return domain?.meta.color || "blue";
 }
@@ -30,12 +32,15 @@ function getMasteryLabel(score: number): string {
   return "Not Started";
 }
 
-export function DomainProgressGrid({ domains, isNewUser = false }: DomainProgressGridProps) {
+export function DomainProgressGrid({ domains, isNewUser = false, examId }: DomainProgressGridProps) {
+  const examConfig = getExamById(examId);
+  const examName = examConfig?.shortName || examId.toUpperCase();
+
   return (
     <div className="space-y-4">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">
-          {isNewUser ? "SAP-C02 Exam Domains" : "Assessment Scores"}
+          {isNewUser ? `${examName} Exam Domains` : "Assessment Scores"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {isNewUser
@@ -45,14 +50,14 @@ export function DomainProgressGrid({ domains, isNewUser = false }: DomainProgres
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {domains.map(domain => {
-          const color = getDomainColor(domain.domainId);
+          const color = getDomainColor(examId, domain.domainId);
           const borderClass = getDomainBorderColor(color);
           const masteryLabel = getMasteryLabel(domain.masteryScore);
 
           return (
             <Link
               key={domain.domainId}
-              href={`/assess/${domain.domainId}`}
+              href={`/${examId}/assess/${domain.domainId}`}
               className="block group"
             >
               <Card className={`border-l-4 ${borderClass} hover:bg-muted/50 transition-colors`}>

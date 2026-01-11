@@ -10,6 +10,7 @@ import type { AssessmentSubmission } from '@/types/assessment';
 export async function POST(request: NextRequest) {
   try {
     const body: AssessmentSubmission = await request.json();
+    const examId = body.examId || 'sap-c02';
 
     // Validate input
     if (!body.answers || body.answers.length === 0) {
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
     // Get questions for validation
     let questions;
     if (body.topicId && body.domainId) {
-      questions = getTopicQuestions(body.domainId, body.topicId);
+      questions = getTopicQuestions(examId, body.domainId, body.topicId);
     } else if (body.domainId) {
-      questions = getRandomDomainQuestions(body.domainId, 100); // Get all
+      questions = getRandomDomainQuestions(examId, body.domainId, 100); // Get all
     } else {
       return NextResponse.json(
         { error: 'Domain or topic ID required' },
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
     // Store assessment session in database
     const sessionResult = db.prepare(`
       INSERT INTO assessment_sessions (
+        exam_id,
         domain_id,
         session_type,
         total_questions,
@@ -60,8 +62,9 @@ export async function POST(request: NextRequest) {
         score_percentage,
         time_taken_seconds,
         started_at
-      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now', '-' || ? || ' seconds'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', '-' || ? || ' seconds'))
     `).run(
+      examId,
       body.domainId || null,
       'initial',
       result.totalCount,
@@ -84,6 +87,7 @@ export async function POST(request: NextRequest) {
 
       db.prepare(`
         INSERT INTO question_attempts (
+          exam_id,
           question_id,
           domain_id,
           topic_id,
@@ -91,8 +95,9 @@ export async function POST(request: NextRequest) {
           is_correct,
           time_taken_seconds,
           mode
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
+        examId,
         answer.questionId,
         questionDomainId,
         questionTopicId,
@@ -123,47 +128,48 @@ export async function POST(request: NextRequest) {
     for (const [topicId, { domainId, correct, total }] of topicGroups.entries()) {
       db.prepare(`
         INSERT INTO topic_progress (
+          exam_id,
           domain_id,
           topic_id,
           questions_attempted,
           questions_correct,
           mastery_level,
           last_studied_at
-        ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(domain_id, topic_id) DO UPDATE SET
+        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(exam_id, domain_id, topic_id) DO UPDATE SET
           questions_attempted = questions_attempted + excluded.questions_attempted,
           questions_correct = questions_correct + excluded.questions_correct,
           mastery_level = CAST(questions_correct + excluded.questions_correct AS REAL) /
                          (questions_attempted + excluded.questions_attempted),
           last_studied_at = CURRENT_TIMESTAMP,
           updated_at = CURRENT_TIMESTAMP
-      `).run(domainId, topicId, total, correct, correct / total);
+      `).run(examId, domainId, topicId, total, correct, correct / total);
     }
 
     // Store weak areas (topics where user performed below threshold)
     for (const weakArea of result.weakAreas) {
       db.prepare(`
-        INSERT INTO weak_areas (domain_id, topic_id, identified_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(domain_id, topic_id) DO UPDATE SET
+        INSERT INTO weak_areas (exam_id, domain_id, topic_id, identified_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(exam_id, domain_id, topic_id) DO UPDATE SET
           last_attempt_at = CURRENT_TIMESTAMP,
           attempts_since_identification = attempts_since_identification + 1
-      `).run(weakArea.domainId, weakArea.topicId);
+      `).run(examId, weakArea.domainId, weakArea.topicId);
     }
 
     // Auto-resolve weak areas: if topic mastery is now >= 80%, mark as resolved
     for (const [topicId, { domainId }] of topicGroups.entries()) {
       const progress = db.prepare(`
         SELECT mastery_level FROM topic_progress
-        WHERE domain_id = ? AND topic_id = ?
-      `).get(domainId, topicId) as { mastery_level: number } | undefined;
+        WHERE exam_id = ? AND domain_id = ? AND topic_id = ?
+      `).get(examId, domainId, topicId) as { mastery_level: number } | undefined;
 
       if (progress && progress.mastery_level >= 0.8) {
         db.prepare(`
           UPDATE weak_areas
           SET resolved = 1
-          WHERE domain_id = ? AND topic_id = ? AND resolved = 0
-        `).run(domainId, topicId);
+          WHERE exam_id = ? AND domain_id = ? AND topic_id = ? AND resolved = 0
+        `).run(examId, domainId, topicId);
       }
     }
 

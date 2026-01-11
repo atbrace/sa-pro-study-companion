@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { getSidebarHierarchy } from "@/lib/content/sidebar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AWS Solutions Architect Professional Study Companion",
-  description: "Comprehensive SAP-C02 certification preparation with AI-powered tutoring",
+  title: "AWS Certification Study Companion",
+  description: "Comprehensive AWS certification preparation with AI-powered tutoring",
 };
 
 export default function RootLayout({
@@ -25,9 +23,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Load sidebar hierarchy on server side
-  const sidebarHierarchy = getSidebarHierarchy();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
@@ -37,7 +32,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AppLayout sidebarHierarchy={sidebarHierarchy}>{children}</AppLayout>
+          {children}
         </ThemeProvider>
       </body>
     </html>

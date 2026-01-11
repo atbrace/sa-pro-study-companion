@@ -1,6 +1,6 @@
-# AWS SAP-C02 Study Companion - Project Status
+# AWS Certification Study Companion - Project Status
 
-> **Last Updated:** 2026-01-05
+> **Last Updated:** 2026-01-11
 >
 > This file tracks implementation progress across all phases. Updated as work is completed.
 
@@ -15,6 +15,7 @@
 | **Phase 3: AI Tutor** | ✅ Complete | 100% | - |
 | **Phase 4: Experiments** | 🚧 In Progress | 85% | High |
 | **Phase 5: Polish** | 🚧 Partial | 30% | Medium |
+| **Multi-Exam Support** | ✅ Complete | 100% | - |
 
 ---
 
@@ -175,6 +176,28 @@ src/app/
 │       ├── destroy/route.ts           # ✅ Cleanup API
 │       └── status/route.ts            # ✅ Status polling API
 ```
+
+---
+
+## Multi-Exam Support ✅ **COMPLETE**
+
+Refactored the app to support multiple AWS certification exams.
+
+### Completed ✅
+- [x] **Exam types and config** - `src/types/exam.ts`, exam.yaml per exam
+- [x] **Content restructuring** - Moved to `content/exams/[exam-id]/domains/`
+- [x] **Exam loader** - `src/lib/content/exam-loader.ts`
+- [x] **Database migration** - Added `exam_id` to all progress tables
+- [x] **Route restructuring** - All routes under `/[exam]/` dynamic segment
+- [x] **Exam context** - `ExamProvider` and `useExam` hook
+- [x] **Component updates** - Sidebar, nav, dashboard use exam config
+- [x] **API route updates** - All APIs accept exam parameter
+- [x] **Exam picker** - Root page shows available exams
+- [x] **Under construction banner** - Shows for exams with incomplete content
+
+### Supported Exams
+- **SAP-C02** - AWS Solutions Architect Professional (full content)
+- **MLA-C01** - AWS Machine Learning Engineer Associate (scaffold only)
 
 ---
 

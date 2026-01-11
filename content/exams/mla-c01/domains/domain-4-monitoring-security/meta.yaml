@@ -1,0 +1,58 @@
+id: domain-4-monitoring-security
+name: ML Solution Monitoring, Maintenance, and Security
+shortName: Monitoring & Security
+weight: 24
+description: >
+  Monitor model performance in production, detect data and model drift,
+  optimize infrastructure costs, and implement security controls for ML
+  workloads using AWS services.
+color: red
+icon: shield
+
+examTasks:
+  - id: task-4-1
+    name: Monitor model inference
+    description: >
+      Track model accuracy, latency, and throughput; detect data drift and
+      model degradation using SageMaker Model Monitor.
+  - id: task-4-2
+    name: Monitor and optimize infrastructure and costs
+    description: >
+      Monitor compute resources, optimize instance utilization, and implement
+      cost management strategies for ML workloads.
+  - id: task-4-3
+    name: Secure AWS resources
+    description: >
+      Implement IAM policies, encryption, network isolation, and compliance
+      controls for ML artifacts and infrastructure.
+
+topics:
+  - model-monitoring
+  - drift-detection
+  - cost-optimization
+  - ml-security
+
+keyServices:
+  - Amazon SageMaker Model Monitor
+  - Amazon CloudWatch
+  - AWS CloudTrail
+  - AWS IAM
+  - AWS KMS
+  - Amazon VPC
+  - AWS Secrets Manager
+  - AWS Cost Explorer
+  - Amazon SageMaker Clarify
+
+awsDocLinks:
+  - title: Amazon SageMaker Model Monitor
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    type: doc
+  - title: Detect Drift in ML Models
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    type: doc
+  - title: Security in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/security.html
+    type: doc
+  - title: SageMaker Infrastructure Security
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html
+    type: doc

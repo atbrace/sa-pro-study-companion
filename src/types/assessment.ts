@@ -11,6 +11,7 @@ export interface QuestionAnswer {
 
 export interface AssessmentSubmission {
   sessionId: string;
+  examId?: string;
   domainId?: string;
   topicId?: string;
   answers: QuestionAnswer[];

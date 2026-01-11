@@ -14,17 +14,18 @@ interface WeakArea {
 
 interface WeakAreasSummaryProps {
   domains: DomainProgress[];
+  examId: string;
 }
 
 /**
  * Aggregate weak areas from all domains and return top 3
  */
-function getTopWeakAreas(domains: DomainProgress[]): WeakArea[] {
+function getTopWeakAreas(examId: string, domains: DomainProgress[]): WeakArea[] {
   const allWeakAreas: WeakArea[] = [];
 
   for (const domain of domains) {
     for (const weakArea of domain.weakAreas) {
-      const topic = getTopicById(domain.domainId, weakArea.topicId);
+      const topic = getTopicById(examId, domain.domainId, weakArea.topicId);
       if (topic) {
         allWeakAreas.push({
           domainId: domain.domainId,
@@ -46,8 +47,8 @@ function getTotalWeakAreas(domains: DomainProgress[]): number {
   return domains.reduce((sum, d) => sum + d.weakAreas.length, 0);
 }
 
-export function WeakAreasSummary({ domains }: WeakAreasSummaryProps) {
-  const topWeakAreas = getTopWeakAreas(domains);
+export function WeakAreasSummary({ domains, examId }: WeakAreasSummaryProps) {
+  const topWeakAreas = getTopWeakAreas(examId, domains);
   const totalWeakAreas = getTotalWeakAreas(domains);
 
   // Don't render anything if there are no weak areas
@@ -79,7 +80,7 @@ export function WeakAreasSummary({ domains }: WeakAreasSummaryProps) {
               </p>
             </div>
             <Button asChild variant="ghost" size="sm" className="shrink-0">
-              <Link href={`/study/${area.domainId}/${area.topicId}`}>
+              <Link href={`/${examId}/study/${area.domainId}/${area.topicId}`}>
                 <BookOpen className="h-4 w-4 mr-1" />
                 Study
               </Link>
@@ -89,7 +90,7 @@ export function WeakAreasSummary({ domains }: WeakAreasSummaryProps) {
 
         {totalWeakAreas > 3 && (
           <Link
-            href="/progress"
+            href={`/${examId}/progress`}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
           >
             See all {totalWeakAreas} weak areas

@@ -6,11 +6,13 @@ import type { Topic } from '@/types/domain';
 
 interface QuestionSectionProps {
   topic: Topic;
+  examId: string;
+  examName: string;
   domainId: string;
   topicId: string;
 }
 
-export function QuestionSection({ topic, domainId, topicId }: QuestionSectionProps) {
+export function QuestionSection({ topic, examId, examName, domainId, topicId }: QuestionSectionProps) {
   const questionCount = topic.questions.length;
 
   return (
@@ -24,10 +26,10 @@ export function QuestionSection({ topic, domainId, topicId }: QuestionSectionPro
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-6">
-            Ready to test what you've learned? These questions cover all concepts from this topic and will help you prepare for the SAP-C02 exam.
+            Ready to test what you've learned? These questions cover all concepts from this topic and will help you prepare for the {examName} exam.
           </p>
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href={`/assess?domain=${domainId}&topic=${topicId}`}>
+            <Link href={`/${examId}/assess?domain=${domainId}&topic=${topicId}`}>
               <Target className="mr-2 h-5 w-5" />
               Start Practice Quiz ({questionCount} questions)
             </Link>
@@ -44,7 +46,7 @@ export function QuestionSection({ topic, domainId, topicId }: QuestionSectionPro
             These practice questions are designed to test your understanding of key concepts and help you identify areas that need more study.
           </p>
           <ul className="list-disc list-inside space-y-2 ml-2">
-            <li>Questions are based on real SAP-C02 exam patterns</li>
+            <li>Questions are based on real {examName} exam patterns</li>
             <li>Each question includes detailed explanations</li>
             <li>Links to official AWS documentation for further reading</li>
             <li>Track your progress and identify weak areas</li>

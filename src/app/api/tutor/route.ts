@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL } from "@/lib/claude/client";
-import { TUTOR_SYSTEM_PROMPT, buildContextPrompt, generateSuggestedQuestions, type TutorContext } from "@/lib/claude/prompts";
+import { buildTutorSystemPrompt, buildContextPrompt, generateSuggestedQuestions, type TutorContext } from "@/lib/claude/prompts";
 import { TUTOR_TOOLS, type TutorToolName } from "@/lib/claude/tools";
 import { serializeIndexForPrompt } from "@/lib/content/index";
+import { getExamById } from "@/lib/content/exam-loader";
 import { getTutorProgressContext } from "@/lib/progress/tutor-context";
 import { db } from "@/lib/db/client";
 import type { MessageParam, ContentBlock, ToolUseBlock, ToolResultBlockParam } from "@anthropic-ai/sdk/resources/messages";
 
-// Cache the navigation index (static content, doesn't change at runtime)
-let cachedNavigationIndex: string | null = null;
+// Cache navigation indices by exam (static content, doesn't change at runtime)
+const cachedNavigationIndices: Map<string, string> = new Map();
 
-function getNavigationIndex(): string {
-  if (!cachedNavigationIndex) {
-    cachedNavigationIndex = serializeIndexForPrompt();
+function getNavigationIndex(examId: string): string {
+  if (!cachedNavigationIndices.has(examId)) {
+    cachedNavigationIndices.set(examId, serializeIndexForPrompt(examId));
   }
-  return cachedNavigationIndex;
+  return cachedNavigationIndices.get(examId)!;
 }
 
 export const runtime = 'nodejs';
 
 interface TutorRequest {
   message: string;
+  examId?: string;
   context?: TutorContext;
   conversationId?: string;
 }
@@ -34,11 +36,20 @@ interface TutorResponse {
 export async function POST(request: NextRequest) {
   try {
     const body: TutorRequest = await request.json();
-    const { message, context, conversationId } = body;
+    const { message, examId: requestExamId, context, conversationId } = body;
+    const examId = requestExamId || 'sap-c02';
+    const examConfig = getExamById(examId);
 
     if (!message || message.trim().length === 0) {
       return NextResponse.json(
         { error: 'Message is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!examConfig) {
+      return NextResponse.json(
+        { error: 'Invalid exam ID' },
         { status: 400 }
       );
     }
@@ -68,9 +79,10 @@ export async function POST(request: NextRequest) {
 
     // Build system prompt with context and navigation index
     const contextPrompt = context ? buildContextPrompt(context) : '';
-    const navigationIndex = getNavigationIndex();
+    const navigationIndex = getNavigationIndex(examId);
+    const tutorSystemPrompt = buildTutorSystemPrompt(examConfig);
     const systemPrompt = [
-      TUTOR_SYSTEM_PROMPT,
+      tutorSystemPrompt,
       navigationIndex,
       contextPrompt,
     ].filter(Boolean).join('\n\n');
@@ -117,7 +129,7 @@ export async function POST(request: NextRequest) {
           const toolName = toolUse.name as TutorToolName;
 
           if (toolName === 'get_study_progress') {
-            const progressContext = getTutorProgressContext();
+            const progressContext = getTutorProgressContext(examId);
             toolResults.push({
               type: 'tool_result',
               tool_use_id: toolUse.id,
@@ -167,12 +179,14 @@ export async function POST(request: NextRequest) {
     if (!dbConversationId) {
       const result = db.prepare(`
         INSERT INTO tutor_conversations (
+          exam_id,
           context_domain,
           context_topic,
           context_question_id,
           messages_json
-        ) VALUES (?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?)
       `).run(
+        examId,
         context?.domainId || null,
         context?.topicId || null,
         context?.questionId || null,

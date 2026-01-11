@@ -5,8 +5,8 @@ import { getTopicById } from '@/lib/content/loader';
  * Get formatted progress context for the tutor tool response
  * This is called when Claude uses the get_study_progress tool
  */
-export function getTutorProgressContext(): string {
-  const summary = getProgressSummary();
+export function getTutorProgressContext(examId: string): string {
+  const summary = getProgressSummary(examId);
   const lines: string[] = [];
 
   // Overall stats
@@ -49,7 +49,7 @@ export function getTutorProgressContext(): string {
     if (domain.weakAreas.length > 0) {
       const weakTopicNames = domain.weakAreas
         .map((w) => {
-          const topic = getTopicById(domain.domainId, w.topicId);
+          const topic = getTopicById(examId, domain.domainId, w.topicId);
           return topic?.meta.name || w.topicId;
         })
         .join(', ');

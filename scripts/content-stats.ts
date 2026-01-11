@@ -2,10 +2,13 @@
 
 import { getContentStats, getAllDomains } from '../src/lib/content/loader';
 
-console.log('Content Statistics\n');
+// Get examId from command line or default to sap-c02
+const examId = process.argv[2] || 'sap-c02';
+
+console.log(`Content Statistics for ${examId}\n`);
 
 try {
-  const stats = getContentStats();
+  const stats = getContentStats(examId);
 
   console.log('Overview:');
   console.log(`  Total Domains: ${stats.totalDomains}`);
@@ -13,7 +16,7 @@ try {
   console.log(`  Total Questions: ${stats.totalQuestions}\n`);
 
   if (stats.domains.length === 0) {
-    console.log('No domains found in content/domains/');
+    console.log(`No domains found for exam ${examId}`);
     console.log('Create domain directories and add content files to get started.\n');
     process.exit(0);
   }
@@ -28,7 +31,7 @@ try {
 
   // Load full domain details
   console.log('\n\nDetailed Information:\n');
-  const domains = getAllDomains();
+  const domains = getAllDomains(examId);
 
   domains.forEach(domain => {
     console.log(`${domain.meta.name} (${domain.meta.weight}% exam weight)`);

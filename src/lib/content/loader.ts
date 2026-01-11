@@ -11,26 +11,27 @@ import type {
   QuestionsData,
   Question,
 } from '@/types/domain';
-
-const CONTENT_DIR = path.join(process.cwd(), 'content', 'domains');
+import { getExamContentDir } from './exam-loader';
 
 /**
- * Get all available domains
+ * Get all available domains for an exam
  */
-export function getAllDomains(): Domain[] {
-  if (!fs.existsSync(CONTENT_DIR)) {
-    console.warn('Content directory does not exist:', CONTENT_DIR);
+export function getAllDomains(examId: string): Domain[] {
+  const contentDir = getExamContentDir(examId);
+
+  if (!fs.existsSync(contentDir)) {
+    console.warn('Content directory does not exist:', contentDir);
     return [];
   }
 
-  const domainDirs = fs.readdirSync(CONTENT_DIR);
+  const domainDirs = fs.readdirSync(contentDir);
 
   return domainDirs
     .filter(dir => {
-      const fullPath = path.join(CONTENT_DIR, dir);
+      const fullPath = path.join(contentDir, dir);
       return fs.statSync(fullPath).isDirectory() && dir.startsWith('domain-');
     })
-    .map(dir => getDomainById(dir))
+    .map(dir => getDomainById(examId, dir))
     .filter((d): d is Domain => d !== null)
     .sort((a, b) => a.meta.id.localeCompare(b.meta.id));
 }
@@ -38,8 +39,9 @@ export function getAllDomains(): Domain[] {
 /**
  * Get a specific domain by ID
  */
-export function getDomainById(domainId: string): Domain | null {
-  const domainPath = path.join(CONTENT_DIR, domainId);
+export function getDomainById(examId: string, domainId: string): Domain | null {
+  const contentDir = getExamContentDir(examId);
+  const domainPath = path.join(contentDir, domainId);
 
   if (!fs.existsSync(domainPath)) {
     console.warn('Domain directory does not exist:', domainPath);
@@ -62,7 +64,7 @@ export function getDomainById(domainId: string): Domain | null {
     : null;
 
   // Load all topics for this domain
-  const topics = getTopicsForDomain(domainId);
+  const topics = getTopicsForDomain(examId, domainId);
 
   return {
     meta,
@@ -74,8 +76,9 @@ export function getDomainById(domainId: string): Domain | null {
 /**
  * Get all topics for a domain
  */
-export function getTopicsForDomain(domainId: string): Topic[] {
-  const topicsPath = path.join(CONTENT_DIR, domainId, 'topics');
+export function getTopicsForDomain(examId: string, domainId: string): Topic[] {
+  const contentDir = getExamContentDir(examId);
+  const topicsPath = path.join(contentDir, domainId, 'topics');
 
   if (!fs.existsSync(topicsPath)) {
     return [];
@@ -88,15 +91,16 @@ export function getTopicsForDomain(domainId: string): Topic[] {
       const fullPath = path.join(topicsPath, dir);
       return fs.statSync(fullPath).isDirectory();
     })
-    .map(dir => getTopicById(domainId, dir))
+    .map(dir => getTopicById(examId, domainId, dir))
     .filter((t): t is Topic => t !== null);
 }
 
 /**
  * Get a specific topic by domain and topic ID
  */
-export function getTopicById(domainId: string, topicId: string): Topic | null {
-  const topicPath = path.join(CONTENT_DIR, domainId, 'topics', topicId);
+export function getTopicById(examId: string, domainId: string, topicId: string): Topic | null {
+  const contentDir = getExamContentDir(examId);
+  const topicPath = path.join(contentDir, domainId, 'topics', topicId);
 
   if (!fs.existsSync(topicPath)) {
     return null;
@@ -117,7 +121,7 @@ export function getTopicById(domainId: string, topicId: string): Topic | null {
     : null;
 
   // Load questions
-  const questions = getTopicQuestions(domainId, topicId);
+  const questions = getTopicQuestions(examId, domainId, topicId);
 
   return {
     meta,
@@ -130,9 +134,10 @@ export function getTopicById(domainId: string, topicId: string): Topic | null {
  * Get questions for a specific topic
  * Injects domainId and topicId into each question for tracking purposes
  */
-export function getTopicQuestions(domainId: string, topicId: string): Question[] {
+export function getTopicQuestions(examId: string, domainId: string, topicId: string): Question[] {
+  const contentDir = getExamContentDir(examId);
   const questionsPath = path.join(
-    CONTENT_DIR,
+    contentDir,
     domainId,
     'topics',
     topicId,
@@ -157,10 +162,11 @@ export function getTopicQuestions(domainId: string, topicId: string): Question[]
  * Get a random set of questions for a domain
  */
 export function getRandomDomainQuestions(
+  examId: string,
   domainId: string,
   count: number
 ): Question[] {
-  const topics = getTopicsForDomain(domainId);
+  const topics = getTopicsForDomain(examId, domainId);
   const allQuestions: Question[] = [];
 
   topics.forEach(topic => {
@@ -197,10 +203,10 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * Get content statistics
+ * Get content statistics for an exam
  */
-export function getContentStats() {
-  const domains = getAllDomains();
+export function getContentStats(examId: string) {
+  const domains = getAllDomains(examId);
 
   return {
     totalDomains: domains.length,

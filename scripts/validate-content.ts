@@ -2,15 +2,18 @@
 
 import { getAllDomains } from '../src/lib/content/loader';
 
-console.log('Validating content structure...\n');
+// Get examId from command line or default to sap-c02
+const examId = process.argv[2] || 'sap-c02';
+
+console.log(`Validating content structure for ${examId}...\n`);
 
 let hasErrors = false;
 
 try {
-  const domains = getAllDomains();
+  const domains = getAllDomains(examId);
 
   if (domains.length === 0) {
-    console.log('⚠️  No domains found in content/domains/');
+    console.log(`⚠️  No domains found for exam ${examId}`);
     console.log('This is expected for a new project.\n');
     process.exit(0);
   }

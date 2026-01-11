@@ -1,0 +1,59 @@
+id: domain-3-deployment-orchestration
+name: Deployment and Orchestration of ML Workflows
+shortName: Deployment & Orchestration
+weight: 22
+description: >
+  Deploy ML models to production, configure inference endpoints, set up CI/CD
+  pipelines, and orchestrate end-to-end ML workflows using SageMaker and AWS
+  DevOps services.
+color: purple
+icon: rocket
+
+examTasks:
+  - id: task-3-1
+    name: Select deployment infrastructure
+    description: >
+      Choose appropriate deployment options including real-time endpoints,
+      batch transform, serverless inference, and edge deployment.
+  - id: task-3-2
+    name: Create and script infrastructure
+    description: >
+      Provision compute resources, configure auto-scaling, and manage
+      deployment infrastructure using IaC and SageMaker.
+  - id: task-3-3
+    name: Set up CI/CD pipelines for ML workflows
+    description: >
+      Automate model training, testing, and deployment using SageMaker
+      Pipelines, CodePipeline, and orchestration tools.
+
+topics:
+  - model-deployment
+  - inference-optimization
+  - ml-pipelines
+  - cicd-automation
+
+keyServices:
+  - Amazon SageMaker Endpoints
+  - Amazon SageMaker Batch Transform
+  - Amazon SageMaker Serverless Inference
+  - Amazon SageMaker Pipelines
+  - Amazon SageMaker Model Registry
+  - AWS Step Functions
+  - AWS CodePipeline
+  - AWS CodeBuild
+  - Amazon EventBridge
+  - AWS Lambda
+
+awsDocLinks:
+  - title: Deploy Models for Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html
+    type: doc
+  - title: SageMaker Pipelines
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html
+    type: doc
+  - title: SageMaker Model Registry
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html
+    type: doc
+  - title: MLOps with Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-whatis.html
+    type: doc

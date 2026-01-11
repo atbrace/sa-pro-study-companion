@@ -4,16 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, MessageSquare } from 'lucide-react';
 import { MobileSidebar } from './MobileSidebar';
+import { useExam } from '@/contexts/ExamContext';
 import type { SidebarHierarchy } from '@/types/sidebar';
 import { useState } from 'react';
 
 interface HeaderProps {
   onTutorToggle?: () => void;
   sidebarHierarchy: SidebarHierarchy;
+  examId: string;
 }
 
-export function Header({ onTutorToggle, sidebarHierarchy }: HeaderProps) {
+export function Header({ onTutorToggle, sidebarHierarchy, examId }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { config } = useExam();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
@@ -31,10 +34,11 @@ export function Header({ onTutorToggle, sidebarHierarchy }: HeaderProps) {
               <MobileSidebar
                 onNavigate={() => setMobileMenuOpen(false)}
                 sidebarHierarchy={sidebarHierarchy}
+                examId={examId}
               />
             </SheetContent>
           </Sheet>
-          <h1 className="text-lg font-semibold">AWS SAP Study</h1>
+          <h1 className="text-lg font-semibold">{config.shortName} Study</h1>
         </div>
 
         {/* Desktop - Empty space (logo is in sidebar) */}

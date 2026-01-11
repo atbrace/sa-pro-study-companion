@@ -47,13 +47,13 @@ export interface ProgressSummary {
 /**
  * Calculate mastery score for a domain based on topic progress
  */
-export function calculateDomainMastery(domainId: string): number {
+export function calculateDomainMastery(examId: string, domainId: string): number {
   const result = db.prepare(`
     SELECT
       AVG(mastery_level) as avg_mastery
     FROM topic_progress
-    WHERE domain_id = ?
-  `).get(domainId) as { avg_mastery: number | null };
+    WHERE exam_id = ? AND domain_id = ?
+  `).get(examId, domainId) as { avg_mastery: number | null };
 
   return result.avg_mastery ? result.avg_mastery * 100 : 0;
 }
@@ -61,13 +61,13 @@ export function calculateDomainMastery(domainId: string): number {
 /**
  * Calculate overall mastery score weighted by domain exam weights
  */
-export function calculateOverallMastery(): number {
-  const domains = getAllDomains();
+export function calculateOverallMastery(examId: string): number {
+  const domains = getAllDomains(examId);
   let weightedSum = 0;
   let totalWeight = 0;
 
   for (const domain of domains) {
-    const mastery = calculateDomainMastery(domain.meta.id);
+    const mastery = calculateDomainMastery(examId, domain.meta.id);
     weightedSum += mastery * (domain.meta.weight / 100);
     totalWeight += domain.meta.weight / 100;
   }
@@ -78,8 +78,8 @@ export function calculateOverallMastery(): number {
 /**
  * Get domain progress details
  */
-export function getDomainProgress(domainId: string): DomainProgress | null {
-  const domains = getAllDomains();
+export function getDomainProgress(examId: string, domainId: string): DomainProgress | null {
+  const domains = getAllDomains(examId);
   const domain = domains.find(d => d.meta.id === domainId);
 
   if (!domain) return null;
@@ -90,8 +90,8 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
       COUNT(*) as topics_with_progress,
       SUM(CASE WHEN mastery_level >= 0.85 THEN 1 ELSE 0 END) as completed_topics
     FROM topic_progress
-    WHERE domain_id = ?
-  `).get(domainId) as { topics_with_progress: number; completed_topics: number };
+    WHERE exam_id = ? AND domain_id = ?
+  `).get(examId, domainId) as { topics_with_progress: number; completed_topics: number };
 
   // Get question stats
   const questionStats = db.prepare(`
@@ -99,23 +99,23 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
       COUNT(*) as attempted,
       SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
     FROM question_attempts
-    WHERE domain_id = ?
-  `).get(domainId) as { attempted: number; correct: number };
+    WHERE exam_id = ? AND domain_id = ?
+  `).get(examId, domainId) as { attempted: number; correct: number };
 
   // Get weak areas
   const weakAreas = db.prepare(`
     SELECT DISTINCT topic_id
     FROM weak_areas
-    WHERE domain_id = ? AND resolved = 0
+    WHERE exam_id = ? AND domain_id = ? AND resolved = 0
     ORDER BY identified_at DESC
     LIMIT 5
-  `).all(domainId) as Array<{ topic_id: string }>;
+  `).all(examId, domainId) as Array<{ topic_id: string }>;
 
   // Validate that topics exist in content, filter out any that don't
   const validWeakAreas = weakAreas
     .map(w => ({ topicId: w.topic_id }))
     .filter(w => {
-      const topic = getTopicById(domainId, w.topicId);
+      const topic = getTopicById(examId, domainId, w.topicId);
       return topic !== null;
     });
 
@@ -123,7 +123,7 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
     domainId: domain.meta.id,
     domainName: domain.meta.shortName,
     weight: domain.meta.weight,
-    masteryScore: calculateDomainMastery(domainId),
+    masteryScore: calculateDomainMastery(examId, domainId),
     topicsCompleted: topicStats.completed_topics || 0,
     totalTopics: domain.topics.length,
     weakAreas: validWeakAreas,
@@ -135,24 +135,26 @@ export function getDomainProgress(domainId: string): DomainProgress | null {
 /**
  * Get overall progress statistics
  */
-export function getOverallProgress(): OverallProgress {
+export function getOverallProgress(examId: string): OverallProgress {
   const questionStats = db.prepare(`
     SELECT
       COUNT(*) as attempted,
       SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
     FROM question_attempts
-  `).get() as { attempted: number; correct: number };
+    WHERE exam_id = ?
+  `).get(examId) as { attempted: number; correct: number };
 
   const studyTime = db.prepare(`
     SELECT COALESCE(SUM(duration_seconds), 0) as total_seconds
     FROM study_sessions
-  `).get() as { total_seconds: number };
+    WHERE exam_id = ?
+  `).get(examId) as { total_seconds: number };
 
   // Experiments are now managed manually (no longer tracked in database)
   const experimentsCompleted = 0;
 
   return {
-    masteryScore: calculateOverallMastery(),
+    masteryScore: calculateOverallMastery(examId),
     questionsAttempted: questionStats.attempted || 0,
     questionsCorrect: questionStats.correct || 0,
     studyTimeMinutes: Math.round((studyTime.total_seconds || 0) / 60),
@@ -163,7 +165,7 @@ export function getOverallProgress(): OverallProgress {
 /**
  * Get recent activity
  */
-export function getRecentActivity(limit: number = 10): RecentActivity[] {
+export function getRecentActivity(examId: string, limit: number = 10): RecentActivity[] {
   const activities: RecentActivity[] = [];
 
   // Get recent assessments
@@ -174,9 +176,10 @@ export function getRecentActivity(limit: number = 10): RecentActivity[] {
       score_percentage,
       completed_at
     FROM assessment_sessions
+    WHERE exam_id = ?
     ORDER BY completed_at DESC
     LIMIT ?
-  `).all(limit) as Array<{
+  `).all(examId, limit) as Array<{
     domain_id: string | null;
     session_type: string;
     score_percentage: number;
@@ -201,9 +204,10 @@ export function getRecentActivity(limit: number = 10): RecentActivity[] {
       activity_type,
       ended_at
     FROM study_sessions
+    WHERE exam_id = ?
     ORDER BY ended_at DESC
     LIMIT ?
-  `).all(limit) as Array<{
+  `).all(examId, limit) as Array<{
     domain_id: string | null;
     topic_id: string | null;
     activity_type: string;
@@ -231,9 +235,9 @@ export function getRecentActivity(limit: number = 10): RecentActivity[] {
 /**
  * Calculate exam readiness estimate
  */
-export function getReadinessEstimate(): ReadinessEstimate {
-  const overall = getOverallProgress();
-  const domains = getAllDomains();
+export function getReadinessEstimate(examId: string): ReadinessEstimate {
+  const overall = getOverallProgress(examId);
+  const domains = getAllDomains(examId);
 
   // Check if user has attempted enough questions
   const minQuestionsPerDomain = 10;
@@ -280,13 +284,13 @@ export function getReadinessEstimate(): ReadinessEstimate {
 /**
  * Get complete progress summary
  */
-export function getProgressSummary(): ProgressSummary {
-  const domains = getAllDomains();
+export function getProgressSummary(examId: string): ProgressSummary {
+  const domains = getAllDomains(examId);
 
   return {
-    overall: getOverallProgress(),
-    domains: domains.map(d => getDomainProgress(d.meta.id)).filter(Boolean) as DomainProgress[],
-    recentActivity: getRecentActivity(10),
-    readinessEstimate: getReadinessEstimate(),
+    overall: getOverallProgress(examId),
+    domains: domains.map(d => getDomainProgress(examId, d.meta.id)).filter(Boolean) as DomainProgress[],
+    recentActivity: getRecentActivity(examId, 10),
+    readinessEstimate: getReadinessEstimate(examId),
   };
 }

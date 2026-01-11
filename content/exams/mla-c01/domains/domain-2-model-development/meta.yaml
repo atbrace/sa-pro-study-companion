@@ -1,0 +1,58 @@
+id: domain-2-model-development
+name: ML Model Development
+shortName: Model Development
+weight: 26
+description: >
+  Select appropriate modeling approaches, train and refine models, tune hyperparameters,
+  and analyze model performance using SageMaker and AWS AI services.
+color: green
+icon: brain
+
+examTasks:
+  - id: task-2-1
+    name: Choose a modeling approach
+    description: >
+      Select appropriate ML algorithms and AWS AI services based on business
+      requirements and problem type.
+  - id: task-2-2
+    name: Train and refine models
+    description: >
+      Configure training jobs, apply regularization, tune hyperparameters,
+      and optimize model performance using SageMaker.
+  - id: task-2-3
+    name: Analyze model performance
+    description: >
+      Evaluate models using appropriate metrics, compare model versions,
+      and iterate on model improvements.
+
+topics:
+  - modeling-approaches
+  - model-training
+  - hyperparameter-tuning
+  - model-evaluation
+
+keyServices:
+  - Amazon SageMaker
+  - Amazon SageMaker Built-in Algorithms
+  - Amazon SageMaker Autopilot
+  - Amazon SageMaker Debugger
+  - Amazon SageMaker Experiments
+  - Amazon Bedrock
+  - Amazon Rekognition
+  - Amazon Comprehend
+  - Amazon Translate
+  - Amazon Transcribe
+
+awsDocLinks:
+  - title: Train Models with Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/train-model.html
+    type: doc
+  - title: SageMaker Built-in Algorithms
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html
+    type: doc
+  - title: Automatic Model Tuning
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning.html
+    type: doc
+  - title: Amazon Bedrock User Guide
+    url: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+    type: doc

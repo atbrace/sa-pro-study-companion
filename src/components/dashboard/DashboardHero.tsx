@@ -2,11 +2,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Target, Sparkles, BookOpen } from "lucide-react";
+import { getExamById } from "@/lib/content/exam-loader";
 import type { DomainProgress, OverallProgress } from "@/lib/progress/calculator";
 
 interface DashboardHeroProps {
   overall: OverallProgress;
   domains: DomainProgress[];
+  examId: string;
 }
 
 /**
@@ -22,7 +24,7 @@ function getMasteryStatus(score: number): { label: string; variant: "default" | 
 /**
  * Get the appropriate CTA based on user state
  */
-function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
+function getCTA(examId: string, overall: OverallProgress, domains: DomainProgress[]): {
   text: string;
   href: string;
   icon: React.ReactNode;
@@ -31,7 +33,7 @@ function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
   if (overall.questionsAttempted === 0) {
     return {
       text: "Start Your First Assessment",
-      href: "/assess",
+      href: `/${examId}/assess`,
       icon: <Target className="h-5 w-5" />,
     };
   }
@@ -40,7 +42,7 @@ function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
   if (overall.masteryScore >= 85) {
     return {
       text: "Review Your Progress",
-      href: "/progress",
+      href: `/${examId}/progress`,
       icon: <Sparkles className="h-5 w-5" />,
     };
   }
@@ -54,7 +56,7 @@ function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
     const weakest = domainsWithWeakAreas[0];
     return {
       text: `Continue ${weakest.domainName} Assessment`,
-      href: `/assess/${weakest.domainId}`,
+      href: `/${examId}/assess/${weakest.domainId}`,
       icon: <ArrowRight className="h-5 w-5" />,
     };
   }
@@ -66,7 +68,7 @@ function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
   if (lowestMasteryDomain && lowestMasteryDomain.masteryScore < 85) {
     return {
       text: `Continue ${lowestMasteryDomain.domainName} Assessment`,
-      href: `/assess/${lowestMasteryDomain.domainId}`,
+      href: `/${examId}/assess/${lowestMasteryDomain.domainId}`,
       icon: <ArrowRight className="h-5 w-5" />,
     };
   }
@@ -74,7 +76,7 @@ function getCTA(overall: OverallProgress, domains: DomainProgress[]): {
   // Default fallback
   return {
     text: "Continue Assessments",
-    href: "/assess",
+    href: `/${examId}/assess`,
     icon: <ArrowRight className="h-5 w-5" />,
   };
 }
@@ -89,27 +91,31 @@ function getMasteryColorClass(score: number): string {
   return "text-muted-foreground";
 }
 
-export function DashboardHero({ overall, domains }: DashboardHeroProps) {
+export function DashboardHero({ overall, domains, examId }: DashboardHeroProps) {
   const isNewUser = overall.questionsAttempted === 0;
   const masteryStatus = getMasteryStatus(overall.masteryScore);
-  const cta = getCTA(overall, domains);
+  const cta = getCTA(examId, overall, domains);
   const masteryColorClass = getMasteryColorClass(overall.masteryScore);
+  const examConfig = getExamById(examId);
+  const examName = examConfig?.shortName || examId.toUpperCase();
+  const domainCount = examConfig?.domains.length || domains.length;
+  const masteryThreshold = examConfig?.masteryThreshold || 85;
 
   if (isNewUser) {
     return (
       <div className="text-center space-y-6 py-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            SAP-C02 Study Companion
+            {examName} Study Companion
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Ready to begin your AWS Solutions Architect Professional certification journey?
+            Ready to begin your {examConfig?.name || 'certification'} journey?
           </p>
         </div>
 
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
           <BookOpen className="h-5 w-5" />
-          <span>4 domains - 85% mastery target</span>
+          <span>{domainCount} domains - {masteryThreshold}% mastery target</span>
         </div>
 
         <Button asChild size="lg" className="gap-2">
@@ -126,7 +132,7 @@ export function DashboardHero({ overall, domains }: DashboardHeroProps) {
     <div className="text-center space-y-6 py-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          SAP-C02 Study Companion
+          {examName} Study Companion
         </h1>
         <div className="flex items-center justify-center gap-4">
           <span className={`text-4xl font-bold ${masteryColorClass}`}>

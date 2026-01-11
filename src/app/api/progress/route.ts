@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getProgressSummary } from "@/lib/progress/calculator";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const progress = getProgressSummary();
+    const searchParams = request.nextUrl.searchParams;
+    const examId = searchParams.get('exam') || 'sap-c02';
+
+    const progress = getProgressSummary(examId);
     return NextResponse.json(progress);
   } catch (error) {
     console.error('Error fetching progress:', error);

@@ -48,13 +48,14 @@ export function useSidebarState(pathname: string) {
 
   // Auto-expand based on current pathname
   useEffect(() => {
-    // Parse pathname: /study/domain-1/topic-2/section-3
-    const match = pathname?.match(/^\/study\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
+    // Parse pathname: /[exam]/study/domain-1/topic-2/section-3
+    const match = pathname?.match(/^\/([^/]+)\/study\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
 
     if (!match) return;
 
-    const domainId = match[1];
-    const topicId = match[2];
+    // match[1] = examId, match[2] = domainId, match[3] = topicId
+    const domainId = match[2];
+    const topicId = match[3];
 
     // Batch state updates to prevent cascading re-renders
     // Only update if the value actually needs to change
