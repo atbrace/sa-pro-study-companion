@@ -1,231 +1,340 @@
-# AWS SAP Study App - Content Library
+# Content Authoring Guide
 
-## Overview
+This guide explains how to add and structure study content for AWS certification exams.
 
-This document describes the structure and organization of the study content for the AWS Solutions Architect Professional (SAP-C02) certification preparation application.
+---
 
-## Content Structure
+## Directory Structure
 
 ```
-content/
-├── domains/
-│   ├── domain-1-organizational-complexity/
-│   │   ├── meta.yaml              # Domain metadata
-│   │   ├── overview.md            # Domain overview and study path
-│   │   └── topics/
-│   │       ├── network-connectivity/
-│   │       │   ├── meta.yaml      # Topic metadata
-│   │       │   ├── content.md     # Study material
-│   │       │   └── questions.yaml # Knowledge check questions
-│   │       ├── security-controls/
-│   │       ├── resilient-architectures/
-│   │       ├── multi-account-environment/
-│   │       └── cost-optimization/
-│   ├── domain-2-new-solutions/
-│   ├── domain-3-continuous-improvement/
-│   └── domain-4-migration-modernization/
-│
-└── experiments/
-    ├── lab-transit-gateway/
-    │   ├── README.md              # Lab guide
-    │   └── cdk/
-    │       └── stack.ts           # CDK infrastructure
-    └── [other labs]/
+content/exams/
+  [exam-id]/                    # e.g., sap-c02, mla-c01
+    exam.yaml                   # Exam configuration
+    domains/
+      [domain-id]/              # e.g., domain-1-organizational-complexity
+        meta.yaml               # Domain metadata
+        overview.md             # Domain overview content
+        topics/
+          [topic-id]/           # e.g., network-connectivity
+            meta.yaml           # Topic metadata
+            content.md          # Study content (Markdown)
+            questions.yaml      # Practice questions
+
+content/experiments/            # Shared across all exams
+  [lab-id]/
+    README.md                   # Lab guide
+    cdk/
+      stack.ts                  # CDK infrastructure
 ```
 
-## Domain Breakdown (SAP-C02 Aligned)
+---
 
-### Domain 1: Design Solutions for Organizational Complexity (26%)
+## Adding a New Exam
 
-| Topic | Exam Task | Key Services |
-|-------|-----------|--------------|
-| Network Connectivity | Task 1.1 | Transit Gateway, Direct Connect, VPN, Route 53 |
-| Security Controls | Task 1.2 | IAM, KMS, Security Hub, CloudTrail |
-| Resilient Architectures | Task 1.3 | Elastic Disaster Recovery, Multi-Region, Backup |
-| Multi-Account Environment | Task 1.4 | Organizations, Control Tower, SCPs |
-| Cost Optimization | Task 1.5 | Cost Explorer, Budgets, Compute Optimizer |
+### Step 1: Create the exam directory
 
-### Domain 2: Design for New Solutions (29%)
+```bash
+mkdir -p content/exams/[exam-id]/domains
+```
 
-| Topic | Exam Task | Key Services |
-|-------|-----------|--------------|
-| Deployment Strategy | Task 2.1 | CloudFormation, CodePipeline, Systems Manager |
-| Business Continuity | Task 2.2 | Route 53, Elastic Disaster Recovery, Backup |
-| Security Controls | Task 2.3 | IAM, WAF, Shield, GuardDuty |
-| Reliability Requirements | Task 2.4 | Auto Scaling, ELB, Multi-AZ, SQS/SNS |
-| Performance Objectives | Task 2.5 | CloudFront, ElastiCache, Aurora, DynamoDB |
-| Cost Optimization Strategy | Task 2.6 | Savings Plans, Spot, Reserved Instances |
+### Step 2: Create exam.yaml
 
-### Domain 3: Continuous Improvement for Existing Solutions (25%)
+This file configures the exam and provides the AI tutor with exam-specific context.
 
-| Topic | Exam Task | Key Services |
-|-------|-----------|--------------|
-| Operational Excellence | Task 3.1 | CloudWatch, X-Ray, Systems Manager |
-| Security Improvement | Task 3.2 | Config, Secrets Manager, Inspector |
-| Performance Improvement | Task 3.3 | Compute Optimizer, CloudWatch, Auto Scaling |
-| Reliability Improvement | Task 3.4 | Trusted Advisor, Well-Architected Tool |
-| Cost Optimization | Task 3.5 | Cost Explorer, Budgets, tagging |
+```yaml
+id: exam-id                     # URL-safe identifier (e.g., sap-c02)
+name: Full Exam Name            # e.g., AWS Solutions Architect Professional
+shortName: EXAM-CODE            # e.g., SAP-C02
+description: Brief description of the certification
 
-### Domain 4: Accelerate Workload Migration and Modernization (20%)
+# Lucide icon name (see https://lucide.dev/icons)
+icon: Building2
 
-| Topic | Exam Task | Key Services |
-|-------|-----------|--------------|
-| Workload Selection | Task 4.1 | Migration Hub, Application Discovery |
-| Migration Approach | Task 4.2 | DMS, SCT, DataSync, Snow Family |
-| New Architecture | Task 4.3 | ECS, EKS, Lambda, Aurora, DynamoDB |
-| Modernization Opportunities | Task 4.4 | Lambda, Fargate, Step Functions, EventBridge |
+# Tailwind color for UI accents
+color: orange
+
+# Scoring thresholds
+passingScore: 750               # AWS passing score
+totalScore: 1000                # AWS total score
+masteryThreshold: 85            # Percentage to be "exam ready"
+weakAreaThreshold: 60           # Below this marks a weak area
+resolveThreshold: 80            # Above this resolves a weak area
+
+# Domain weights (must sum to 100)
+domains:
+  - id: domain-1-example
+    name: Domain Name
+    weight: 25
+
+# AI tutor system prompt (exam-specific instructions)
+tutorPrompt: |
+  You are an expert [exam name] tutor...
+  [Include exam context, key services, response guidelines]
+```
+
+### Step 3: Create domain directories
+
+For each domain listed in `exam.yaml`, create:
+
+```bash
+mkdir -p content/exams/[exam-id]/domains/[domain-id]/topics
+```
+
+### Step 4: Add domain content
+
+Create `meta.yaml` and `overview.md` for each domain (see formats below).
+
+### Step 5: Add topics
+
+For each topic, create a directory with `meta.yaml`, `content.md`, and `questions.yaml`.
+
+### Step 6: Validate
+
+```bash
+pnpm content:validate
+```
+
+The app automatically picks up new content - no code changes needed.
+
+---
 
 ## File Formats
 
 ### Domain meta.yaml
 
 ```yaml
-id: domain-1-organizational-complexity
-name: Design Solutions for Organizational Complexity
-shortName: Organizational Complexity
-weight: 26                              # Exam percentage weight
+id: domain-1-example
+name: Full Domain Name
+shortName: Short Name           # For sidebar display
+weight: 25                      # Exam weight percentage
 description: >
-  Full description of the domain...
-color: blue                             # UI theme color
-icon: building-2                        # Lucide icon name
+  Multi-line description of what this domain covers.
 
+color: blue                     # blue, orange, green, purple, red
+icon: building-2                # Lucide icon name
+
+# Exam tasks this domain covers (from official exam guide)
 examTasks:
   - id: task-1-1
-    name: Task name from exam guide
-    description: What this task covers
+    name: Task name
+    description: >
+      What this task involves.
 
+# Topic IDs in display order
 topics:
-  - network-connectivity               # Topic folder names
-  - security-controls
+  - topic-id-1
+  - topic-id-2
 
+# Key AWS services for this domain
 keyServices:
-  - Amazon VPC
-  - AWS Transit Gateway
+  - Service Name 1
+  - Service Name 2
 
+# Official AWS documentation links
 awsDocLinks:
-  - title: Document title
+  - title: Link Title
     url: https://docs.aws.amazon.com/...
-    type: doc | whitepaper | faq
+    type: doc                   # doc, whitepaper, or faq
+```
+
+### Domain overview.md
+
+Markdown file with domain overview. Supports standard Markdown plus frontmatter:
+
+```markdown
+---
+title: Domain Overview Title
+---
+
+# Domain Name
+
+Overview content here...
+
+## Key Concepts
+
+- Concept 1
+- Concept 2
+
+## Exam Tips
+
+Tips for this domain...
 ```
 
 ### Topic meta.yaml
 
 ```yaml
-id: network-connectivity
-name: Network Connectivity Strategies
-shortName: Network Connectivity
-examTask: task-1-1                      # Links to domain task
-description: >
-  Full description...
+id: topic-id
+name: Full Topic Name
+shortName: Short Name           # For sidebar display
+examTask: task-1-1              # Links to domain examTask
 
-estimatedStudyTime: 90                  # Minutes
-difficulty: beginner | intermediate | advanced
+description: >
+  What this topic covers.
+
+estimatedStudyTime: 90          # Minutes
+difficulty: intermediate        # beginner, intermediate, advanced
 
 keyServices:
-  - Amazon VPC
-  - AWS Transit Gateway
+  - Service 1
+  - Service 2
 
 keyConcepts:
-  - Transit Gateway routing
-  - Direct Connect virtual interfaces
+  - Concept 1
+  - Concept 2
 
 awsDocLinks:
-  - title: Document title
-    url: https://...
-    type: doc | whitepaper | faq
+  - title: Link Title
+    url: https://docs.aws.amazon.com/...
+    type: doc
 
+# Optional: related hands-on labs
 relatedExperiments:
-  - lab-transit-gateway
+  - lab-id-1
 ```
 
 ### Topic content.md
 
+Markdown study content. Use headings to create navigable sections:
+
 ```markdown
 ---
 title: Topic Title
-lastUpdated: 2025-01-05
 ---
 
-# Topic Title
+# Topic Name
 
 Introduction paragraph...
 
-## Section Heading
+## Section One
 
-Content with inline [AWS doc links](https://...).
-
-> 📚 [Related documentation](https://...)
+Content with **bold** and `code`.
 
 ### Subsection
 
-More content...
+More detailed content...
+
+## Section Two
+
+Additional content...
+
+## Best Practices
+
+- Practice 1
+- Practice 2
 
 ## Exam Tips
 
-1. Key point for the exam
-2. Another important concept
+What to focus on for the exam...
 ```
+
+**Section IDs**: Headings become navigable sections in the sidebar. The app generates IDs from heading text (e.g., "Section One" becomes `section-one`).
 
 ### Topic questions.yaml
 
+Practice questions for the topic. Aim for 15+ questions per topic.
+
 ```yaml
 questions:
-  - id: unique-id-001
-    type: single | multi
-    correctCount: 2                     # Only for multi-select
+  # Single-select question
+  - id: unique-id-001           # Unique within the exam
+    type: single
     text: >
-      Question text that can span
-      multiple lines...
+      Question text here. Can be multi-line.
+      Include scenario details and specific requirements.
     options:
       - id: A
-        text: Option A text
+        text: First option
       - id: B
-        text: Option B text
+        text: Second option
       - id: C
-        text: Option C text
+        text: Third option
       - id: D
-        text: Option D text
-    correctAnswer: B                    # Or [A, C] for multi-select
+        text: Fourth option
+    correctAnswer: B
     explanation: >
-      Explanation of why this answer is correct
-      and why others are incorrect...
+      Explain why B is correct and why other options are wrong.
+      Reference specific AWS features or behaviors.
     awsDocLink: https://docs.aws.amazon.com/...
-    services: [Service1, Service2]
-    concepts: [concept1, concept2]
+    services:
+      - Service Name
+    concepts:
+      - Concept Name
+
+  # Multi-select question
+  - id: unique-id-002
+    type: multi
+    correctCount: 2             # How many correct answers
+    text: >
+      Question asking to select TWO answers...
+    options:
+      - id: A
+        text: Option A
+      - id: B
+        text: Option B
+      - id: C
+        text: Option C
+      - id: D
+        text: Option D
+      - id: E
+        text: Option E
+    correctAnswer:
+      - A
+      - C
+    explanation: >
+      Explain why A and C are correct...
+    awsDocLink: https://docs.aws.amazon.com/...
+    services:
+      - Service 1
+      - Service 2
+    concepts:
+      - Concept 1
 ```
 
-## Question Guidelines
+---
 
-### Question Types
+## Question Writing Guidelines
 
-1. **Single-select**: One correct answer from 4 options
-2. **Multi-select**: 2-3 correct answers from 5-6 options
+### Format
 
-### Question Quality Standards
-
-- Questions should be scenario-based when possible
-- Avoid trivial recall questions
-- Include realistic distractors
-- Explanations should explain WHY, not just WHAT
-- Link to specific AWS documentation
-- Tag with relevant services and concepts
+- **Scenario-based**: Start with a realistic scenario (company size, requirements, constraints)
+- **Clear ask**: End with a specific question ("Which solution...", "What should...")
+- **4-5 options**: Single-select uses 4 options, multi-select can use 5
+- **Plausible distractors**: Wrong answers should be realistic but clearly incorrect
 
 ### Difficulty Levels
 
-- **Initial Assessment**: Quick knowledge checks (30-60 seconds each)
-- **Deep Dive**: More complex scenarios (2-3 minutes each)
+- **Easy**: Direct service knowledge, single-service solutions
+- **Medium**: Multi-service integration, trade-off analysis
+- **Hard**: Complex scenarios, multiple constraints, edge cases
+
+### Explanation Quality
+
+- Explain why the correct answer is right
+- Explain why each wrong answer is wrong
+- Reference specific AWS features, limits, or behaviors
+- Include links to relevant documentation
+
+### ID Conventions
+
+Use a prefix based on the topic:
+- `net-001`, `net-002` for network connectivity
+- `sec-001`, `sec-002` for security
+- `cost-001`, `cost-002` for cost optimization
+
+---
 
 ## Experiment Guidelines
 
 ### Lab Structure
 
 ```
-lab-name/
-├── README.md          # Lab guide (Markdown)
-├── meta.yaml          # Lab metadata (optional)
-└── cdk/
-    ├── stack.ts       # Main CDK stack
-    └── package.json   # CDK dependencies
+content/experiments/
+  lab-name/
+    README.md          # Lab guide (Markdown)
+    meta.yaml          # Lab metadata
+    cdk/
+      stack.ts         # Main CDK stack
+      package.json     # CDK dependencies
 ```
 
 ### Lab Requirements
@@ -244,28 +353,92 @@ lab-name/
 - Provide stack outputs for console links
 - Support clean destroy without manual intervention
 
-## Content Checklist
+---
+
+## Validation
+
+Run content validation to check for errors:
+
+```bash
+pnpm content:validate
+```
+
+This checks:
+- Required fields in YAML files
+- Valid question format
+- Correct answer references valid option IDs
+- File structure matches expected layout
+
+View content statistics:
+
+```bash
+pnpm content:stats
+```
+
+---
+
+## Content Quality Checklist
 
 ### Per Topic (15 questions minimum)
 
-- [ ] meta.yaml with all required fields
-- [ ] content.md with study material
-- [ ] content-advanced.md (if needed for length)
-- [ ] questions.yaml with 15 knowledge check questions
-- [ ] All AWS doc links verified working
-- [ ] Questions reviewed for accuracy
+- [ ] `meta.yaml` has all required fields
+- [ ] `content.md` covers key concepts with clear explanations
+- [ ] `content.md` includes AWS documentation links
+- [ ] `questions.yaml` has 15+ questions
+- [ ] Mix of single-select and multi-select questions
+- [ ] All questions have detailed explanations
+- [ ] Questions reference official AWS documentation
+- [ ] Content validated with `pnpm content:validate`
 
 ### Per Domain
 
-- [ ] meta.yaml with domain overview
-- [ ] overview.md with study path
+- [ ] `meta.yaml` with all required fields
+- [ ] `overview.md` with study path
 - [ ] All topics completed
-- [ ] At least 2 related experiments
+- [ ] At least one related experiment
 
-### Per Experiment
+### Per Exam
 
-- [ ] README.md with complete lab guide
-- [ ] CDK stack tested and working
-- [ ] Cost estimate included
-- [ ] Cleanup verified
-- [ ] Learning objectives aligned with domain/topic
+- [ ] `exam.yaml` with complete configuration
+- [ ] All domains have content
+- [ ] AI tutor prompt is exam-specific
+- [ ] Total questions >= 50 (removes "under construction" banner)
+
+---
+
+## Supported Exams
+
+| Exam ID | Name | Status |
+|---------|------|--------|
+| `sap-c02` | AWS Solutions Architect Professional | Complete (300 questions) |
+| `mla-c01` | AWS Machine Learning Engineer Associate | Scaffold only |
+
+---
+
+## Example: Adding MLA-C01 Content
+
+The MLA-C01 exam scaffold exists. To add content:
+
+1. **Add topics to each domain**:
+   ```bash
+   mkdir -p content/exams/mla-c01/domains/domain-1-data-preparation/topics/data-ingestion
+   ```
+
+2. **Create topic files**:
+   - `meta.yaml` - Topic metadata
+   - `content.md` - Study material
+   - `questions.yaml` - Practice questions
+
+3. **Update domain meta.yaml** to list the new topic:
+   ```yaml
+   topics:
+     - data-ingestion
+     - feature-engineering
+   ```
+
+4. **Validate**:
+   ```bash
+   pnpm content:validate
+   ```
+
+The app automatically picks up new content - no code changes needed.
