@@ -31,7 +31,7 @@ A local-first study application for AWS certification preparation. Currently sup
 Before you begin, ensure you have:
 
 - **Node.js** 18.x or higher ([Download](https://nodejs.org/))
-- **pnpm** 8.x or higher (install via `npm install -g pnpm`)
+- **pnpm** 10.x (install via `npm install -g pnpm`)
 - **Claude API Key** from Anthropic ([Get API key](https://console.anthropic.com/))
 - **(Optional) AWS Account** for hands-on experiments with CDK deployments
 
@@ -39,7 +39,7 @@ Before you begin, ensure you have:
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/sa-pro-study-companion.git
+git clone https://github.com/atbrace/sa-pro-study-companion.git
 cd sa-pro-study-companion
 pnpm install
 
@@ -62,7 +62,7 @@ Open [http://localhost:3000](http://localhost:3000) and start studying!
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/sa-pro-study-companion.git
+git clone https://github.com/atbrace/sa-pro-study-companion.git
 cd sa-pro-study-companion
 ```
 
