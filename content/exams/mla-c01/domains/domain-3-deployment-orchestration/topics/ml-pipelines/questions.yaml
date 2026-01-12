@@ -1,0 +1,513 @@
+questions:
+  - id: mlp-001
+    type: single
+    text: |
+      A data science team is building a SageMaker Pipeline for training a recommendation model. The pipeline includes data preprocessing, model training, and model evaluation steps. The training step should only execute after both preprocessing steps (customer data and product data) complete successfully. How should the pipeline be configured?
+    options:
+      - id: A
+        text: Add explicit dependencies using add_depends_on() for both preprocessing steps on the training step
+      - id: B
+        text: Reference the output properties of both preprocessing steps as inputs to the training step
+      - id: C
+        text: Use a ConditionStep to check if both preprocessing steps completed before training
+      - id: D
+        text: Set the ParallelismConfiguration MaxParallelExecutionSteps to 1 to force sequential execution
+    correctAnswer: B
+    explanation: |
+      Data dependencies are created automatically when one step references properties from another step. By referencing outputs from both preprocessing steps as inputs to the training step (e.g., processing_step_1.properties.ProcessingOutputConfig.Outputs["data"].S3Output.S3Uri), SageMaker Pipelines constructs the DAG and ensures the training step waits for both preprocessing steps to complete. This is the correct and idiomatic approach.
+
+      Option A (add_depends_on) works for custom dependencies without data flow but is unnecessary when data dependencies exist naturally through property references. Option C (ConditionStep) is for conditional branching based on evaluation criteria, not dependency management. Option D reduces parallelism globally but doesn't create the specific dependency relationship needed between these three steps.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - DAG construction
+      - Step dependencies
+      - Data dependencies
+
+  - id: mlp-002
+    type: single
+    text: |
+      A machine learning platform needs to automatically retrain a fraud detection model whenever new labeled transaction data is uploaded to an S3 bucket with the prefix "training-data/fraud/". The pipeline should pass the S3 object key as a parameter. What is the most efficient solution?
+    options:
+      - id: A
+        text: Create an EventBridge rule matching S3 Object Created events with prefix filter, targeting the SageMaker Pipeline with dynamic parameter mapping
+      - id: B
+        text: Configure an S3 event notification to trigger a Lambda function that starts the SageMaker Pipeline using boto3
+      - id: C
+        text: Use AWS Step Functions with an S3 integration to monitor the bucket and start the SageMaker Pipeline when new objects arrive
+      - id: D
+        text: Create a scheduled EventBridge rule that runs hourly to check for new files and start the pipeline if found
+    correctAnswer: A
+    explanation: |
+      EventBridge rules can directly target SageMaker Pipelines and support dynamic parameter passing using JSON path expressions (e.g., "$.detail.object.key" to pass the S3 object key). This provides a serverless, event-driven solution without requiring additional Lambda functions or orchestration layers. EventBridge supports S3 event patterns with prefix filtering for precise event matching.
+
+      Option B works but adds unnecessary complexity with a Lambda function when EventBridge can directly invoke the pipeline. Option C (Step Functions) adds orchestration overhead for a simple trigger scenario. Option D (scheduled polling) introduces latency and inefficiency compared to event-driven architecture.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pipeline-eventbridge.html
+    services:
+      - Amazon EventBridge
+      - Amazon SageMaker Pipelines
+      - Amazon S3
+    concepts:
+      - Event-driven automation
+      - Pipeline parameters
+      - S3 event patterns
+
+  - id: mlp-003
+    type: single
+    text: |
+      A SageMaker Pipeline includes an evaluation step that calculates model accuracy and stores it in a JSON file. The model should only be registered to the Model Registry if accuracy exceeds 85%. Which step type should be used to implement this conditional logic?
+    options:
+      - id: A
+        text: LambdaStep that evaluates the accuracy and conditionally invokes RegisterModel API
+      - id: B
+        text: ConditionStep with ConditionGreaterThanOrEqualTo comparing accuracy to threshold, with RegisterModel in if_steps
+      - id: C
+        text: CallbackStep that pauses execution for manual review of accuracy metrics before registration
+      - id: D
+        text: ProcessingStep that runs a script to check accuracy and creates model package if threshold is met
+    correctAnswer: B
+    explanation: |
+      ConditionStep is specifically designed for conditional branching in SageMaker Pipelines. Using JsonGet() function with ConditionGreaterThanOrEqualTo, you can extract the accuracy value from the evaluation JSON file and compare it to the threshold. If the condition evaluates to True, the if_steps (containing RegisterModel) execute; otherwise, else_steps execute. This is the native, declarative approach for conditional pipeline logic.
+
+      Option A (LambdaStep) can work but requires custom code and API calls when native pipeline functionality exists. Option C (CallbackStep) is for human-in-the-loop workflows, not automated conditional logic. Option D (ProcessingStep with script) bypasses the pipeline's conditional execution framework and creates model packages outside the pipeline definition.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html
+    services:
+      - Amazon SageMaker Pipelines
+      - SageMaker Model Registry
+    concepts:
+      - Conditional execution
+      - ConditionStep
+      - Model registration
+
+  - id: mlp-004
+    type: multi
+    correctCount: 2
+    text: |
+      A data science team is experiencing long pipeline execution times during development due to repeated execution of expensive preprocessing steps while they iterate on model evaluation logic. Which optimization techniques would reduce execution time and cost? (Select TWO)
+    options:
+      - id: A
+        text: Enable step caching with a 7-day expiration for preprocessing steps
+      - id: B
+        text: Increase the ParallelismConfiguration MaxParallelExecutionSteps value to 50
+      - id: C
+        text: Use selective execution to re-run only evaluation and downstream steps, reusing preprocessing outputs from previous executions
+      - id: D
+        text: Convert all steps to use local mode with LocalPipelineSession
+      - id: E
+        text: Add explicit dependencies using add_depends_on() to force sequential execution
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Step caching (A) reuses outputs from previous successful executions when step configuration and inputs remain unchanged, eliminating redundant preprocessing computation. Selective execution (C) allows running specific pipeline steps while reusing cached outputs from a reference execution, perfect for iterating on later stages without re-running early expensive steps.
+
+      Option B (increasing parallelism) doesn't help when the issue is repeated execution of the same steps, not insufficient concurrency. Option D (local mode) is useful for initial development with small data but has limitations (not compatible with SageMaker algorithms, limited resources). Option E (explicit dependencies) forces sequential execution, increasing total runtime rather than reducing it.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines-caching.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Step caching
+      - Selective execution
+      - Pipeline optimization
+
+  - id: mlp-005
+    type: single
+    text: |
+      A machine learning workflow needs to orchestrate data preparation using AWS Glue ETL, model training with SageMaker, validation with a Lambda function, and notification via SNS. The workflow requires sophisticated error handling with automatic retries and exponential backoff. Which orchestration service should be used?
+    options:
+      - id: A
+        text: SageMaker Pipelines with LambdaStep for Glue integration and error handling logic
+      - id: B
+        text: AWS Step Functions state machine with service integrations for Glue, SageMaker, Lambda, and SNS
+      - id: C
+        text: EventBridge rules chaining multiple services with DLQ for error handling
+      - id: D
+        text: CodePipeline with CodeBuild stages for each workflow component
+    correctAnswer: B
+    explanation: |
+      AWS Step Functions is designed for orchestrating workflows across multiple AWS services with built-in error handling, retries with exponential backoff, and state management. Step Functions provides direct integrations with Glue, SageMaker (.sync pattern), Lambda, and SNS, and offers sophisticated error handling capabilities (retry policies, catch blocks) that are essential for production workflows. This scenario requires orchestration beyond the SageMaker ecosystem, making Step Functions the appropriate choice.
+
+      Option A (SageMaker Pipelines) is optimized for ML workflows within SageMaker but lacks native Glue integration and sophisticated error handling for external services. Option C (EventBridge rules) provides event-driven triggering but not workflow orchestration with state management and retry logic. Option D (CodePipeline) is for CI/CD automation, not runtime workflow orchestration.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/connect-sagemaker.html
+    services:
+      - AWS Step Functions
+      - Amazon SageMaker
+      - AWS Glue
+      - AWS Lambda
+    concepts:
+      - Workflow orchestration
+      - Multi-service integration
+      - Error handling
+
+  - id: mlp-006
+    type: single
+    text: |
+      A SageMaker Project uses the "MLOps template for model building, training, and deployment" template. Data scientists commit updated training code to the model build CodeCommit repository. What happens next in the automated workflow?
+    options:
+      - id: A
+        text: The model is immediately deployed to production SageMaker endpoint
+      - id: B
+        text: CodePipeline triggers, CodeBuild creates/updates the SageMaker Pipeline definition and starts pipeline execution
+      - id: C
+        text: EventBridge rule detects the commit and starts the SageMaker Pipeline with latest code
+      - id: D
+        text: Lambda function packages the code and registers a new model version to Model Registry
+    correctAnswer: B
+    explanation: |
+      SageMaker Projects using the model building template include a CodePipeline that monitors the model build CodeCommit repository. When code is committed, CodePipeline's source stage triggers, followed by a CodeBuild stage that executes the buildspec.yml. This build step typically runs tests, creates or updates the SageMaker Pipeline definition using the Python SDK, and starts a pipeline execution. This provides CI/CD automation for the training workflow.
+
+      Option A is incorrect because model deployment happens through a separate model deploy pipeline, not immediately upon code commit. Option C (EventBridge) is not used in the standard SageMaker Projects template for code repository monitoring - CodePipeline's source stage handles this. Option D oversimplifies the process; model registration happens within the SageMaker Pipeline execution, not via a standalone Lambda function.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-templates-sm.html
+    services:
+      - SageMaker Projects
+      - AWS CodePipeline
+      - AWS CodeBuild
+      - Amazon SageMaker Pipelines
+    concepts:
+      - MLOps templates
+      - CI/CD automation
+      - Model building workflow
+
+  - id: mlp-007
+    type: single
+    text: |
+      A model registered in the SageMaker Model Registry has its approval status changed to "Approved" by a data scientist. The organization wants to automatically trigger deployment to a staging environment. How should this be implemented?
+    options:
+      - id: A
+        text: Configure a Lambda function with S3 trigger to monitor model artifacts and start deployment when new versions are created
+      - id: B
+        text: Create an EventBridge rule matching "SageMaker Model Package State Change" events with ModelApprovalStatus "Approved", targeting the model deploy CodePipeline
+      - id: C
+        text: Use SageMaker Projects callback mechanism to automatically deploy approved models
+      - id: D
+        text: Configure a Step Functions state machine to poll the Model Registry hourly for approved models
+    correctAnswer: B
+    explanation: |
+      SageMaker emits EventBridge events when Model Registry approval status changes. Creating an EventBridge rule with pattern matching "SageMaker Model Package State Change" detail-type and filtering for ModelApprovalStatus "Approved" enables event-driven deployment automation. The rule can target the model deploy CodePipeline, which handles deployment to staging, testing, and production environments. This is the standard pattern used in SageMaker Projects.
+
+      Option A (Lambda with S3 trigger) doesn't detect approval status changes, only new artifacts. Option C is incorrect; SageMaker Projects use EventBridge rules, not a callback mechanism. Option D (polling with Step Functions) introduces unnecessary latency and resource consumption compared to event-driven architecture.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automating-sagemaker-with-eventbridge.html
+    services:
+      - Amazon EventBridge
+      - SageMaker Model Registry
+      - AWS CodePipeline
+    concepts:
+      - Event-driven deployment
+      - Model approval workflow
+      - Automated deployment
+
+  - id: mlp-008
+    type: single
+    text: |
+      A production ML pipeline needs to execute three independent data preprocessing tasks (customer data, product data, transaction data) followed by a training step that requires all three outputs. The pipeline is configured with ParallelismConfiguration MaxParallelExecutionSteps set to 2. How will this pipeline execute?
+    options:
+      - id: A
+        text: All three preprocessing steps execute in parallel, then training executes after all complete
+      - id: B
+        text: Two preprocessing steps execute in parallel, the third waits until one completes, then training executes
+      - id: C
+        text: All steps execute sequentially in the order defined in the pipeline
+      - id: D
+        text: Training executes in parallel with preprocessing steps since no dependencies are defined
+    correctAnswer: B
+    explanation: |
+      The ParallelismConfiguration MaxParallelExecutionSteps parameter limits concurrent step execution to 2. Since the three preprocessing steps have no dependencies between them, they would normally execute in parallel, but the limit constrains this to 2 concurrent steps. The third preprocessing step waits until one of the first two completes. Once all three preprocessing steps complete, the training step executes (since it has data dependencies on all three outputs).
+
+      Option A is incorrect because the parallelism limit is 2, not unlimited. Option C is incorrect because steps without dependencies execute in parallel (up to the limit), not sequentially. Option D is incorrect because training has implicit data dependencies on all preprocessing steps through property references, so it must wait for them to complete.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-pipeline.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Parallel execution
+      - ParallelismConfiguration
+      - Step dependencies
+
+  - id: mlp-009
+    type: multi
+    correctCount: 3
+    text: |
+      A data science team wants to test their SageMaker Pipeline locally before running it in the cloud to reduce development costs. Which statements are true about SageMaker Pipelines local mode? (Select THREE)
+    options:
+      - id: A
+        text: Local mode requires Docker to be installed and running on the local machine
+      - id: B
+        text: SageMaker built-in algorithms like XGBoost are fully supported in local mode
+      - id: C
+        text: Pipeline executions run in local mode are not recorded in SageMaker Experiments
+      - id: D
+        text: Local mode requires using LocalPipelineSession instead of standard PipelineSession
+      - id: E
+        text: Local mode supports all step types including ConditionStep, LambdaStep, and CallbackStep
+    correctAnswer:
+      - A
+      - C
+      - D
+    explanation: |
+      Local mode requires Docker (A) to run containers locally, uses LocalPipelineSession (D) to route execution to local resources instead of SageMaker-managed infrastructure, and does not record executions in SageMaker Experiments (C) since they run outside the SageMaker service.
+
+      Option B is incorrect - SageMaker built-in algorithms are NOT compatible with local mode; you must use custom containers or frameworks like SKLearn, PyTorch, or TensorFlow. Option E is partially incorrect - while many step types work locally, steps that require SageMaker service integration (like Lambda invocation or external callbacks) have limitations in local mode.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines-local-mode.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Local mode testing
+      - Pipeline development
+      - LocalPipelineSession
+
+  - id: mlp-010
+    type: single
+    text: |
+      An enterprise ML platform has separate AWS accounts for development, staging, and production. Models are built and registered in the development account's Model Registry. When a model is approved, it should be automatically deployed to the production account's SageMaker endpoint. What architecture supports this requirement?
+    options:
+      - id: A
+        text: Use S3 cross-region replication to copy model artifacts to production account, then deploy using Lambda
+      - id: B
+        text: Configure EventBridge rule in production account to detect model approval events from development account, triggering CodePipeline with cross-account IAM role to access model artifacts
+      - id: C
+        text: Create a SageMaker Pipeline in production account that polls the development account Model Registry for approved models
+      - id: D
+        text: Manually export model artifacts from development account and import to production account Model Registry
+    correctAnswer: B
+    explanation: |
+      Cross-account model deployment requires EventBridge to route events from the development account (where approval happens) to the production account. EventBridge supports cross-account event buses, allowing the production account to receive "Model Package State Change" events. The production account's CodePipeline is triggered by this event and uses cross-account IAM roles to access model artifacts in the development account's S3 bucket, then deploys to production endpoints. This provides automated, event-driven deployment across accounts.
+
+      Option A lacks automation (Lambda triggered by replication doesn't know about approval status) and duplicates artifacts unnecessarily. Option C (polling) introduces latency and complexity compared to event-driven architecture. Option D (manual export) eliminates automation entirely.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automating-sagemaker-with-eventbridge.html
+    services:
+      - Amazon EventBridge
+      - AWS CodePipeline
+      - SageMaker Model Registry
+      - AWS IAM
+    concepts:
+      - Cross-account deployment
+      - Event-driven automation
+      - MLOps architecture
+
+  - id: mlp-011
+    type: single
+    text: |
+      A SageMaker Pipeline has step caching enabled with a 30-day expiration on preprocessing steps. A data scientist runs the pipeline with input data located at s3://bucket/data/train.csv. The next day, they run the pipeline again with the same S3 path, but the file contents have been updated. How will the pipeline behave?
+    options:
+      - id: A
+        text: Step caching reuses the previous preprocessing output since the S3 path is unchanged
+      - id: B
+        text: Step caching detects the file content change and re-runs preprocessing with the new data
+      - id: C
+        text: The pipeline fails with a cache validation error due to the data modification
+      - id: D
+        text: Step caching is automatically disabled when file contents change, forcing full execution
+    correctAnswer: A
+    explanation: |
+      SageMaker Pipelines step caching creates a cache key based on step configuration, including input data S3 URIs, hyperparameters, and container images. The cache key does NOT include file content checksums or modification timestamps. If the S3 path remains unchanged, caching will reuse previous outputs even if file contents changed. This is a common pitfall - to invalidate cache with new data, use a different S3 path (e.g., include timestamp or version in path) or temporarily disable caching.
+
+      Option B is incorrect because SageMaker does not inspect file contents for cache invalidation. Option C is incorrect; no cache validation error occurs. Option D is incorrect; caching does not automatically disable based on file content changes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines-caching.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Step caching
+      - Cache key generation
+      - Pipeline optimization
+
+  - id: mlp-012
+    type: single
+    text: |
+      A SageMaker Pipeline includes a custom validation step that calls an internal API to check if a trained model meets business compliance requirements. If validation fails, the pipeline should stop without registering the model. Which step type is most appropriate for this custom validation logic?
+    options:
+      - id: A
+        text: ProcessingStep running a script that calls the API and raises an exception on validation failure
+      - id: B
+        text: LambdaStep that invokes a Lambda function to call the API and returns validation results
+      - id: C
+        text: CallbackStep that pauses execution and sends validation request to the compliance API
+      - id: D
+        text: ConditionStep that evaluates model metrics from the evaluation step
+    correctAnswer: B
+    explanation: |
+      LambdaStep is designed for custom logic not natively supported by SageMaker steps, such as calling external APIs, custom validation, or integration with third-party services. Lambda functions can make API calls, evaluate responses, and return structured outputs that subsequent pipeline steps (like ConditionStep) can use to make decisions. LambdaStep executes synchronously and returns results directly to the pipeline.
+
+      Option A (ProcessingStep) is heavyweight for a simple API call (requires container, compute instance allocation) and exceptions don't provide structured outputs for downstream conditional logic. Option C (CallbackStep) is for human-in-the-loop workflows requiring manual intervention, not automated API validation. Option D (ConditionStep) evaluates conditions but doesn't make API calls - it needs input from another step like LambdaStep.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html
+    services:
+      - Amazon SageMaker Pipelines
+      - AWS Lambda
+    concepts:
+      - LambdaStep
+      - Custom validation
+      - External API integration
+
+  - id: mlp-013
+    type: multi
+    correctCount: 2
+    text: |
+      A production ML pipeline needs to deploy a new model version to a SageMaker endpoint serving real-time predictions. The deployment must minimize risk and enable automatic rollback if errors increase. Which deployment strategies meet these requirements? (Select TWO)
+    options:
+      - id: A
+        text: Blue/green deployment with ALL_AT_ONCE traffic routing and CloudWatch alarm-based auto-rollback
+      - id: B
+        text: Canary deployment routing 10% traffic to new version, monitoring for 10 minutes, then full cutover if metrics are healthy
+      - id: C
+        text: Linear deployment increasing traffic by 20% every 10 minutes with auto-rollback on alarm triggers
+      - id: D
+        text: Replace the existing endpoint configuration and recreate the endpoint with the new model version
+      - id: E
+        text: Create a new endpoint with the new model version and use Route 53 weighted routing to shift traffic
+    correctAnswer:
+      - B
+      - C
+    explanation: |
+      Both canary (B) and linear (C) deployment strategies support gradual traffic shifting with automatic rollback based on CloudWatch alarms. Canary deployment routes a small percentage of traffic to the new version (e.g., 10%) and waits for a monitoring period before full cutover. Linear deployment gradually increases traffic in fixed increments (e.g., 20% every 10 minutes). Both strategies configure AutoRollbackConfiguration with CloudWatch alarms that trigger rollback if error rates or latency exceed thresholds.
+
+      Option A (blue/green with ALL_AT_ONCE) switches all traffic immediately, providing no gradual rollout or bake time for monitoring. Option D (endpoint recreation) causes downtime and has no rollback capability. Option E (Route 53 weighted routing) works but is not a SageMaker-native deployment strategy and lacks integrated auto-rollback with endpoint-level metrics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-guardrails.html
+    services:
+      - Amazon SageMaker
+      - Amazon CloudWatch
+    concepts:
+      - Deployment strategies
+      - Canary deployment
+      - Blue/green deployment
+      - Auto-rollback
+
+  - id: mlp-014
+    type: single
+    text: |
+      A data science team uses AWS Step Functions to orchestrate a complex ML workflow involving SageMaker training, AWS Glue data validation, and Lambda-based feature engineering. The training job occasionally fails due to transient infrastructure issues. How should the workflow be configured to automatically retry training with exponential backoff?
+    options:
+      - id: A
+        text: Configure the SageMaker Training task state with Retry policy specifying ErrorEquals, IntervalSeconds, MaxAttempts, and BackoffRate
+      - id: B
+        text: Wrap the training step in a Lambda function that implements retry logic with exponential backoff
+      - id: C
+        text: Use a Step Functions Parallel state to run multiple training attempts simultaneously
+      - id: D
+        text: Configure EventBridge to restart the entire Step Functions execution when training fails
+    correctAnswer: A
+    explanation: |
+      AWS Step Functions supports built-in retry mechanisms for task states with configurable retry policies. The Retry field in a task state definition specifies ErrorEquals (error types to retry), IntervalSeconds (initial wait time), MaxAttempts (retry limit), and BackoffRate (exponential multiplier). This provides automatic, configurable retry with exponential backoff without additional code. For example: "Retry": [{"ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2.0}] retries up to 3 times with waits of 2, 4, and 8 seconds.
+
+      Option B (Lambda wrapper) adds unnecessary complexity when Step Functions provides native retry capabilities. Option C (Parallel state) runs tasks concurrently but doesn't implement retry logic. Option D (EventBridge restart) restarts the entire workflow, not just the failed task, wasting compute on already-completed steps.
+    awsDocLink: https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
+    services:
+      - AWS Step Functions
+      - Amazon SageMaker
+    concepts:
+      - Error handling
+      - Retry policies
+      - Exponential backoff
+      - Workflow resilience
+
+  - id: mlp-015
+    type: single
+    text: |
+      A SageMaker Pipeline includes 8 independent preprocessing steps that can run in parallel, followed by a single training step. Each preprocessing step takes approximately 30 minutes. The pipeline is configured with default parallelism settings. What is the expected minimum execution time for the preprocessing phase?
+    options:
+      - id: A
+        text: 30 minutes (all 8 steps run in parallel)
+      - id: B
+        text: 240 minutes (8 steps × 30 minutes, sequential execution)
+      - id: C
+        text: 60 minutes (4 parallel batches of 2 steps each)
+      - id: D
+        text: Depends on AWS account resource limits and service quotas
+    correctAnswer: A
+    explanation: |
+      SageMaker Pipelines executes steps with no dependencies in parallel by default, without artificial limits on concurrent execution (unless ParallelismConfiguration is explicitly set). All 8 independent preprocessing steps would start simultaneously and complete in approximately 30 minutes (assuming sufficient AWS resources). SageMaker Pipelines automatically provisions the necessary infrastructure to run steps in parallel.
+
+      Option B (sequential execution) is incorrect; SageMaker Pipelines parallelizes independent steps by default. Option C assumes an artificial parallelism limit that doesn't exist in default configuration. Option D is theoretically possible if account-level service quotas are reached, but this is not the expected behavior with standard quotas - the question asks for expected minimum time under normal conditions.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-pipeline.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Parallel execution
+      - Pipeline performance
+      - Default behavior
+
+  - id: mlp-016
+    type: single
+    text: |
+      A machine learning team needs to implement a pipeline that requires manual approval from a compliance officer before registering a model to the Model Registry. The approval process should pause pipeline execution and wait for an external approval decision via API call. Which step type supports this requirement?
+    options:
+      - id: A
+        text: ConditionStep with a Lambda function that polls for approval status
+      - id: B
+        text: CallbackStep that sends approval request to SQS queue and waits for callback with approval decision
+      - id: C
+        text: LambdaStep that triggers SNS notification and blocks until approval is received
+      - id: D
+        text: ProcessingStep that runs a long-running script monitoring for approval events
+    correctAnswer: B
+    explanation: |
+      CallbackStep is specifically designed for human-in-the-loop workflows that require pausing pipeline execution while waiting for external input or approval. When a CallbackStep executes, it sends a message to an SQS queue with a unique token, then pauses the pipeline. An external system (approval portal, API, manual process) processes the request and sends a callback to SageMaker with the token and outputs (approval/rejection). The pipeline then resumes execution. This is the native SageMaker Pipelines pattern for manual approvals.
+
+      Option A (ConditionStep with polling Lambda) doesn't pause execution; ConditionStep evaluates conditions immediately during execution. Option C is incorrect because LambdaStep doesn't block/wait - it executes the function and returns results synchronously (Lambda timeout max 15 minutes). Option D (long-running ProcessingStep) could work but wastes compute resources waiting and is not the intended pattern.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon SQS
+    concepts:
+      - CallbackStep
+      - Human-in-the-loop workflows
+      - Manual approval
+
+  - id: mlp-017
+    type: multi
+    correctCount: 3
+    text: |
+      A data science team wants to optimize their SageMaker Pipeline that includes multiple expensive training experiments. Which caching behaviors are correct? (Select THREE)
+    options:
+      - id: A
+        text: Step caching only reuses outputs from successful step executions, never from failed runs
+      - id: B
+        text: Cache keys include step name, input data S3 URIs, hyperparameters, container images, and instance types
+      - id: C
+        text: Cached outputs can be shared between different pipelines if step configurations match
+      - id: D
+        text: When multiple cached runs exist within the expiration period, the most recent successful run is used
+      - id: E
+        text: Changing a parameter default value invalidates the cache even if the parameter is not used in the step
+    correctAnswer:
+      - A
+      - B
+      - D
+    explanation: |
+      Step caching only reuses successful executions (A) to prevent propagating errors. Cache keys include all step configuration elements (B) including name, inputs, hyperparameters, images, and instance types - any change invalidates the cache. When multiple valid cached runs exist, the most recent is selected (D).
+
+      Option C is incorrect - cache is scoped per individual pipeline and cannot be shared across pipelines, even with identical step configurations. Option E is incorrect - only parameters actually used by the step affect its cache key; unused parameter changes don't invalidate cache.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines-caching.html
+    services:
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Step caching
+      - Cache behavior
+      - Cache key generation
+
+  - id: mlp-018
+    type: single
+    text: |
+      An organization uses SageMaker Projects with the MLOps template for model building and deployment. The model deploy repository's CodePipeline includes stages for staging deployment, integration tests, manual approval, and production deployment. A new model version is approved in the Model Registry. What triggers the deployment pipeline?
+    options:
+      - id: A
+        text: Manual execution of the model deploy CodePipeline by the data science team
+      - id: B
+        text: EventBridge rule detecting "SageMaker Model Package State Change" event with "Approved" status
+      - id: C
+        text: Scheduled EventBridge rule that runs daily to check for approved models
+      - id: D
+        text: CodeCommit repository commit in the model deploy repository
+    correctAnswer: B
+    explanation: |
+      In SageMaker Projects using the standard deployment template, an EventBridge rule is automatically configured to monitor Model Registry events. When a model's approval status changes to "Approved", SageMaker emits a "Model Package State Change" event. The EventBridge rule matches this event pattern and triggers the model deploy CodePipeline as the target, initiating the automated deployment workflow through staging, testing, approval, and production stages. This provides event-driven, automated deployment.
+
+      Option A (manual execution) contradicts the automation goal of MLOps templates. Option C (scheduled polling) introduces unnecessary latency and resource usage compared to event-driven triggers. Option D (CodeCommit commit) would trigger pipeline changes/updates but not model deployments; the deployment pipeline is triggered by model approval events, not code changes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-templates-sm.html
+    services:
+      - SageMaker Projects
+      - Amazon EventBridge
+      - SageMaker Model Registry
+      - AWS CodePipeline
+    concepts:
+      - MLOps templates
+      - Event-driven deployment
+      - Model approval workflow

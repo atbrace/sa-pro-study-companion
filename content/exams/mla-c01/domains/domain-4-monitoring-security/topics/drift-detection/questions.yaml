@@ -1,0 +1,734 @@
+questions:
+  - id: dd-001
+    type: single
+    text: |
+      A healthcare company deployed a patient readmission prediction model six months ago. The model's accuracy has
+      dropped from 87% to 72%, but analysis shows that input feature distributions (patient age, diagnosis codes,
+      medication counts) remain statistically similar to the training data. What type of drift is occurring?
+    options:
+      - id: A
+        text: Data drift, because the model performance has degraded
+      - id: B
+        text: Concept drift, because the relationship between features and outcomes has changed
+      - id: C
+        text: Bias drift, because the model is performing differently on patient subgroups
+      - id: D
+        text: Feature attribution drift, because feature importance has shifted over time
+    correctAnswer: B
+    explanation: |
+      This is concept drift. The scenario explicitly states that input feature distributions remain similar to training
+      data (ruling out data drift), but model performance has degraded significantly. Concept drift occurs when P(Y|X)
+      changes - the relationship between input features and the target variable (readmission) has evolved, even though
+      the distribution of features P(X) remains stable. This commonly happens in healthcare when treatment protocols
+      change, new medications become available, or disease progression patterns evolve. Data drift would show feature
+      distribution changes. Bias drift requires evidence of differential performance across protected groups, which is
+      not mentioned. Feature attribution drift is a symptom that may accompany concept drift but is not the root cause
+      of accuracy degradation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Concept drift
+      - Data drift distinction
+      - Model quality monitoring
+
+  - id: dd-002
+    type: single
+    text: |
+      A fraud detection model shows stable prediction accuracy over time, but analysis reveals that average transaction
+      amounts have increased from $85 to $145, and the geographic distribution of transactions has shifted from 60%
+      domestic to 40% domestic. What monitoring configuration should be implemented?
+    options:
+      - id: A
+        text: Model quality monitoring with ground truth labels to track accuracy degradation
+      - id: B
+        text: Data quality monitoring with baseline constraints on feature distributions
+      - id: C
+        text: Bias drift monitoring with Clarify to detect fairness violations
+      - id: D
+        text: No additional monitoring is needed since accuracy remains stable
+    correctAnswer: B
+    explanation: |
+      Data quality monitoring with baseline constraints is the correct approach. The scenario describes data drift -
+      changes in input feature distributions (transaction amounts, geographic distribution) while model performance
+      remains stable. This indicates P(X) is changing while P(Y|X) remains constant. Data quality monitoring uses
+      SageMaker Model Monitor to detect when production data distributions deviate from training baseline statistics,
+      computing metrics on feature means, standard deviations, and distributions. Although accuracy is currently
+      stable, significant data drift can eventually degrade performance as inputs move further from training ranges,
+      making proactive monitoring essential. Model quality monitoring (option A) is unnecessary since accuracy is
+      stable. Bias drift monitoring (option C) would be appropriate if there were concerns about fairness across
+      protected attributes, which is not indicated. Option D is incorrect because even with stable accuracy, continued
+      data drift should be monitored as it may eventually cause performance degradation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Data drift
+      - Data quality monitoring
+      - Baseline constraints
+
+  - id: dd-003
+    type: multi
+    correctCount: 3
+    text: |
+      You are creating a baseline for SageMaker Model Monitor to detect data drift on a real-time inference endpoint.
+      Which three outputs or capabilities does the baseline processing job provide?
+    options:
+      - id: A
+        text: statistics.json containing feature-level metrics like mean, standard deviation, and quantiles
+      - id: B
+        text: constraints.json with suggested thresholds for detecting violations
+      - id: C
+        text: Automated retraining of the model when baseline violations are detected
+      - id: D
+        text: Statistical metrics computed using Deequ, an open-source Apache Spark library
+      - id: E
+        text: Real-time feature transformations applied to incoming inference requests
+    correctAnswer:
+      - A
+      - B
+      - D
+    explanation: |
+      The baseline processing job produces statistics.json (A) containing computed metrics for each feature including
+      mean, standard deviation, min, max, quantiles, and distribution characteristics. It also generates
+      constraints.json (B) with suggested threshold values for detecting violations when production data deviates from
+      baseline statistics. The job uses Deequ (D), AWS's open-source Apache Spark library for measuring data quality in
+      large datasets, to compute these metrics. Option C is incorrect - baselines do not automatically retrain models;
+      they only detect violations. Automated retraining requires separate configuration using CloudWatch alarms,
+      EventBridge rules, and SageMaker Pipelines. Option E is incorrect - baselines do not transform data; they
+      establish reference statistics for comparison. Feature transformations would be implemented in preprocessing
+      steps or Feature Store, not in monitoring baselines.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-create-baseline.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Baseline creation
+      - Deequ
+      - Constraint violations
+
+  - id: dd-004
+    type: single
+    text: |
+      A computer vision model performs image classification for manufacturing defect detection. The ML engineer wants to
+      monitor for data drift. What is the correct approach for monitoring this model with SageMaker Model Monitor?
+    options:
+      - id: A
+        text: Configure data quality monitoring on the raw image inputs to detect visual drift
+      - id: B
+        text: Monitor the model's output predictions (defect class labels and confidence scores) as tabular data
+      - id: C
+        text: Use SageMaker Clarify bias monitoring to detect drift in image content
+      - id: D
+        text: Implement custom monitoring with Amazon Rekognition to analyze image distributions
+    correctAnswer: B
+    explanation: |
+      SageMaker Model Monitor computes metrics and statistics on tabular data only - it cannot directly analyze raw
+      images, video, or audio. The correct approach for computer vision models is to monitor the structured outputs
+      (defect class labels, confidence scores, bounding box coordinates) rather than image inputs. These outputs are
+      tabular data that Model Monitor can analyze for distribution changes, missing values, and constraint violations.
+      Option A is incorrect because Model Monitor cannot process raw image data. Option C is incorrect because Clarify
+      bias monitoring also operates on tabular data and requires defined protected attributes, not image content
+      analysis. Option D, while technically possible, is not the standard SageMaker Model Monitor approach and would
+      require custom implementation. For image input drift detection, you would need custom solutions analyzing image
+      statistics (pixel distributions, embeddings from a feature extractor) separately from Model Monitor, but the
+      question asks specifically about Model Monitor capabilities.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Tabular data limitation
+      - Computer vision monitoring
+      - Data quality monitoring
+
+  - id: dd-005
+    type: single
+    text: |
+      A loan approval model is monitored for bias drift using SageMaker Clarify. The DPPL (Difference in Positive
+      Proportions in Labels) metric has an allowed range of (-0.1, 0.1). A monitoring execution measures DPPL at 0.18
+      with a 95% confidence interval of (0.12, 0.24). What action does SageMaker Clarify take?
+    options:
+      - id: A
+        text: No alert is generated because the confidence interval overlaps with the allowed range
+      - id: B
+        text: An alert is generated because the confidence interval is disjoint from the allowed range
+      - id: C
+        text: An alert is generated because the point estimate (0.18) exceeds the allowed range
+      - id: D
+        text: The monitoring execution fails due to insufficient sample size for statistical significance
+    correctAnswer: B
+    explanation: |
+      SageMaker Clarify uses statistical significance testing with confidence intervals to account for noise in
+      measurements, especially with small sample sizes. The allowed range is (-0.1, 0.1), and the confidence interval
+      is (0.12, 0.24). These two ranges are completely disjoint (they do not overlap), which confirms with high
+      confidence that bias exists outside the acceptable range. Clarify uses the normal bootstrap interval method to
+      construct confidence intervals. The alert logic is: if the confidence interval overlaps with the allowed range,
+      bias is likely within acceptable limits (no alert); if the ranges are disjoint, bias is confirmed outside
+      acceptable limits (alert issued). Option A is incorrect because the ranges do not overlap. Option C is
+      insufficient - Clarify does not alert based solely on point estimates because they can be noisy; it requires
+      statistical confidence via interval analysis. Option D is incorrect - if sample size were insufficient, the
+      confidence interval would be very wide, potentially overlapping the allowed range, but the monitoring would still
+      complete (not fail).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Bias drift
+      - Statistical significance
+      - Confidence intervals
+
+  - id: dd-006
+    type: multi
+    correctCount: 2
+    text: |
+      An ML engineer needs to automate model retraining when data drift exceeds acceptable thresholds. Which two
+      components are required to trigger SageMaker Pipelines execution when drift is detected?
+    options:
+      - id: A
+        text: CloudWatch alarm configured with drift metric threshold
+      - id: B
+        text: EventBridge rule that captures CloudWatch alarm state changes
+      - id: C
+        text: AWS Lambda function to preprocess training data before retraining
+      - id: D
+        text: SageMaker Autopilot job to automatically retrain the model
+      - id: E
+        text: AWS Step Functions state machine to orchestrate the workflow
+    correctAnswer:
+      - A
+      - B
+    explanation: |
+      Automating drift-triggered retraining requires CloudWatch alarm (A) configured to monitor drift metrics published
+      by Model Monitor, with threshold values that define unacceptable drift levels. When the alarm enters ALARM state,
+      an EventBridge rule (B) captures the alarm state change event and triggers the SageMaker Pipeline execution. This
+      integration between CloudWatch and EventBridge is the standard AWS pattern for event-driven automation. Option C
+      (Lambda preprocessing) may be useful within the pipeline but is not required to trigger it. Option D is incorrect
+      because SageMaker Autopilot is for AutoML model development, not retraining workflows - Pipelines orchestrates
+      retraining. Option E (Step Functions) is an alternative orchestration service that can be triggered by
+      EventBridge, but the question specifically asks about triggering Pipelines. While Step Functions is valid for ML
+      workflows, Pipelines is the SageMaker-native orchestration service designed for ML workflows with better
+      integration with SageMaker jobs.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/automate-model-retraining-with-amazon-sagemaker-pipelines-when-drift-is-detected/
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon CloudWatch
+      - Amazon EventBridge
+    concepts:
+      - Automated retraining
+      - EventBridge integration
+      - CloudWatch alarms
+
+  - id: dd-007
+    type: single
+    text: |
+      A deployed model receives 100,000 inference requests per hour. The ML team wants to monitor for data drift but
+      needs to optimize costs. What is the most cost-effective monitoring configuration?
+    options:
+      - id: A
+        text: Enable 100% data capture and run monitoring jobs every hour for maximum drift detection speed
+      - id: B
+        text: Enable 20% data capture sampling and run monitoring jobs daily with ml.m5.xlarge instances
+      - id: C
+        text: Disable data capture and rely on CloudWatch endpoint metrics for drift detection
+      - id: D
+        text: Enable 100% data capture but only run monitoring jobs monthly to reduce processing costs
+    correctAnswer: B
+    explanation: |
+      Option B balances cost optimization with effective drift detection. For high-volume endpoints (100,000
+      requests/hour = 2.4M/day), 20% sampling provides sufficient data for statistically valid drift detection (480,000
+      samples/day) while reducing S3 storage, data transfer, and processing costs by 80%. Daily monitoring is
+      appropriate for most use cases - it's frequent enough to catch drift trends without the overhead of hourly
+      processing. The ml.m5.xlarge instance type is cost-effective for most workloads. Option A is unnecessarily
+      expensive - 100% capture and hourly monitoring maximizes costs without proportional benefit since 20% sampling
+      maintains statistical validity. Option C is incorrect because CloudWatch endpoint metrics (invocations, latency,
+      errors) do not detect feature distribution drift; they only track endpoint health and performance. Option D is
+      problematic because monthly monitoring introduces long detection delays (drift could impact the business for
+      weeks before discovery), and the cost savings from reduced monitoring frequency are negligible compared to the
+      risk of prolonged drift-induced degradation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Cost optimization
+      - Data capture sampling
+      - Monitoring frequency
+
+  - id: dd-008
+    type: single
+    text: |
+      A production model requires validation of a retrained version before deployment. The team wants to test the new
+      model's behavior on live traffic without affecting end users. What deployment strategy should be used?
+    options:
+      - id: A
+        text: Use production variants with 50/50 traffic split between old and new models
+      - id: B
+        text: Deploy the new model as a shadow variant with 100% traffic replication from production
+      - id: C
+        text: Replace the production model directly and monitor CloudWatch metrics for issues
+      - id: D
+        text: Create a separate endpoint for the new model and manually send sample requests
+    correctAnswer: B
+    explanation: |
+      Shadow variants (option B) are designed precisely for this use case - validating new models on live traffic
+      without user impact. A shadow variant receives replicated production traffic (configured percentage, often 100%),
+      processes requests in parallel with the production variant, but does not return responses to end users. This
+      enables comprehensive testing of prediction behavior, latency, resource consumption, and error handling on real
+      production data patterns without any risk to user experience. Predictions are logged for offline analysis. Option
+      A (production variants with traffic split) would impact users because both variants return responses - 50% of
+      users would receive predictions from the unvalidated new model, creating risk. Option C (direct replacement) is
+      high-risk without validation - if the new model has issues, all users are immediately impacted. Option D (separate
+      endpoint with manual testing) doesn't expose the model to realistic production traffic patterns, workload, and
+      edge cases, limiting validation effectiveness.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-shadow-deployment.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Shadow deployments
+      - Model validation
+      - Production variants
+
+  - id: dd-009
+    type: multi
+    correctCount: 3
+    text: |
+      A monitoring execution completes with state "CompletedWithViolations." Which three pieces of information can be
+      found in the constraint violations report?
+    options:
+      - id: A
+        text: Feature name where the violation occurred
+      - id: B
+        text: Constraint check type that was violated (e.g., baseline_drift_check, data_type_check)
+      - id: C
+        text: Detailed description of the violation including measured values and thresholds
+      - id: D
+        text: Automatically retrained model artifacts for the violated features
+      - id: E
+        text: Recommended instance type changes to resolve the violations
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: |
+      The constraint_violations.json report contains structured information about each violation detected during
+      monitoring execution. It includes the feature_name (A) identifying which feature violated constraints, the
+      constraint_check_type (B) specifying which constraint was violated (baseline_drift_check for distribution changes,
+      data_type_check for type mismatches, completeness for missing values, etc.), and a description (C) providing
+      details like measured values, baseline values, thresholds exceeded, and percentage changes. Option D is incorrect
+      - monitoring detects violations but does not automatically retrain models or produce model artifacts. Retraining
+      requires separate pipeline execution triggered by CloudWatch alarms and EventBridge rules. Option E is incorrect -
+      violation reports describe data quality or model quality issues, not infrastructure recommendations. Instance type
+      selection is unrelated to constraint violations and would be addressed through endpoint performance monitoring
+      (latency, CPU utilization) rather than Model Monitor drift detection.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-interpreting-results.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Constraint violations
+      - Violation reports
+      - Monitoring execution states
+
+  - id: dd-010
+    type: single
+    text: |
+      A model serves predictions across multiple geographic regions with different regulatory requirements. Bias drift
+      monitoring detects violations in the European region but not in the North American region. What is the best
+      approach to handle region-specific drift?
+    options:
+      - id: A
+        text: Create a single global baseline and accept higher violation rates in some regions
+      - id: B
+        text: Create separate baselines for each region and configure region-specific monitoring schedules
+      - id: C
+        text: Disable monitoring in regions with violations until the global model is retrained
+      - id: D
+        text: Deploy the same model to all regions but only monitor the North American region
+    correctAnswer: B
+    explanation: |
+      Region-specific baselines (option B) are the correct approach when data distributions, regulatory requirements,
+      or bias sensitivities differ across segments. Create separate baselines using region-specific training data or
+      production data samples from each region, then configure independent monitoring schedules for each region with
+      appropriate thresholds. This enables accurate drift detection tailored to each region's characteristics. You can
+      even consider region-specific models if distributions differ significantly. Option A (global baseline) would
+      result in false positives in regions with naturally different distributions and false negatives in regions where
+      the baseline doesn't represent local patterns. Option C (disabling monitoring) eliminates visibility into model
+      behavior precisely where issues are detected, creating compliance and performance risks. Option D (monitoring
+      only one region) ignores regulatory requirements in other regions and provides no drift detection where violations
+      already exist, compounding risk. Segment-specific monitoring is a best practice for models serving diverse
+      populations or use cases.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    services:
+      - Amazon SageMaker Clarify
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Segment-specific monitoring
+      - Bias drift
+      - Baseline creation
+
+  - id: dd-011
+    type: single
+    text: |
+      Ground truth labels for a model are available with a 90-day delay due to the business process for outcome
+      verification. The team wants to detect model performance degradation as early as possible. What monitoring
+      strategy should be implemented?
+    options:
+      - id: A
+        text: Configure model quality monitoring only, running every 90 days when labels become available
+      - id: B
+        text: Configure data quality monitoring daily and model quality monitoring every 90 days with delayed labels
+      - id: C
+        text: Configure feature attribution drift monitoring as a proxy for model performance without requiring labels
+      - id: D
+        text: Wait 90 days for initial labels, then configure daily model quality monitoring with no further delays
+    correctAnswer: B
+    explanation: |
+      A multi-layered monitoring approach (option B) provides the earliest possible drift detection given label
+      constraints. Data quality monitoring runs daily without requiring labels, detecting data drift (feature
+      distribution changes) that often precedes or causes model performance degradation. Model quality monitoring runs
+      every 90 days when ground truth becomes available, measuring actual prediction accuracy to detect concept drift.
+      This combination provides early warning signals (data drift) and definitive performance measurement (model
+      quality). Option A misses opportunities for early drift detection - waiting 90 days to detect any issues allows
+      prolonged degradation. Option C (feature attribution drift) can provide useful signals about changing model
+      behavior, but it's not a replacement for actual performance measurement and doesn't definitively indicate
+      accuracy problems. Option D is impossible - if labels have a 90-day delay, daily model quality monitoring cannot
+      access labels for yesterday's predictions; the delay persists throughout the model's lifecycle.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Model quality monitoring
+      - Data quality monitoring
+      - Ground truth labels
+
+  - id: dd-012
+    type: single
+    text: |
+      A SageMaker endpoint with data capture enabled experiences disk utilization reaching 78%. What will happen to data
+      capture, and what action should be taken?
+    options:
+      - id: A
+        text: Data capture continues normally; no action is required until 90% utilization
+      - id: B
+        text: Data capture automatically stops to prevent disk exhaustion; reduce capture sampling or increase instance storage
+      - id: C
+        text: Data capture continues but with reduced sampling percentage; monitor utilization trends
+      - id: D
+        text: The endpoint automatically scales storage capacity; verify cost implications
+    correctAnswer: B
+    explanation: |
+      SageMaker Model Monitor stops data capture when endpoint disk utilization exceeds 75% to prevent disk exhaustion
+      that could cause endpoint failures. At 78% utilization, data capture has already stopped. Remediation options
+      include: (1) reduce data capture sampling percentage (e.g., from 100% to 20%) to decrease storage consumption,
+      (2) increase instance storage capacity by changing to a larger instance type, (3) decrease monitoring frequency
+      to allow more time for captured data to be transferred to S3 and local storage to be cleared, or (4) implement S3
+      lifecycle policies to manage captured data retention. Option A is incorrect - the 75% threshold has been exceeded.
+      Option C is incorrect - SageMaker does not automatically adjust sampling; it stops capture entirely. Option D is
+      incorrect - endpoints do not automatically scale storage; instance type changes require manual configuration. The
+      75% threshold is documented as a hard limit to maintain endpoint stability, so proactive monitoring of disk
+      utilization is essential when data capture is enabled.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Data capture
+      - Disk utilization
+      - Endpoint limitations
+
+  - id: dd-013
+    type: multi
+    correctCount: 2
+    text: |
+      An ML team wants to compare a retrained model against the current production model using live traffic. Both models
+      should receive real requests, and the team wants to measure accuracy differences. Which two deployment strategies
+      support this requirement?
+    options:
+      - id: A
+        text: Deploy both models as production variants with 50/50 traffic distribution
+      - id: B
+        text: Deploy the new model as a shadow variant receiving 100% replicated traffic
+      - id: C
+        text: Deploy both models as production variants, routing traffic to variant A but collecting predictions from both
+      - id: D
+        text: Invoke specific variants directly using the TargetVariant parameter for controlled comparison
+      - id: E
+        text: Deploy separate endpoints for each model and split traffic at the application layer
+    correctAnswer:
+      - A
+      - D
+    explanation: |
+      Production variants enable A/B testing where both models receive real traffic and return responses. Option A
+      (50/50 traffic distribution) sends half the production traffic to each model, allowing accuracy comparison on
+      equivalent data volumes. Option D (TargetVariant parameter) allows the application to explicitly invoke specific
+      variants, enabling controlled experiments where the same request is sent to both models and predictions are
+      compared. This supports direct head-to-head comparison. Option B (shadow variant) does not meet requirements
+      because shadow variants do not return responses to applications - only production variants respond, so you cannot
+      compare which predictions users receive. Option C is not a valid SageMaker capability - you cannot route traffic
+      to one variant while collecting predictions from another; traffic routing and prediction collection are coupled.
+      Option E (separate endpoints) technically works but loses SageMaker's built-in A/B testing features like automatic
+      traffic distribution, unified metrics, and variant management - it's more complex and less integrated than using
+      production variants.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Production variants
+      - A/B testing
+      - Model comparison
+
+  - id: dd-014
+    type: single
+    text: |
+      A model's feature attribution drift monitoring shows that the importance of the "account_age" feature has
+      decreased from 0.35 (35% SHAP value contribution) to 0.12 (12%) over three months, while "transaction_velocity"
+      importance increased from 0.15 to 0.42. What does this indicate?
+    options:
+      - id: A
+        text: Data drift - the distribution of account_age values has changed significantly
+      - id: B
+        text: Concept drift - the model's decision-making logic for predictions has shifted
+      - id: C
+        text: Bias drift - the model is now discriminating based on transaction patterns instead of account history
+      - id: D
+        text: Model quality degradation - the model's accuracy has decreased due to feature importance changes
+    correctAnswer: B
+    explanation: |
+      Feature attribution drift indicates changes in how the model makes decisions, which signals concept drift - the
+      underlying relationships the model uses to generate predictions have shifted. The model now relies more heavily on
+      transaction velocity and less on account age, suggesting that the relationship between features and the target
+      variable has evolved. This could reflect real-world changes (e.g., fraudsters adapting to exploit newer accounts,
+      making transaction velocity more predictive than account age) or model degradation. Option A (data drift) would be
+      indicated by changes in the statistical distribution of feature values (mean, std dev, quantiles), not feature
+      importance. Feature attribution measures contribution to predictions, not input distributions. Option C (bias
+      drift) requires evidence of differential treatment of protected groups and is measured by bias metrics (DPPL, DI),
+      not feature importance shifts. Option D assumes accuracy degradation, which is not necessarily true - feature
+      importance can shift while maintaining or even improving accuracy if the model adapts to new patterns. However,
+      significant attribution drift warrants investigation and accuracy validation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-feature-attribution-drift.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Feature attribution drift
+      - Concept drift
+      - SHAP values
+
+  - id: dd-015
+    type: multi
+    correctCount: 3
+    text: |
+      According to AWS Well-Architected Machine Learning Lens best practices, which three actions should be included in
+      an automated retraining framework?
+    options:
+      - id: A
+        text: Monitor data statistics and ML inferences using Model Monitor, triggering retraining when drift exceeds thresholds
+      - id: B
+        text: Use AWS Step Functions or SageMaker Pipelines to orchestrate end-to-end retraining workflows
+      - id: C
+        text: Replace the production model immediately after retraining completes without validation
+      - id: D
+        text: Store engineered features in SageMaker Feature Store to maintain consistency between training and inference
+      - id: E
+        text: Implement scheduled retraining at fixed intervals regardless of drift detection
+    correctAnswer:
+      - A
+      - B
+      - D
+    explanation: |
+      The AWS Well-Architected Machine Learning Lens specifies best practices for automated retraining. Option A aligns
+      with the guidance to monitor data statistics and inferences with Model Monitor, using defined thresholds to
+      trigger retraining when drift is detected. Option B follows the recommendation to use orchestration services (Step
+      Functions or Pipelines) to automate workflows with minimal manual intervention. Option D reflects the best
+      practice of using Feature Store to maintain a single source of truth for features, ensuring training/inference
+      consistency and simplifying retraining with updated data. Option C violates best practices - models should be
+      validated (shadow testing, A/B testing, offline evaluation) before production deployment to ensure performance
+      improvements and catch potential issues. Option E (scheduled retraining only) is incomplete; while scheduled
+      retraining is mentioned as one trigger type, best practices recommend a hybrid approach combining scheduled and
+      drift-based triggers to balance proactive maintenance with reactive response to detected issues.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/mlper-16.html
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Feature Store
+      - AWS Step Functions
+    concepts:
+      - Automated retraining
+      - Well-Architected best practices
+      - MLOps
+
+  - id: dd-016
+    type: single
+    text: |
+      A production model monitoring execution fails with state "Failed" and FailureReason indicating "Access Denied to
+      S3 bucket." What is the most likely root cause?
+    options:
+      - id: A
+        text: The monitoring schedule frequency is configured too high, exceeding API rate limits
+      - id: B
+        text: The monitoring job's IAM role lacks s3:PutObject permissions for the output location
+      - id: C
+        text: The baseline constraints file is corrupted or in an invalid format
+      - id: D
+        text: The endpoint's data capture is disabled or disk utilization exceeded 75%
+    correctAnswer: B
+    explanation: |
+      "Access Denied to S3 bucket" errors indicate IAM permission issues. Model Monitor requires specific S3 permissions
+      to function: s3:GetObject to read captured data and baseline files, s3:PutObject to write monitoring execution
+      outputs (violation reports, statistics), and s3:ListBucket for bucket operations. The monitoring job assumes an
+      IAM role that must have these permissions for the S3 locations specified in the monitoring configuration. Option A
+      (API rate limits) would produce throttling errors, not access denied errors. Option C (corrupted constraints file)
+      would cause parsing or validation errors during execution, not S3 access errors. Option D (data capture disabled)
+      would result in no data to analyze, potentially causing different failure messages, but not specifically "Access
+      Denied to S3 bucket." The "Failed" state with S3 access denied messages specifically points to IAM configuration
+      issues that must be resolved by updating the monitoring job's execution role permissions.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-faqs.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - AWS IAM
+      - Amazon S3
+    concepts:
+      - IAM permissions
+      - Monitoring execution states
+      - Troubleshooting
+
+  - id: dd-017
+    type: single
+    text: |
+      A company wants to detect both gradual drift (small continuous changes over weeks) and sudden drift (abrupt
+      changes from external events) in their model's input data. What monitoring configuration best addresses both
+      scenarios?
+    options:
+      - id: A
+        text: Daily monitoring with cumulative drift metrics tracking changes over 30-day windows
+      - id: B
+        text: Weekly monitoring with standard baseline comparison to reduce costs
+      - id: C
+        text: Hourly monitoring with both single-period and cumulative drift thresholds in CloudWatch alarms
+      - id: D
+        text: Monthly monitoring with year-over-year baseline comparisons
+    correctAnswer: C
+    explanation: |
+      Hourly monitoring with dual threshold types (option C) addresses both drift patterns. Single-period thresholds
+      detect sudden drift by comparing each hour's data against the baseline - large deviations trigger immediate
+      alerts. Cumulative drift thresholds track aggregated metrics over multiple periods (e.g., 24 hours, 7 days) to
+      detect gradual trends that would be noise in single-period analysis. CloudWatch alarms support both anomaly
+      detection (sudden spikes) and threshold-based monitoring (gradual trends exceeding cumulative thresholds). Option
+      A (daily monitoring with 30-day windows) may detect gradual drift but delays sudden drift detection by up to 24
+      hours, which could be critical for high-value models. Option B (weekly monitoring) is too infrequent for either
+      drift type - sudden drift impacts business for up to a week before detection, and gradual drift trends are harder
+      to distinguish from noise with sparse samples. Option D (monthly monitoring) is inappropriate for production model
+      monitoring - both drift types could significantly degrade performance for weeks before detection.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+    concepts:
+      - Gradual drift
+      - Sudden drift
+      - Monitoring frequency
+
+  - id: dd-018
+    type: multi
+    correctCount: 2
+    text: |
+      A bias drift monitoring schedule is configured to run weekly for a loan approval model with protected attributes
+      of race and gender. Which two statements correctly describe this monitoring configuration?
+    options:
+      - id: A
+        text: The monitoring computes bias metrics like DPPL and DI for race and gender subgroups each week
+      - id: B
+        text: The monitoring automatically adjusts model weights to reduce bias when violations are detected
+      - id: C
+        text: Violations are identified when confidence intervals for bias metrics are disjoint from allowed ranges
+      - id: D
+        text: The monitoring requires ground truth labels to compute bias metrics on model predictions
+      - id: E
+        text: Bias drift detection works on raw image inputs for computer vision loan document analysis models
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Option A is correct - SageMaker Clarify bias drift monitoring computes bias metrics (DPPL - Difference in Positive
+      Proportions in Labels, DI - Disparate Impact, DCO - Difference in Conditional Outcomes, and others) for each
+      protected attribute group defined in the monitoring configuration. These metrics measure differential treatment or
+      outcomes across subgroups. Option C is correct - Clarify uses bootstrap interval methods to construct confidence
+      intervals around measured bias metrics, accounting for statistical noise. Violations are confirmed when the
+      confidence interval is disjoint from (does not overlap with) the allowed range specified in the configuration.
+      Option B is incorrect - monitoring detects bias but does not automatically modify the model; bias remediation
+      requires retraining with balanced data, fairness constraints, or post-processing techniques. Option D is
+      misleading - while some bias metrics benefit from ground truth (to measure outcome differences), pre-training bias
+      metrics can be computed on predictions alone by comparing predicted positive/negative rates across groups. Option
+      E is incorrect - Clarify operates on tabular data (predicted labels, confidence scores), not raw images.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Bias drift
+      - Protected attributes
+      - Statistical significance
+
+  - id: dd-019
+    type: single
+    text: |
+      After retraining a model due to detected data drift, the team wants to validate the new model version on
+      production traffic for one week before making it the primary model. During validation, 90% of traffic should
+      continue using the current model. What is the most appropriate deployment strategy?
+    options:
+      - id: A
+        text: Deploy production variants with 90% weight to current model and 10% weight to new model, then update weights after validation
+      - id: B
+        text: Deploy the new model as a shadow variant receiving 10% replicated traffic for validation
+      - id: C
+        text: Create a separate validation endpoint and manually route 10% of application traffic to it
+      - id: D
+        text: Replace the production model with the new model and roll back if issues are detected during the week
+    correctAnswer: A
+    explanation: |
+      Production variants with weighted traffic distribution (option A) is the correct approach for gradual rollout with
+      user impact. The scenario specifies that 90% of traffic should continue using the current model while 10% uses the
+      new model for validation. This is classic A/B testing - both models return predictions to users, allowing
+      real-world performance comparison on live traffic. After the validation week, if the new model performs well,
+      weights can be updated (e.g., 50/50, then 100% new model) without endpoint recreation. Option B (shadow variant
+      with 10% traffic) does not return predictions to users, so it cannot validate real-world impact on the 10% of
+      traffic - shadow testing is for risk-free validation before any user exposure. Option C (separate endpoint)
+      requires application-layer routing complexity and loses SageMaker's built-in variant management. Option D (direct
+      replacement) exposes 100% of users immediately, contradicting the requirement for gradual 10% validation, and
+      rollback after a full week of issues would impact users unnecessarily.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Production variants
+      - A/B testing
+      - Gradual rollout
+
+  - id: dd-020
+    type: single
+    text: |
+      A model quality monitoring job shows that precision has remained stable at 88%, but recall has dropped from 82% to
+      61% over two months. What does this indicate about the model's behavior?
+    options:
+      - id: A
+        text: The model has become more conservative, predicting positive class less frequently (higher false negatives)
+      - id: B
+        text: The model has become more aggressive, predicting positive class more frequently (higher false positives)
+      - id: C
+        text: The model's predictions are equally accurate but the positive class distribution has changed in production data
+      - id: D
+        text: The monitoring configuration is incorrect since precision and recall should move together
+    correctAnswer: A
+    explanation: |
+      Stable precision with decreasing recall indicates the model has become more conservative. Precision = TP/(TP+FP)
+      measures "when the model predicts positive, how often is it correct?" Recall = TP/(TP+FN) measures "of all actual
+      positives, how many does the model find?" If precision is stable but recall drops, the model is making fewer
+      positive predictions overall (reducing TP), but when it does predict positive, it's still accurate (maintaining
+      the TP/FP ratio). This means it's missing more true positives (increasing FN), making it more conservative. This
+      could result from threshold drift, concept drift changing decision boundaries, or feature drift pushing positive
+      cases outside the model's learned patterns. Option B (more aggressive) would increase recall (catching more
+      positives) but likely decrease precision (more false positives). Option C is partially true but doesn't explain
+      the recall drop - if data distribution changed but the model performed well, both metrics might change together.
+      Option D is incorrect - precision and recall are independent metrics that can move in opposite directions based on
+      model behavior changes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Model quality monitoring
+      - Precision and recall
+      - Concept drift

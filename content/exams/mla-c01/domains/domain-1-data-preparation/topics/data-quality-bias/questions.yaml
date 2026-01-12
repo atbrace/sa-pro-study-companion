@@ -1,0 +1,1216 @@
+questions:
+  - id: dqb-001
+    type: single
+    text: |
+      A financial services company is developing a loan approval model and needs to detect bias in their training dataset
+      before model training begins. The dataset contains 50,000 loan applications with demographic information including
+      age groups (18-30, 31-50, 51-70, 71+) as a protected attribute. The team wants to determine if positive loan
+      decisions are equally distributed across age groups.
+
+      Which SageMaker Clarify metric should they use?
+    options:
+      - id: A
+        text: Difference in Positive Proportions in Predicted Labels (DPPL)
+      - id: B
+        text: Difference in Proportions of Labels (DPL)
+      - id: C
+        text: Accuracy Difference (AD)
+      - id: D
+        text: Disparate Impact (DI)
+    correctAnswer: B
+    explanation: |
+      DPL (Difference in Proportions of Labels) is the correct pre-training bias metric for this scenario. The question
+      specifically states they need to detect bias "before model training begins", which eliminates post-training metrics.
+
+      DPL measures whether positive outcomes (loan approvals) are equally distributed across facets (age groups) in the
+      training dataset. It compares the proportion of positive labels between favored and disfavored facets, ranging
+      from -1 to +1, with values near zero indicating equal distribution.
+
+      Why other options are incorrect:
+      - DPPL (A) is a post-training metric that analyzes model predictions, not training data labels
+      - AD (C) is a post-training metric that compares prediction accuracy between facets
+      - DI (D) is a post-training metric that measures the ratio of positive prediction rates
+
+      For pre-training bias analysis of label distribution, DPL is the appropriate choice.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-data-bias.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Pre-training bias metrics
+      - DPL metric
+      - Bias detection
+
+  - id: dqb-002
+    type: multi
+    correctCount: 2
+    text: |
+      A healthcare ML team is implementing data quality validation for a patient records dataset using AWS Glue Data Quality.
+      The dataset contains patient IDs, diagnosis codes, treatment dates, and billing information. The team needs to ensure
+      that every patient_id is unique, all treatment_date values are present, and the average billing_amount falls within
+      expected ranges based on historical data.
+
+      Which DQDL rules should they implement? (Choose TWO.)
+    options:
+      - id: A
+        text: "Rules = [IsUnique \"patient_id\", IsComplete \"treatment_date\", Mean \"billing_amount\" between 500.0 and 5000.0]"
+      - id: B
+        text: "Rules = [IsPrimaryKey \"patient_id\", Completeness \"treatment_date\" > 0.99, Mean \"billing_amount\" > last() * 0.8]"
+      - id: C
+        text: "Rules = [IsUnique \"patient_id\", IsComplete \"treatment_date\", RowCount > 1000]"
+      - id: D
+        text: "Rules = [ColumnExists \"patient_id\", DataFreshness \"treatment_date\" < 30 days, Sum \"billing_amount\" > 10000]"
+      - id: E
+        text: "Rules = [IsUnique \"patient_id\", IsComplete \"treatment_date\", Mean \"billing_amount\" between 500.0 and 5000.0, RowCount > 100]"
+    correctAnswer:
+      - A
+      - E
+    explanation: |
+      Options A and E are both correct because they properly implement the three required validations using appropriate
+      DQDL rules.
+
+      **Option A** is correct and concise:
+      - IsUnique "patient_id" - ensures all patient IDs are unique
+      - IsComplete "treatment_date" - ensures all treatment dates are present (no nulls)
+      - Mean "billing_amount" between 500.0 and 5000.0 - validates average billing is in expected range
+
+      **Option E** is also correct and includes an additional helpful rule:
+      - Contains all three required rules from option A
+      - Adds RowCount > 100 to ensure sufficient data volume (good practice but not explicitly required)
+
+      Why other options are incorrect:
+
+      **Option B** uses IsPrimaryKey which validates both uniqueness AND non-null values, but uses a dynamic rule
+      (last() * 0.8) for billing_amount instead of the specified fixed range. While dynamic rules are valid, they don't
+      match the requirement for "expected ranges based on historical data" - the question implies known fixed ranges.
+
+      **Option C** includes the correct uniqueness and completeness rules but omits the billing_amount validation entirely,
+      failing to meet the third requirement.
+
+      **Option D** uses ColumnExists instead of IsUnique (only checking column presence, not uniqueness), uses DataFreshness
+      for timeliness (not mentioned in requirements), and uses Sum instead of Mean for billing validation.
+
+      The key learning points are: IsUnique validates uniqueness, IsComplete validates no null values (100% completeness),
+      and statistical rules like Mean can validate expected ranges for numeric data.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/dqdl.html
+    services:
+      - AWS Glue Data Quality
+    concepts:
+      - DQDL rules
+      - Data completeness
+      - Data uniqueness
+      - Statistical validation
+
+  - id: dqb-003
+    type: single
+    text: |
+      A data scientist is preparing a dataset for training a customer churn prediction model. The dataset contains
+      timestamped customer interactions over the past 3 years. The model will predict whether customers will churn in the
+      next 30 days based on their interaction history. The team is deciding how to split the data into training, validation,
+      and test sets.
+
+      Which splitting strategy should they use to prevent data leakage?
+    options:
+      - id: A
+        text: Random split with 70% training, 15% validation, 15% test
+      - id: B
+        text: Stratified split on churn label with 70% training, 15% validation, 15% test
+      - id: C
+        text: Ordered split by timestamp with the earliest 70% as training, next 15% as validation, most recent 15% as test
+      - id: D
+        text: Stratified split on customer_id with 70% training, 15% validation, 15% test
+    correctAnswer: C
+    explanation: |
+      Ordered split by timestamp (Option C) is correct because this is time-series data where temporal dependencies are
+      critical, and the prediction task involves forecasting future events (churn in the next 30 days).
+
+      **Why ordered splitting prevents data leakage:**
+      - Ensures training data comes from earlier time periods than validation and test data
+      - Mimics production deployment where models trained on historical data predict future events
+      - Prevents the model from "peeking" at future information when learning to predict past events
+      - Places the most recent data in the test set, providing the most realistic evaluation of future performance
+
+      If random or stratified splitting were used, the model could be trained on data from 2025 and tested on data from
+      2023, allowing future information to influence predictions of past events. This creates artificially optimistic
+      performance estimates that won't hold in production.
+
+      Why other options are incorrect:
+
+      **Option A (Random split)** would distribute data from all time periods across all splits, causing severe temporal
+      leakage. The model would learn from future data to predict past events.
+
+      **Option B (Stratified on churn label)** addresses class imbalance but still randomly distributes temporal data,
+      causing the same leakage problem as option A.
+
+      **Option D (Stratified on customer_id)** would ensure all interactions from the same customer are in the same split
+      (which is actually good practice), but doesn't address the temporal leakage issue. You need both customer-level
+      grouping AND temporal ordering.
+
+      The ideal solution for this scenario would combine ordered splitting with customer-level grouping, but among the
+      given options, ordered temporal splitting (C) is the most critical requirement.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/create-train-test-and-validation-splits-on-your-data-for-machine-learning-with-amazon-sagemaker-data-wrangler/
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Ordered split
+      - Data leakage prevention
+      - Time-series data
+      - Train/test/validation splits
+
+  - id: dqb-004
+    type: single
+    text: |
+      An ML engineer has trained a hiring recommendation model and deployed it to production. After monitoring for 3 months,
+      they notice that while the overall accuracy is 85%, the model achieves 90% accuracy for candidates from demographic
+      group A but only 75% accuracy for candidates from demographic group B. The business requires that the model perform
+      equally well across demographic groups.
+
+      Which SageMaker Clarify post-training bias metric quantifies this issue?
+    options:
+      - id: A
+        text: Difference in Positive Proportions in Predicted Labels (DPPL)
+      - id: B
+        text: Recall Difference (RD)
+      - id: C
+        text: Accuracy Difference (AD)
+      - id: D
+        text: Treatment Equality (TE)
+    correctAnswer: C
+    explanation: |
+      Accuracy Difference (AD) is the correct metric because it directly measures the difference in prediction accuracy
+      between facets (demographic groups).
+
+      AD is calculated as: AD = ACCa - ACCd
+
+      Where ACCa is the accuracy for facet 'a' (the favored group) and ACCd is the accuracy for facet 'd' (the disfavored
+      group). In this scenario:
+
+      AD = 0.90 - 0.75 = 0.15 (or 15%)
+
+      This positive AD value of 0.15 indicates the model is 15% more accurate for demographic group A than group B,
+      quantifying the disparity described in the question. AD ranges from -1 to +1, with zero indicating equal accuracy
+      across facets.
+
+      Why other options are incorrect:
+
+      **DPPL (A)** measures whether the model predicts positive outcomes at similar rates for different facets, not whether
+      predictions are equally accurate. A model could predict positive outcomes at equal rates but with different accuracy.
+
+      **Recall Difference (B)** measures the difference in true positive rates (sensitivity) between facets - whether the
+      model is equally good at identifying positive cases. While RD is related to accuracy, it only considers true positives,
+      not overall correctness including true negatives.
+
+      **Treatment Equality (D)** compares the ratio of false positives to false negatives between facets, measuring whether
+      error types occur in similar proportions. This is different from measuring overall accuracy differences.
+
+      When a question describes different accuracy rates across demographic groups, AD is the appropriate metric to quantify
+      this disparity.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Post-training bias metrics
+      - Accuracy Difference
+      - Model fairness
+
+  - id: dqb-005
+    type: multi
+    correctCount: 3
+    text: |
+      A computer vision team is training an image classification model to identify manufacturing defects. They have only
+      1,000 labeled training images, and the model shows signs of overfitting (95% training accuracy but 65% validation
+      accuracy). The team wants to apply data augmentation to improve generalization.
+
+      Which augmentation techniques are appropriate for this use case? (Choose THREE.)
+    options:
+      - id: A
+        text: Random rotation of ±15 degrees
+      - id: B
+        text: Random horizontal and vertical flipping
+      - id: C
+        text: Random cropping and resizing
+      - id: D
+        text: Extreme color inversion (converting images to negative)
+      - id: E
+        text: Random brightness and contrast adjustments
+      - id: F
+        text: Mixing images from different classes together (mixup)
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: |
+      Options A, C, and E are appropriate augmentation techniques for manufacturing defect detection that will improve
+      generalization without compromising label validity.
+
+      **Option A (Random rotation ±15 degrees)** is correct because:
+      - Defects can appear at various orientations during manufacturing
+      - Small rotations create realistic variations that the model might encounter in production
+      - This teaches the model to recognize defects regardless of orientation
+      - The ±15 degree range is conservative enough to maintain realistic images
+
+      **Option C (Random cropping and resizing)** is correct because:
+      - Defects may appear at different positions within images
+      - Cropping forces the model to recognize defects from partial views
+      - This simulates variations in camera positioning or zooming
+      - Resizing back to the original dimensions maintains input consistency
+
+      **Option E (Random brightness and contrast adjustments)** is correct because:
+      - Manufacturing environments have varying lighting conditions
+      - Different cameras or camera settings produce different brightness/contrast
+      - These adjustments improve robustness to lighting variations without changing defect characteristics
+      - Subtle adjustments maintain image realism while creating useful variations
+
+      Why other options are incorrect or less appropriate:
+
+      **Option B (Vertical flipping)** is partially problematic. While horizontal flipping might be acceptable (defects
+      could appear mirrored), vertical flipping is typically not appropriate for manufacturing defects because it creates
+      unrealistic orientations. In manufacturing, gravity and process flow mean certain orientations are impossible.
+      Horizontal flipping alone would be acceptable, but the option includes vertical flipping.
+
+      **Option D (Extreme color inversion)** is inappropriate because:
+      - Creating negative images produces unrealistic appearances that won't occur in production
+      - Defect detection often relies on color characteristics (rust, discoloration, etc.)
+      - Extreme augmentations can confuse the model rather than help it generalize
+
+      **Option F (Mixup - blending images from different classes)** is generally inappropriate for defect detection because:
+      - Blending a defective product image with a non-defective one creates an unrealistic hybrid
+      - The resulting mixed label (e.g., 0.5 defective, 0.5 non-defective) doesn't represent reality
+      - Mixup works better for natural image classification than for binary defect detection
+      - Manufacturing defects are discrete conditions, not continuous blends
+
+      The key principle is that augmented images must remain realistic and maintain valid labels. Geometric transformations
+      and photometric adjustments that simulate real-world variations are appropriate, while extreme transformations that
+      create impossible scenarios should be avoided.
+    awsDocLink: https://aws.amazon.com/what-is/data-augmentation/
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Data augmentation
+      - Image augmentation techniques
+      - Overfitting prevention
+      - Model generalization
+
+  - id: dqb-006
+    type: single
+    text: |
+      A data engineering team uses AWS Glue ETL jobs to process customer transaction data daily. They need to validate
+      that every transaction_id in the transactions table has a corresponding customer_id that exists in the customers
+      table. Additionally, they want to ensure that the total number of transactions matches between the raw and processed
+      datasets.
+
+      Which AWS Glue Data Quality rules should they implement?
+    options:
+      - id: A
+        text: "Rules = [IsUnique \"transaction_id\", ColumnExists \"customer_id\"]"
+      - id: B
+        text: "Rules = [ReferentialIntegrity \"transactions.customer_id\" \"customers.customer_id\", RowCountMatch \"transactions\" \"processed_transactions\"]"
+      - id: C
+        text: "Rules = [DatasetMatch \"transactions\" \"customers\", SchemaMatch \"transactions\" \"processed_transactions\"]"
+      - id: D
+        text: "Rules = [IsPrimaryKey \"transaction_id\", IsPrimaryKey \"customer_id\", RowCount > 1000]"
+    correctAnswer: B
+    explanation: |
+      Option B is correct because it uses the appropriate multi-dataset validation rules for the two requirements.
+
+      **ReferentialIntegrity "transactions.customer_id" "customers.customer_id"** validates that every customer_id value
+      in the transactions table exists in the customers table. This is the DQDL rule designed specifically for validating
+      foreign key relationships between datasets, ensuring no orphaned transactions reference non-existent customers.
+
+      **RowCountMatch "transactions" "processed_transactions"** validates that both datasets have the same number of rows,
+      ensuring no transactions were lost or duplicated during ETL processing. This catches pipeline errors where data is
+      inadvertently dropped or duplicated.
+
+      Together, these rules address both requirements: referential integrity (every transaction has a valid customer) and
+      row count matching (all transactions are preserved during processing).
+
+      Why other options are incorrect:
+
+      **Option A** only validates that transaction_id is unique and that a customer_id column exists. It does not validate
+      that customer_id values actually exist in the customers table (referential integrity), nor does it compare row counts
+      between datasets.
+
+      **Option C** uses DatasetMatch which validates that entire datasets are identical (all columns and all rows), not
+      just referential integrity. SchemaMatch only checks that schemas are the same, not that row counts match or that
+      data is preserved.
+
+      **Option D** validates primary key constraints on individual columns but doesn't check relationships between datasets
+      or compare processed vs. raw data. RowCount > 1000 only checks a single dataset has sufficient volume.
+
+      This question tests understanding of AWS Glue Data Quality's multi-dataset rules, which are essential for validating
+      data relationships and ETL pipeline correctness. ReferentialIntegrity and RowCountMatch are the specific rules
+      designed for these use cases.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/dqdl.html
+    services:
+      - AWS Glue Data Quality
+    concepts:
+      - Referential integrity
+      - Multi-dataset validation
+      - DQDL rules
+      - ETL validation
+
+  - id: dqb-007
+    type: single
+    text: |
+      An ML team is preparing a dataset for binary classification (fraud vs. non-fraud). The dataset is highly imbalanced
+      with 98% non-fraud and 2% fraud cases. They plan to split the data into 70% training, 15% validation, and 15% test
+      sets. They are concerned that random splitting might place most fraud cases in one split, leaving other splits
+      with insufficient fraud examples.
+
+      What is the most appropriate splitting strategy?
+    options:
+      - id: A
+        text: Random split with a large enough dataset size to ensure statistical representation
+      - id: B
+        text: Stratified split on the fraud label to maintain 98/2 ratio in all splits
+      - id: C
+        text: Ordered split by timestamp if the data has temporal ordering
+      - id: D
+        text: Manual splitting by moving all fraud cases to the training set to maximize learning
+    correctAnswer: B
+    explanation: |
+      Stratified split on the fraud label (Option B) is correct because it ensures the same class proportion (98% non-fraud,
+      2% fraud) is maintained in all three splits.
+
+      **Why stratified splitting is critical for imbalanced data:**
+      - With only 2% fraud cases, random splitting could place disproportionate numbers in different splits
+      - If most fraud cases randomly end up in training, validation and test sets might have too few fraud examples for
+        reliable evaluation
+      - Stratified splitting guarantees each split contains approximately 2% fraud cases, ensuring all splits are
+        representative
+      - This provides reliable model evaluation and prevents scenarios where validation or test sets have zero or very
+        few positive examples
+
+      For example, with 10,000 total examples (200 fraud cases):
+      - Training: 7,000 samples with ~140 fraud cases (2%)
+      - Validation: 1,500 samples with ~30 fraud cases (2%)
+      - Test: 1,500 samples with ~30 fraud cases (2%)
+
+      This ensures each split has sufficient fraud examples for learning and evaluation.
+
+      Why other options are incorrect:
+
+      **Option A (Random split)** is risky because with only 2% fraud cases, random splitting could easily create unbalanced
+      splits. For example, by chance, training might get 1.5% fraud while test gets 3%, reducing representativeness. While
+      larger datasets reduce this risk, stratification is always preferable for imbalanced data.
+
+      **Option C (Ordered split)** is only appropriate if the data has temporal dependencies that require chronological
+      splitting. The question doesn't mention timestamps or temporal patterns, so there's no indication this is time-series
+      data. If it were, you'd need both ordered AND stratified splitting.
+
+      **Option D (All fraud in training)** is incorrect because:
+      - Validation and test sets would have zero fraud cases, making evaluation impossible
+      - You can't measure model performance on fraud detection without fraud cases in validation/test
+      - This violates the fundamental principle that validation and test sets must be representative of the problem
+
+      Amazon SageMaker Data Wrangler provides built-in stratified splitting functionality where you can specify the column
+      to stratify on. This is the recommended approach for imbalanced classification problems.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/create-train-test-and-validation-splits-on-your-data-for-machine-learning-with-amazon-sagemaker-data-wrangler/
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Stratified split
+      - Class imbalance
+      - Train/test/validation splits
+      - Data preparation
+
+  - id: dqb-008
+    type: single
+    text: |
+      A healthcare organization has deployed a patient readmission prediction model. After 6 months in production, the
+      model's accuracy has decreased from 82% to 71%. The ML team uses Amazon SageMaker Model Monitor to investigate and
+      discovers that the distribution of patient age in recent inference data has shifted significantly compared to the
+      training data baseline.
+
+      What issue has Model Monitor identified, and what should the team do?
+    options:
+      - id: A
+        text: Schema drift - update the model endpoint to accept the new schema
+      - id: B
+        text: Data drift - retrain the model using recent data that reflects current patient demographics
+      - id: C
+        text: Concept drift - adjust the model's decision threshold
+      - id: D
+        text: Bias drift - apply SageMaker Clarify to remove bias from predictions
+    correctAnswer: B
+    explanation: |
+      Data drift (Option B) is correct because Model Monitor detected that the statistical distribution of a feature (patient
+      age) has changed significantly from the training data baseline.
+
+      **Data drift** occurs when the statistical properties of input features change over time. In this case:
+      - The training data had a certain age distribution (the baseline)
+      - Production inference data now has a different age distribution
+      - This distributional shift causes the model's performance to degrade from 82% to 71%
+
+      **Why retraining is the appropriate solution:**
+      - The model was trained on historical patient demographics that no longer represent the current population
+      - Retraining on recent data that reflects current demographics will create a model adapted to the new distribution
+      - The new model will learn patterns relevant to the current patient age distribution
+      - This is the standard approach to handling data drift in production ML systems
+
+      **What Model Monitor does:**
+      - Captures inference input data from deployed endpoints
+      - Compares statistical distributions against a baseline computed from training data
+      - Detects significant divergence using statistical tests
+      - Generates CloudWatch metrics and can trigger alarms when drift exceeds thresholds
+
+      Why other options are incorrect:
+
+      **Option A (Schema drift)** refers to changes in data structure - columns being added/removed, data types changing,
+      etc. The question describes a distribution shift (age values changing), not a structural change. Schema drift would
+      cause inference failures, not gradual accuracy degradation.
+
+      **Option C (Concept drift)** refers to changes in the relationship between features and targets. For example, if
+      the factors that cause readmission change (new treatment protocols, different discharge procedures), that's concept
+      drift. The question specifically states the age distribution changed, which is feature drift (data drift), not a
+      change in the feature-target relationship. Also, adjusting the decision threshold doesn't address distributional
+      changes.
+
+      **Option D (Bias drift)** isn't a standard term in ML monitoring. While bias can change over time, the question
+      describes a performance degradation due to distributional shift, not a fairness issue across demographic groups.
+      SageMaker Clarify detects bias in predictions, but the solution to data drift is retraining, not bias mitigation.
+
+      The key distinction: Data drift is about feature distributions changing; concept drift is about feature-target
+      relationships changing. Both can cause performance degradation, but they have different solutions.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Data drift
+      - Model monitoring
+      - Distribution shift
+      - Model retraining
+
+  - id: dqb-009
+    type: multi
+    correctCount: 2
+    text: |
+      An NLP team is building a sentiment analysis model for customer reviews. They have 5,000 labeled training examples,
+      which is insufficient for training a deep learning model from scratch. The team wants to apply data augmentation to
+      increase the effective dataset size while maintaining label validity.
+
+      Which text augmentation techniques are appropriate? (Choose TWO.)
+    options:
+      - id: A
+        text: Randomly shuffling the order of words within each sentence
+      - id: B
+        text: Using back-translation (translate to another language and back to English) to create paraphrased variations
+      - id: C
+        text: Replacing words with synonyms while preserving sentiment
+      - id: D
+        text: Randomly deleting 50% of words from each review
+      - id: E
+        text: Mixing reviews from different sentiment classes together
+    correctAnswer:
+      - B
+      - C
+    explanation: |
+      Options B (back-translation) and C (synonym replacement) are appropriate text augmentation techniques that increase
+      dataset size while maintaining label validity for sentiment analysis.
+
+      **Option B (Back-translation)** is correct because:
+      - Translating text to another language (e.g., English → French) and back to English creates paraphrased versions
+      - The paraphrases express the same sentiment with different wording
+      - This preserves sentiment labels while creating linguistic variations
+      - AWS Translate can facilitate back-translation workflows
+      - Example: "This product is excellent" → "Ce produit est excellent" → "This product is outstanding"
+      - The sentiment remains positive, but the wording varies, providing useful training variations
+
+      **Option C (Synonym replacement)** is correct because:
+      - Replacing words with synonyms maintains meaning and sentiment while creating variations
+      - This must be done carefully to preserve sentiment (don't replace "good" with "bad")
+      - Contextually appropriate synonym selection is critical
+      - Example: "This movie was amazing" → "This film was incredible"
+      - Both sentences express positive sentiment, but with different vocabulary
+      - Pre-trained language models like BERT can help identify appropriate synonym replacements
+
+      Why other options are incorrect:
+
+      **Option A (Random word shuffling)** destroys sentence structure and meaning. Sentiment analysis relies on word order
+      and grammar. Shuffling "This movie was not very good" to "good very not was movie This" creates nonsensical text
+      that can't be used for training. While some NLP tasks use word shuffling (e.g., training order-invariant models),
+      it's inappropriate for sentiment analysis.
+
+      **Option D (Deleting 50% of words)** is too aggressive and would likely change or destroy sentiment:
+      - Deleting critical sentiment-bearing words (adjectives, negations) alters meaning
+      - 50% deletion creates incomplete fragments that may not express clear sentiment
+      - While minor random deletion (10-20%) can work, 50% is excessive
+      - Example: "This product is not good" → "product not" (ambiguous sentiment)
+      - This could introduce label noise rather than useful augmentation
+
+      **Option E (Mixing reviews from different classes)** creates training data with invalid labels:
+      - Blending a positive review with a negative review creates text with mixed sentiment
+      - The resulting label (e.g., 50% positive, 50% negative) doesn't represent a real sentiment
+      - Unlike image mixup (which can work for natural images), text mixup typically produces incoherent or contradictory
+        text that confuses training
+      - Example: Mixing "Great product!" with "Terrible quality!" creates nonsensical combined text
+
+      For text augmentation, the key principle is maintaining semantic meaning and label validity. Back-translation and
+      synonym replacement achieve this by creating variations that express the same sentiment with different words or
+      phrasing.
+    awsDocLink: https://aws.amazon.com/what-is/data-augmentation/
+    services:
+      - Amazon Translate
+      - Amazon SageMaker
+    concepts:
+      - Data augmentation
+      - Text augmentation
+      - NLP data preparation
+      - Label preservation
+
+  - id: dqb-010
+    type: single
+    text: |
+      A retail company is analyzing their product recommendation model and discovers that while the model recommends
+      premium products to 40% of customers from demographic group A, it only recommends premium products to 20% of
+      customers from demographic group B, despite both groups having similar purchasing power and preferences.
+
+      Which bias metric should they use to quantify this disparity?
+    options:
+      - id: A
+        text: Class Imbalance (CI)
+      - id: B
+        text: Difference in Positive Proportions in Predicted Labels (DPPL)
+      - id: C
+        text: Accuracy Difference (AD)
+      - id: D
+        text: Recall Difference (RD)
+    correctAnswer: B
+    explanation: |
+      DPPL (Difference in Positive Proportions in Predicted Labels) is correct because it measures the difference in the
+      rate at which the model predicts positive outcomes (premium product recommendations) between different facets
+      (demographic groups).
+
+      DPPL is calculated as: DPPL = q'a - q'd
+
+      Where q'a and q'd are the proportions of predicted positive labels for facets 'a' and 'd'. In this scenario:
+
+      DPPL = 0.40 - 0.20 = 0.20 (or 20%)
+
+      This positive DPPL value indicates the model recommends premium products to demographic group A at a 20 percentage
+      point higher rate than group B.
+
+      **Why DPPL is the right metric:**
+      - It directly measures disparities in positive prediction rates (premium recommendations)
+      - This is a post-training metric that analyzes model behavior, not training data
+      - The question describes unequal recommendation rates from a deployed model
+      - DPPL ranges from -1 to +1, with zero indicating equal positive prediction rates
+
+      **The fairness concern:**
+      If both groups have "similar purchasing power and preferences," they should receive premium recommendations at similar
+      rates. The 2:1 disparity (40% vs. 20%) suggests the model is treating groups differently despite similar characteristics,
+      indicating potential bias.
+
+      Why other options are incorrect:
+
+      **Option A (Class Imbalance)** is a pre-training metric that measures whether different facets have similar representation
+      in the training dataset. It doesn't measure model prediction behavior. CI would tell you if the training data had
+      unequal numbers of group A vs. group B members, not whether the model makes different predictions.
+
+      **Option C (Accuracy Difference)** measures whether the model is equally accurate for both groups. The question doesn't
+      mention prediction accuracy or correctness - it describes different recommendation rates. Even if the model is equally
+      accurate for both groups, it could still recommend at different rates.
+
+      **Option D (Recall Difference)** measures the difference in true positive rates - whether the model correctly identifies
+      positive cases at equal rates for both groups. This requires knowing ground truth labels (who actually should receive
+      premium recommendations). The question describes observed recommendation rates, not evaluation against ground truth.
+
+      DPPL is the appropriate metric whenever you need to quantify differences in positive prediction rates between demographic
+      groups, which is exactly what the question describes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Post-training bias metrics
+      - DPPL metric
+      - Demographic parity
+      - Recommendation fairness
+
+  - id: dqb-011
+    type: single
+    text: |
+      A machine learning engineer is preparing data for model training and needs to perform feature scaling. The dataset
+      is split into training, validation, and test sets. The engineer plans to normalize all numeric features using
+      StandardScaler (zero mean, unit variance).
+
+      What is the correct approach to prevent preprocessing leakage?
+    options:
+      - id: A
+        text: Fit StandardScaler on the combined training, validation, and test data, then transform all three sets using the same scaler
+      - id: B
+        text: Fit StandardScaler separately on training, validation, and test sets, transforming each with its own scaler
+      - id: C
+        text: Fit StandardScaler on the training set only, then transform training, validation, and test sets using the training-fitted scaler
+      - id: D
+        text: Fit StandardScaler on the validation set, then transform all three sets using the validation-fitted scaler
+    correctAnswer: C
+    explanation: |
+      Option C is correct because it prevents preprocessing leakage by ensuring that only training data influences the
+      computation of scaling parameters (mean and standard deviation), which are then applied to all datasets.
+
+      **The correct preprocessing workflow:**
+      1. Split data into training, validation, and test sets FIRST
+      2. Fit the StandardScaler on the training set only (compute mean and std from training data)
+      3. Transform the training set using the fitted scaler
+      4. Transform the validation set using the same training-fitted scaler
+      5. Transform the test set using the same training-fitted scaler
+
+      **Why this prevents leakage:**
+      - The validation and test sets represent "unseen" future data
+      - If their values influence scaling parameters, information from future data leaks into the training process
+      - In production, you can only compute scaling parameters from historical (training) data
+      - This approach mimics production deployment where new data is scaled using parameters from training data
+
+      **Example:**
+      ```python
+      from sklearn.preprocessing import StandardScaler
+
+      # CORRECT approach
+      scaler = StandardScaler()
+      scaler.fit(X_train)  # Compute mean and std from training only
+      X_train_scaled = scaler.transform(X_train)
+      X_val_scaled = scaler.transform(X_val)  # Use training statistics
+      X_test_scaled = scaler.transform(X_test)  # Use training statistics
+      ```
+
+      Why other options are incorrect:
+
+      **Option A (Fit on combined data)** is the classic preprocessing leakage mistake:
+      - Computing mean and std from all data allows test set values to influence training preprocessing
+      - This creates overly optimistic performance estimates
+      - In production, future data isn't available to compute scaling parameters
+      - This is one of the most common data leakage errors in ML pipelines
+
+      **Option B (Separate scalers for each set)** violates the fundamental principle that the model must work with
+      consistently preprocessed data:
+      - Different scaling parameters for each set mean they're on different scales
+      - The model trained on one scale (training) would be evaluated on different scales (validation/test)
+      - This makes performance metrics meaningless
+      - Features with mean=0, std=1 in training might have mean=5, std=2 in test with separate scaling
+
+      **Option D (Fit on validation set)** is incorrect because:
+      - The model is trained on data scaled using training set statistics
+      - Scaling with validation statistics creates a train/validation mismatch
+      - Validation set should never influence training preprocessing
+      - This is just as problematic as using test set for scaling
+
+      The general rule: Fit preprocessing on training data only, then apply the fitted transformation to all datasets.
+      This applies to all preprocessing that learns parameters: scaling, normalization, imputation, encoding, PCA, etc.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+    services:
+      - Amazon SageMaker Processing
+    concepts:
+      - Preprocessing leakage
+      - Feature scaling
+      - Data preparation
+      - Train/test contamination
+
+  - id: dqb-012
+    type: multi
+    correctCount: 3
+    text: |
+      An e-commerce company uses AWS Glue Data Quality to monitor their product catalog data daily. They want to detect
+      anomalies and data quality degradation automatically. The product catalog includes product IDs, names, prices,
+      category, inventory counts, and last_updated timestamps.
+
+      Which DQDL capabilities should they implement for comprehensive monitoring? (Choose THREE.)
+    options:
+      - id: A
+        text: Dynamic rules using the last() operator to compare current row counts against previous runs
+      - id: B
+        text: DetectAnomalies rule to automatically identify unusual patterns in numeric columns
+      - id: C
+        text: DataFreshness rule to ensure products have been updated within acceptable timeframes
+      - id: D
+        text: Fixed threshold rules for price ranges that never need adjustment
+      - id: E
+        text: SchemaMatch rule to detect unexpected changes in column structure
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: |
+      Options A, B, and C represent comprehensive monitoring capabilities that adapt to changing data and automatically
+      detect issues.
+
+      **Option A (Dynamic rules with last() operator)** is correct because:
+      - Dynamic rules adapt to gradual changes in data characteristics over time
+      - Example: `RowCount > last() * 0.9` ensures current row count is at least 90% of the previous run
+      - This catches sudden drops in product catalog size without using fixed thresholds
+      - More flexible than static thresholds as data naturally grows over time
+      - Example: `Mean "price" between last() * 0.8 and last() * 1.2` detects unusual price shifts
+
+      **Option B (DetectAnomalies rule)** is correct because:
+      - Uses machine learning to learn normal patterns in data automatically
+      - Identifies statistically significant deviations from historical baselines
+      - Works without manually defining expected ranges for every column
+      - Particularly useful for detecting unusual spikes or drops in inventory counts, prices, etc.
+      - Adapts to seasonality and trends in the data
+      - Example: Automatically detects if average inventory suddenly drops by 50% or prices spike unexpectedly
+
+      **Option C (DataFreshness rule)** is correct because:
+      - Ensures product data is current and hasn't become stale
+      - Critical for e-commerce where outdated product information causes customer experience issues
+      - Example: `DataFreshness "last_updated" < 7 days` ensures products are updated at least weekly
+      - Detects pipeline failures where data stops updating
+      - Particularly important for inventory counts and pricing that change frequently
+
+      Together, these three capabilities provide:
+      - Adaptive monitoring that handles data growth (dynamic rules)
+      - Automatic anomaly detection without manual threshold setting (DetectAnomalies)
+      - Timeliness validation to catch stale data (DataFreshness)
+
+      Why other options are less appropriate:
+
+      **Option D (Fixed threshold rules that never need adjustment)** is problematic because:
+      - E-commerce data characteristics change over time (new product categories, price ranges, seasonal variations)
+      - Fixed thresholds become outdated and produce false alarms or miss issues
+      - While some fixed rules are useful (e.g., `ColumnValues "price" > 0`), claiming they "never need adjustment" is
+        unrealistic
+      - The statement "never need adjustment" is a red flag - all monitoring should be reviewed and adjusted periodically
+      - Dynamic rules (option A) are superior to fixed thresholds for most metrics
+
+      **Option E (SchemaMatch rule)** is less critical for comprehensive monitoring:
+      - SchemaMatch compares two datasets' schemas, not monitoring a single dataset over time
+      - While schema validation is important, it's not mentioned in the scenario requirements
+      - The question asks for anomaly detection and quality degradation monitoring, not schema comparison
+      - For single-dataset monitoring, ColumnExists and ColumnDataType are more appropriate than SchemaMatch
+      - SchemaMatch would be relevant if comparing production vs. staging catalogs, but that's not described
+
+      The key insight is that modern data quality monitoring should leverage adaptive techniques (dynamic rules, ML-powered
+      anomaly detection) rather than relying solely on static thresholds that become outdated.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/dqdl.html
+    services:
+      - AWS Glue Data Quality
+    concepts:
+      - Dynamic rules
+      - Anomaly detection
+      - Data freshness
+      - DQDL capabilities
+
+  - id: dqb-013
+    type: single
+    text: |
+      A fintech company trains a credit risk model using historical loan data. The model will predict whether to approve
+      new loan applications. The data science team wants to ensure that similarly qualified applicants from different
+      demographic groups have similar probabilities of receiving the same decision (approval or denial).
+
+      Which SageMaker Clarify metric specifically tests for this type of fairness?
+    options:
+      - id: A
+        text: Difference in Positive Proportions in Predicted Labels (DPPL)
+      - id: B
+        text: Counterfactual Fliptest (FT)
+      - id: C
+        text: Disparate Impact (DI)
+      - id: D
+        text: Treatment Equality (TE)
+    correctAnswer: B
+    explanation: |
+      Counterfactual Fliptest (FT) is correct because it specifically evaluates whether changing only the protected attribute
+      (while keeping all other qualifications the same) causes the model's prediction to change.
+
+      **What Counterfactual Fliptest measures:**
+      - Creates synthetic "counterfactual" examples by swapping the sensitive attribute value
+      - Keeps all other features identical (income, credit score, employment, etc.)
+      - Compares the model's prediction on the original vs. counterfactual example
+      - If predictions differ, the model is treating similarly qualified individuals differently based solely on demographics
+
+      **Example scenario:**
+      - Original applicant: Age=25, Income=$50k, Credit=720, Employed=Yes → Prediction: Approved
+      - Counterfactual: Age=65, Income=$50k, Credit=720, Employed=Yes → Prediction: Denied
+
+      If the only difference is age and the predictions differ, the fliptest detects this disparity. This is exactly what
+      the question asks: "similarly qualified applicants from different demographic groups" receiving different decisions.
+
+      **Why this matters:**
+      - FT measures individual fairness - similar individuals should be treated similarly
+      - This is different from group fairness (equal approval rates across groups)
+      - FT detects direct discrimination based on protected attributes
+      - It tests counterfactual fairness: what would happen if this person belonged to a different demographic group?
+
+      Why other options are incorrect:
+
+      **Option A (DPPL)** measures group fairness - whether positive predictions occur at similar rates across demographic
+      groups. DPPL tells you if 30% of group A and 30% of group B get approvals, but doesn't tell you if similarly qualified
+      individuals within those groups are treated equally. Two groups could have equal approval rates (DPPL=0) but still
+      treat similar individuals differently.
+
+      **Option C (Disparate Impact)** also measures group fairness as a ratio rather than difference. It compares overall
+      positive prediction rates between groups (e.g., group B approved at 80% the rate of group A). Like DPPL, it doesn't
+      evaluate individual-level fairness for similarly qualified applicants.
+
+      **Option D (Treatment Equality)** compares the ratio of false positives to false negatives between groups. It measures
+      whether error types affect groups proportionally, not whether similar individuals receive similar treatment. TE could
+      be equal even if the model systematically discriminates against similar individuals from one group.
+
+      The key distinction: DPPL and DI measure group-level outcomes, while FT measures individual-level fairness for
+      similar applicants. The question's phrase "similarly qualified applicants" is the signal to use FT.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Counterfactual fairness
+      - Individual fairness
+      - Post-training bias metrics
+      - Fliptest
+
+  - id: dqb-014
+    type: single
+    text: |
+      A data scientist is preparing tabular data for a fraud detection model. The dataset has 50 numeric features and
+      100,000 training examples. To prevent overfitting, they want to apply data augmentation. However, the features have
+      complex relationships (e.g., total_amount = quantity * unit_price) that must be preserved.
+
+      Which augmentation approach is most appropriate for this scenario?
+    options:
+      - id: A
+        text: Add Gaussian noise to all numeric features independently
+      - id: B
+        text: Use SMOTE (Synthetic Minority Over-sampling Technique) to create synthetic examples by interpolating between existing examples
+      - id: C
+        text: Randomly permute feature values across examples to create new combinations
+      - id: D
+        text: Use a Variational Autoencoder (VAE) to learn feature relationships and generate new examples
+    correctAnswer: D
+    explanation: |
+      Variational Autoencoder (VAE) is correct because it learns the complex relationships between features and generates
+      synthetic examples that preserve these relationships.
+
+      **Why VAE is appropriate:**
+      - VAEs learn a compressed latent representation that captures feature dependencies
+      - The encoder-decoder architecture learns the underlying data distribution, including constraints like
+        total_amount = quantity * unit_price
+      - Generating from the learned latent space produces new examples that maintain realistic feature relationships
+      - VAEs handle high-dimensional tabular data with complex correlations effectively
+      - Once trained, you can sample from the latent space to generate as many synthetic examples as needed
+
+      **How VAEs work:**
+      1. Encoder network compresses input features to a low-dimensional latent representation
+      2. The latent space is constrained to follow a probability distribution (typically Gaussian)
+      3. Decoder network reconstructs the original features from the latent representation
+      4. Training minimizes reconstruction error while regularizing the latent space
+      5. To generate synthetic data, sample from the latent distribution and decode
+
+      **Why VAEs preserve relationships:**
+      - If the relationship total_amount = quantity * unit_price exists in training data, the VAE learns this constraint
+      - Generated examples will maintain this relationship because the decoder learned to reconstruct consistent values
+      - Unlike naive approaches, VAEs don't violate learned constraints
+
+      Why other options are incorrect:
+
+      **Option A (Add Gaussian noise independently)** violates feature relationships:
+      - Adding noise to quantity, unit_price, and total_amount independently breaks the constraint
+      - Example: Original (quantity=10, unit_price=5, total_amount=50) + noise → (10.1, 5.2, 49.8) = INVALID
+      - The augmented example now has quantity * unit_price ≠ total_amount
+      - This creates unrealistic training examples that confuse the model
+      - For simple independent features this can work, but not with complex relationships
+
+      **Option B (SMOTE - Synthetic Minority Over-sampling Technique)** also violates relationships:
+      - SMOTE interpolates between examples: synthetic = example1 + λ * (example2 - example1)
+      - If example1 has (q=10, p=5, t=50) and example2 has (q=20, p=4, t=80), interpolating gives (q=15, p=4.5, t=65)
+      - But 15 * 4.5 = 67.5 ≠ 65, violating the constraint
+      - SMOTE treats features as independent, which is incorrect for related features
+      - SMOTE is primarily designed for addressing class imbalance, not general augmentation with constraints
+
+      **Option C (Random permutation)** creates nonsensical combinations:
+      - Taking quantity from one example, unit_price from another, and total_amount from a third creates invalid examples
+      - Relationships between features are completely destroyed
+      - Example: Combining q=10 from fraud case, p=1000 from luxury purchase, t=5 from small transaction = NONSENSE
+      - This only works if features are truly independent (rare in real-world tabular data)
+
+      **Additional context:**
+      The question mentions "complex relationships" as a key constraint. This is the signal that naive augmentation
+      techniques will fail. VAEs and GANs are the primary techniques for augmenting tabular data with feature dependencies.
+      VAE is more stable and easier to train than GANs, making it the better choice for this scenario.
+
+      For the MLA-C01 exam, remember:
+      - Image augmentation: geometric and color transformations
+      - Text augmentation: back-translation, synonym replacement
+      - Tabular with constraints: VAE or GAN (VAE is more common/stable)
+      - Tabular with class imbalance and simple features: SMOTE
+    awsDocLink: https://aws.amazon.com/what-is/data-augmentation/
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Data augmentation
+      - Variational Autoencoders
+      - Tabular data augmentation
+      - Feature relationships
+
+  - id: dqb-015
+    type: multi
+    correctCount: 2
+    text: |
+      A healthcare ML team is deploying a diagnostic model to production using Amazon SageMaker. They want to monitor both
+      data quality and bias continuously. The model predicts disease likelihood based on patient vitals and demographics.
+      Protected attributes include age and gender.
+
+      Which monitoring approaches should they implement? (Choose TWO.)
+    options:
+      - id: A
+        text: Enable SageMaker Model Monitor Data Quality monitoring to detect drift in vital sign distributions compared to training data
+      - id: B
+        text: Configure SageMaker Clarify with Model Monitor to continuously evaluate bias metrics on inference data
+      - id: C
+        text: Use AWS Glue Data Quality to validate training data quality before deployment and never check again
+      - id: D
+        text: Set up CloudWatch alarms on inference API latency as the primary quality indicator
+      - id: E
+        text: Implement custom preprocessing logic within the model endpoint to reject low-quality inputs
+    correctAnswer:
+      - A
+      - B
+    explanation: |
+      Options A and B together provide comprehensive continuous monitoring of both data quality and fairness in production.
+
+      **Option A (Model Monitor Data Quality monitoring)** is correct because:
+      - Detects data drift by comparing inference input distributions to training data baselines
+      - Critical for healthcare where patient demographics and vital sign ranges can shift over time
+      - Monitors statistical properties: mean, std, min, max, missing value rates, etc.
+      - Example: If the age distribution of patients shifts toward elderly (mean age increases from 45 to 65), this could
+        degrade model performance if it was trained primarily on middle-aged patients
+      - Generates CloudWatch metrics and triggers alarms when drift exceeds thresholds
+      - Captures inference inputs automatically from SageMaker endpoints
+
+      **Setup involves:**
+      1. Create a baseline by running a SageMaker Processing job on training data
+      2. Enable Data Capture on the SageMaker endpoint
+      3. Create a monitoring schedule that compares captured data to baseline
+      4. Configure CloudWatch alarms for violations
+
+      **Option B (SageMaker Clarify with Model Monitor for bias)** is correct because:
+      - Continuously evaluates fairness metrics on production predictions
+      - Detects bias drift where a model becomes biased over time even if it was fair during training
+      - Monitors post-training bias metrics like DPPL, AD, RD across protected attributes (age, gender)
+      - Example: If the model starts predicting disease at higher rates for older patients with similar vital signs as
+        younger patients, bias metrics will detect this disparity
+      - Integrated with Model Monitor for automated, scheduled bias analysis
+      - Generates bias reports and CloudWatch metrics
+
+      **Why both are needed:**
+      - Data quality monitoring detects input distribution changes (data drift)
+      - Bias monitoring detects fairness issues in model predictions (bias drift)
+      - These are complementary: data can drift without causing bias, or bias can emerge without data drift
+      - Comprehensive production monitoring requires both dimensions
+
+      Why other options are incorrect or insufficient:
+
+      **Option C (One-time AWS Glue Data Quality check)** is insufficient because:
+      - The question asks for continuous monitoring, not one-time validation
+      - Validating training data before deployment is good practice, but doesn't detect production issues
+      - Data quality can degrade in production due to upstream system changes, data pipeline bugs, or shifting patterns
+      - "Never check again" directly contradicts continuous monitoring best practices
+      - You should validate training data AND monitor production data continuously
+
+      **Option D (CloudWatch alarms on API latency)** is incorrect because:
+      - Latency measures model performance (speed), not data quality or fairness
+      - Low latency doesn't indicate good data quality or absence of bias
+      - A model can make fast, low-latency predictions on low-quality or biased data
+      - While monitoring latency is operationally important, it's not a quality or fairness indicator
+      - This confuses operational metrics with data/model quality metrics
+
+      **Option E (Custom preprocessing to reject low-quality inputs)** is incorrect because:
+      - This is defensive filtering, not monitoring
+      - Rejecting inputs doesn't provide visibility into what quality issues are occurring
+      - You lose data on the frequency and types of quality problems
+      - Monitoring (options A and B) provides metrics and alerts while allowing inference to continue
+      - Rejecting inputs can cause production failures and poor user experience
+      - Better to monitor quality issues and retrain/update models than to fail at inference time
+
+      The correct production monitoring strategy combines:
+      1. Model Monitor Data Quality for input drift detection
+      2. Model Monitor Bias (via Clarify) for fairness monitoring
+      3. Model Monitor Model Quality for prediction accuracy monitoring (not asked in this question)
+
+      All three together provide comprehensive production ML monitoring.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Clarify
+    concepts:
+      - Continuous monitoring
+      - Data quality monitoring
+      - Bias monitoring
+      - Production ML monitoring
+
+  - id: dqb-016
+    type: single
+    text: |
+      A machine learning team has a dataset with 1,000,000 rows that cannot fit in memory for preprocessing. They need to
+      shuffle the data before training to ensure good gradient estimates during model training with mini-batch SGD.
+
+      Which approach allows them to shuffle this large dataset efficiently?
+    options:
+      - id: A
+        text: Load the entire dataset into memory, shuffle using random.shuffle(), then write to disk
+      - id: B
+        text: Use reservoir sampling to maintain a shuffled sample in memory
+      - id: C
+        text: Split the data into multiple files, shuffle the file processing order, and use framework data loaders with buffer-based shuffling
+      - id: D
+        text: Don't shuffle the data since the dataset is already large enough to ensure diverse batches
+    correctAnswer: C
+    explanation: |
+      Option C is correct because it provides a practical, memory-efficient approach to shuffling large datasets that don't
+      fit in memory.
+
+      **The multi-level shuffling strategy:**
+
+      1. **File-level shuffling**: Split data into multiple files (e.g., 100 files of 10,000 rows each), then randomize
+         the order in which files are processed. This ensures batches don't always come from the same region of data.
+
+      2. **Buffer-based shuffling**: Deep learning frameworks (TensorFlow, PyTorch) provide data loaders with shuffle
+         buffers. These load a buffer of examples into memory (e.g., 10,000 rows), shuffle within the buffer, emit examples,
+         and refill the buffer. This provides local randomization without loading the entire dataset.
+
+      **Example with TensorFlow:**
+      ```python
+      dataset = tf.data.Dataset.list_files('data_part_*.csv', shuffle=True)  # Shuffle file order
+      dataset = dataset.interleave(lambda x: tf.data.TextLineDataset(x), cycle_length=4)
+      dataset = dataset.shuffle(buffer_size=10000)  # Buffer-based shuffle
+      dataset = dataset.batch(32)
+      ```
+
+      **Example with PyTorch:**
+      ```python
+      # When creating DataLoader for a large dataset split into chunks
+      dataset = LargeDataset(file_pattern='data_part_*.csv')
+      dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+      # PyTorch handles memory-efficient shuffling internally
+      ```
+
+      **Why this works:**
+      - File-level shuffling prevents sequential regions from dominating training
+      - Buffer-based shuffling provides local randomization with bounded memory usage
+      - Combined, these provide sufficient randomization for good gradient estimates
+      - Memory usage is O(buffer_size), not O(dataset_size)
+
+      **SageMaker support:**
+      - SageMaker training jobs can shuffle S3 file processing order
+      - Built-in algorithms automatically handle shuffling
+      - Pipe mode enables streaming data with shuffle buffers
+
+      Why other options are incorrect:
+
+      **Option A (Load entire dataset in memory)** is explicitly stated as impossible in the question:
+      - "1,000,000 rows that cannot fit in memory"
+      - Attempting to load the entire dataset would cause out-of-memory errors
+      - This is the naive approach that doesn't scale to large datasets
+      - Even if it technically fit, loading 1M rows just to shuffle is inefficient
+
+      **Option B (Reservoir sampling)** is a technique for maintaining a random sample from a stream, not for shuffling:
+      - Reservoir sampling selects K random items from N items in a stream
+      - It's used when you want a random subset (sample), not a shuffled complete dataset
+      - This would give you a random sample of 1M rows, but not all 1M rows in shuffled order
+      - This is the wrong tool for this job - it's for sampling, not shuffling
+
+      **Option D (Don't shuffle)** is incorrect because:
+      - Dataset size doesn't eliminate the need for shuffling
+      - Even large datasets need shuffling if they have any ordering (by time, by source, by label, etc.)
+      - The question specifically states they need shuffling for "good gradient estimates during mini-batch SGD"
+      - If data is ordered by label or has any systematic ordering, batches will be biased without shuffling
+      - Example: If the dataset is ordered with all class A examples first, then all class B, early batches will be
+        all class A, causing poor gradient estimates
+      - Shuffling is about randomizing batch composition, not dataset size
+
+      **Key exam takeaway:**
+      For large datasets that don't fit in memory, use a combination of:
+      1. File-level shuffling (randomize file processing order)
+      2. Buffer-based shuffling (frameworks provide this via shuffle buffers)
+      3. SageMaker Pipe mode for streaming with shuffle buffers
+
+      Never assume you can load the entire dataset in memory - design for scale.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+    services:
+      - Amazon SageMaker Processing
+      - Amazon SageMaker Training
+    concepts:
+      - Data shuffling
+      - Large-scale data processing
+      - Buffer-based shuffling
+      - Memory-efficient preprocessing
+
+  - id: dqb-017
+    type: single
+    text: |
+      A financial institution is evaluating their loan approval model for fairness. The model has been trained and deployed.
+      They discover that among applicants who truly should be approved (ground truth label = approved), the model correctly
+      approves 85% of applicants from demographic group A but only 70% of applicants from demographic group B.
+
+      Which bias metric quantifies this disparity in the model's ability to identify qualified applicants?
+    options:
+      - id: A
+        text: Difference in Positive Proportions in Predicted Labels (DPPL)
+      - id: B
+        text: Accuracy Difference (AD)
+      - id: C
+        text: Recall Difference (RD)
+      - id: D
+        text: Difference in Conditional Acceptance (DCAcc)
+    correctAnswer: C
+    explanation: |
+      Recall Difference (RD) is correct because it measures the difference in true positive rates (recall/sensitivity)
+      between facets - exactly what the question describes.
+
+      **Understanding Recall:**
+      - Recall = True Positives / (True Positives + False Negatives)
+      - Measures the proportion of actual positive cases that the model correctly identifies
+      - Also called sensitivity or true positive rate (TPR)
+
+      **In this scenario:**
+      - Group A recall: 85% of truly qualified applicants are approved
+      - Group B recall: 70% of truly qualified applicants are approved
+      - RD = 0.85 - 0.70 = 0.15 (or 15%)
+
+      This 15% recall difference indicates the model is better at identifying qualified applicants from group A than from
+      group B. In other words, the model "misses" 30% of qualified applicants from group B but only 15% from group A.
+
+      **Why this matters:**
+      - Equal opportunity fairness requires similar recall across groups
+      - If qualified individuals should be approved regardless of demographics, the model should identify them at equal rates
+      - Lower recall for group B means qualified applicants from that group face higher false negative rates
+      - This is a form of discrimination where qualified individuals are unfairly denied based on group membership
+
+      **The question's key phrases:**
+      - "among applicants who truly should be approved" → focusing on true positives
+      - "correctly approves" → measures true positive rate
+      - This is the definition of recall: correctly identifying true positives
+
+      Why other options are incorrect:
+
+      **Option A (DPPL)** measures overall positive prediction rates, not performance on truly qualified applicants:
+      - DPPL = proportion of all group A getting approvals - proportion of all group B getting approvals
+      - DPPL includes both correct approvals (true positives) and incorrect approvals (false positives)
+      - The question specifically asks about correctly identifying qualified (true positive) applicants
+      - DPPL could be equal (both groups get same approval rate) even if recall differs (one group's approvals are less
+        accurate)
+
+      **Option B (AD - Accuracy Difference)** measures overall prediction correctness, not specific to identifying positives:
+      - Accuracy = (TP + TN) / (TP + TN + FP + FN)
+      - Includes both positive and negative predictions
+      - The question focuses specifically on the model's performance on qualified applicants (positives only)
+      - A model could have equal accuracy but different recall if it makes different types of errors for each group
+
+      **Option D (DCAcc - Difference in Conditional Acceptance)** is related but measures something different:
+      - DCAcc compares whether qualified applicants are approved at similar rates (similar to recall)
+      - However, DCAcc specifically looks at the conditional probability and is calculated differently
+      - RD is the standard, direct measure of true positive rate differences
+      - When the question describes true positive rates explicitly (85% vs 70%), RD is the most direct answer
+
+      **Key exam insight:**
+      Questions about "correctly identifying" positive cases or "missing" qualified applicants are asking about recall.
+      Different bias metrics capture different notions of fairness:
+      - DPPL → Equal selection rates (demographic parity)
+      - RD → Equal ability to identify qualified applicants (equal opportunity)
+      - AD → Equal overall accuracy
+      - Specificity Difference → Equal ability to identify unqualified applicants
+
+      The specific scenario description tells you which metric to use.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html
+    services:
+      - Amazon SageMaker Clarify
+    concepts:
+      - Recall Difference
+      - Equal opportunity
+      - Post-training bias metrics
+      - True positive rate

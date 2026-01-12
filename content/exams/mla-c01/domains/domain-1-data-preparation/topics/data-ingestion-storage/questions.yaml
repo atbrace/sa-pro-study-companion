@@ -1,0 +1,1577 @@
+questions:
+  - id: dis-001
+    type: single
+    text: |
+      A financial services company ingests 2 TB of transaction data daily from multiple sources into their ML data lake on Amazon S3.
+      Data scientists frequently query the last 30-90 days of data for feature engineering using Amazon Athena, but rarely access older data.
+      The raw data is initially stored in CSV format. The ML team wants to optimize both query performance and storage costs.
+
+      Which combination of actions will BEST achieve these goals?
+    options:
+      - id: A
+        text: Convert CSV to Parquet format using AWS Glue ETL jobs, enable S3 Intelligent-Tiering storage class, and partition data by ingestion date
+      - id: B
+        text: Keep data in CSV format, implement S3 Lifecycle policies to move data older than 30 days to S3 Glacier, and create a single Glue table without partitions
+      - id: C
+        text: Convert CSV to JSON format for better compatibility, use S3 Standard storage class for all data, and partition by random UUID to distribute load
+      - id: D
+        text: Store data in RecordIO-Protobuf format for optimal compression, use S3 Standard-IA for all historical data, and avoid partitioning to simplify queries
+    correctAnswer: A
+    explanation: |
+      Option A is correct because it addresses all requirements optimally:
+
+      1. **Parquet format**: Provides 70-90% compression compared to CSV and enables columnar access for Athena queries. Column pruning dramatically improves query performance when data scientists select specific features.
+
+      2. **S3 Intelligent-Tiering**: Automatically moves data between access tiers based on access patterns. Frequently accessed data (last 30-90 days) stays in frequent access tier, while older data automatically transitions to infrequent access (30 days) and archive instant access (90 days), achieving 40-68% cost savings without manual lifecycle management.
+
+      3. **Partition by ingestion date**: Enables Athena to skip scanning irrelevant data when queries filter by date ranges. For queries on last 30 days, this reduces data scanned by 90%+ compared to full-table scans, directly reducing Athena costs (charged per GB scanned).
+
+      Why other options are incorrect:
+
+      B: CSV format provides no compression or column pruning benefits, resulting in slow queries and high Athena costs. S3 Glacier has millisecond retrieval latency but requires restore operations for bulk access, making it unsuitable for data that might be queried occasionally. No partitioning means all 2 TB scanned for every query.
+
+      C: JSON is actually larger than CSV for structured tabular data (field names repeated for each record) and offers no query performance benefits. Random UUID partitioning provides no query optimization since date-based queries cannot prune partitions. S3 Standard for all data wastes money on infrequently accessed older data.
+
+      D: RecordIO-Protobuf is designed for SageMaker training input, not analytical queries with Athena (which cannot read RecordIO). S3 Standard-IA for all data incurs retrieval charges for frequently accessed recent data, increasing costs. Avoiding partitioning forces full-table scans on every query.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-format.html
+    services:
+      - Amazon S3
+      - AWS Glue
+      - Amazon Athena
+    concepts:
+      - Data formats
+      - S3 storage classes
+      - Partitioning strategies
+
+  - id: dis-002
+    type: single
+    text: |
+      An ML engineering team is training a custom PyTorch model in Amazon SageMaker on a 150 GB dataset stored in S3.
+      The training job takes 6 hours to complete, but the team notices that the first 25 minutes are spent downloading data before training actually begins.
+      The training algorithm reads data sequentially during each epoch and does not require random access to records.
+
+      What change would MOST effectively reduce the total training time and cost?
+    options:
+      - id: A
+        text: Increase the SageMaker training instance size to ml.p4d.24xlarge for faster network bandwidth
+      - id: B
+        text: Convert the dataset to RecordIO-Protobuf format and enable Pipe Mode in the training job configuration
+      - id: C
+        text: Enable S3 Transfer Acceleration on the bucket to speed up downloads during File Mode
+      - id: D
+        text: Split the dataset into 100 smaller files and use multi-threaded downloads in File Mode
+    correctAnswer: B
+    explanation: |
+      Option B is correct because Pipe Mode with RecordIO-Protobuf format directly addresses the 25-minute download bottleneck:
+
+      **Pipe Mode benefits**:
+      - Eliminates pre-training download phase: Training starts in seconds instead of 25 minutes
+      - Streams data from S3 during training: Only small buffers kept in memory
+      - Reduced EBS volume requirement: No need to store full 150 GB dataset locally
+      - Cost savings: 25 minutes less billable training time on expensive GPU instances
+      - Performance improvement: Up to 40% faster data loading with RecordIO-Protobuf streaming
+
+      **RecordIO-Protobuf format**: Optimized binary format specifically designed for streaming with SageMaker. Each record is prefixed with size header, enabling efficient sequential streaming without parsing overhead.
+
+      For a 150 GB dataset on ml.p3.8xlarge instance ($12.24/hour), 25-minute reduction saves approximately $5.10 per training run. Over hundreds of experiments, savings compound significantly.
+
+      Why other options are incorrect:
+
+      A: Upgrading to ml.p4d.24xlarge ($32.77/hour, 4x more expensive) would improve network bandwidth but still requires downloading full 150 GB before training starts. The cost increase far exceeds time savings. Additionally, network bandwidth is rarely the bottleneck for S3 downloads within AWS regions (multi-Gbps throughput available on most instance types).
+
+      C: S3 Transfer Acceleration optimizes transfers over long distances (internet, cross-continent) but provides minimal benefit within the same AWS region where training instances and S3 buckets typically reside. Does not eliminate the fundamental File Mode bottleneck of downloading entire dataset before training.
+
+      D: Multi-threaded downloads can improve File Mode download speed by 2-3x but still requires downloading entire 150 GB to EBS volume before training begins. Adds complexity to training script. Even with 3x speedup (8 minutes download), Pipe Mode is still significantly faster (near-zero startup time).
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/using-pipe-input-mode-for-amazon-sagemaker-algorithms/
+    services:
+      - Amazon SageMaker
+      - Amazon S3
+    concepts:
+      - Pipe Mode vs File Mode
+      - RecordIO-Protobuf format
+      - Training optimization
+
+  - id: dis-003
+    type: multi
+    correctCount: 2
+    text: |
+      A data engineering team is designing a real-time feature ingestion pipeline for a fraud detection system.
+      The system processes 5,000 transactions per second with an average payload size of 2 KB per transaction.
+      Features must be available for real-time inference within 500 milliseconds of transaction occurrence.
+
+      Which TWO design decisions will ensure the system meets the latency and throughput requirements? (Select TWO)
+    options:
+      - id: A
+        text: Use Amazon Kinesis Data Streams with 10 shards in provisioned mode to handle the ingestion throughput
+      - id: B
+        text: Use Amazon Kinesis Data Firehose with a 60-second buffer interval to deliver data to SageMaker Feature Store
+      - id: C
+        text: Implement AWS Lambda consumers to process Kinesis records and write to SageMaker Feature Store Online Store using PutRecord API
+      - id: D
+        text: Configure Kinesis Data Streams to write directly to SageMaker Feature Store Offline Store for real-time feature availability
+      - id: E
+        text: Use Amazon SQS FIFO queues to buffer transactions before batch processing them every minute for feature computation
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Options A and C together provide a complete solution meeting all requirements:
+
+      **Option A - Kinesis Data Streams with 10 shards**:
+
+      Capacity calculation:
+      - Throughput: 5,000 transactions/sec × 2 KB = 10 MB/sec
+      - Records per second: 5,000
+      - Write limits per shard: 1 MB/sec OR 1,000 records/sec (whichever reached first)
+      - Required shards: max(10 MB/sec ÷ 1 MB/sec, 5,000 records/sec ÷ 1,000 records/sec) = max(10, 5) = 10 shards
+
+      Provisioned mode is appropriate here because traffic is predictable (constant 5,000 TPS), enabling cost optimization with fixed shard count.
+
+      Latency: Kinesis provides sub-second ingestion latency, well within 500ms requirement.
+
+      **Option C - Lambda consumers writing to Feature Store Online Store**:
+
+      - Lambda triggered by Kinesis records (batch sizes configurable, typically 100-1000 records)
+      - Lambda computes features from transaction data
+      - PutRecord API writes directly to Online Store (DynamoDB backend)
+      - PutRecord latency: Sub-20ms typical, enabling end-to-end latency < 500ms
+      - Online Store provides low-latency reads for real-time inference at SageMaker endpoints
+
+      This architecture achieves: Transaction → Kinesis (< 100ms) → Lambda (< 100ms) → Feature Store (< 20ms) = < 250ms end-to-end.
+
+      Why other options are incorrect:
+
+      B: Kinesis Data Firehose has **minimum 60-second buffer interval**, which violates the 500-millisecond latency requirement. Firehose is designed for near-real-time delivery (minutes), not sub-second latency required for real-time fraud detection. Additionally, Firehose typically delivers to S3, not directly to Feature Store Online Store.
+
+      D: Kinesis Data Streams does not write directly to Feature Store - custom application logic (Lambda, Flink, or application code) is required to consume streams and invoke Feature Store APIs. Furthermore, Offline Store (S3-based Iceberg tables) is designed for analytical queries and training, not real-time inference. Offline Store has minute-level latency due to S3 write patterns, incompatible with 500ms requirement.
+
+      E: SQS FIFO queues with 1-minute batch processing introduces minimum 1-minute latency (average 30 seconds for transactions arriving mid-interval), which is 60x-120x higher than the 500ms requirement. SQS is appropriate for decoupling and fault tolerance but not for real-time feature serving.
+    awsDocLink: https://docs.aws.amazon.com/streams/latest/dev/service-sizes-and-limits.html
+    services:
+      - Amazon Kinesis Data Streams
+      - AWS Lambda
+      - Amazon SageMaker Feature Store
+    concepts:
+      - Kinesis shard capacity planning
+      - Real-time ingestion patterns
+      - Feature Store Online Store
+
+  - id: dis-004
+    type: single
+    text: |
+      A machine learning team uses AWS Glue to catalog their S3-based data lake containing customer interaction data organized as:
+
+      s3://ml-datalake/interactions/year=2026/month=01/day=11/interactions.parquet
+
+      After running a Glue crawler, data scientists query the table using Amazon Athena but notice that queries scanning the last 7 days take
+      much longer and cost significantly more than expected. The table contains 18 months of data totaling 5 TB.
+
+      What is the MOST likely cause of poor query performance?
+    options:
+      - id: A
+        text: The Glue crawler did not detect the year/month/day folders as partitions, causing Athena to scan all 5 TB for every query
+      - id: B
+        text: Parquet format is not optimized for Athena queries, and the data should be converted to CSV for better performance
+      - id: C
+        text: The Glue Data Catalog stores the actual data instead of just metadata, creating a bottleneck during queries
+      - id: D
+        text: Athena automatically scans all data regardless of WHERE clause filters to ensure accuracy
+    correctAnswer: A
+    explanation: |
+      Option A is correct - the Glue crawler failing to detect partitions is the most common cause of this performance issue pattern.
+
+      **Why this happens**:
+
+      Glue crawlers automatically detect partitions from S3 key patterns **if** the pattern follows standard Hive-style partitioning with key=value format. The provided structure (year=2026/month=01/day=11) should be detected, but common issues that prevent detection include:
+
+      1. **Inconsistent naming**: If some paths use "year" and others use "yr", crawler may skip partition detection
+      2. **Crawler configuration**: "Create a single schema for each S3 path" option may have been disabled
+      3. **Mixed data types**: If year folders contain both files and subfolders, crawler behavior varies
+      4. **Custom classifiers**: Incorrect custom classifier configuration can override partition detection
+
+      **Performance impact without partitions**:
+
+      - Query: `SELECT * FROM interactions WHERE year=2026 AND month=01 AND day>=05`
+      - Without partitions: Athena scans all 5 TB (entire table) to filter records
+      - With partitions: Athena scans only 7 days ≈ 20 GB (5 TB ÷ 548 days × 7 days)
+      - Cost difference: $25.00 vs $0.10 per query (Athena charges $5 per TB scanned)
+      - Time difference: 180 seconds vs 4 seconds (partition pruning reduces I/O by 99%+)
+
+      **Solution**: Re-run Glue crawler with correct configuration, or manually add partitions using:
+      ```sql
+      ALTER TABLE interactions ADD PARTITION (year=2026, month=01, day=11)
+      LOCATION 's3://ml-datalake/interactions/year=2026/month=01/day=11/';
+      ```
+
+      Why other options are incorrect:
+
+      B: Parquet is **optimal** for Athena queries - it provides 70-90% compression and columnar storage enabling column pruning and predicate pushdown. Converting to CSV would dramatically worsen performance (10x slower queries, 5-10x higher costs) because CSV requires scanning entire file even when selecting specific columns, and offers no compression benefits. AWS explicitly recommends Parquet for Athena workloads.
+
+      C: This is a fundamental misunderstanding of AWS Glue Data Catalog architecture. The Data Catalog stores **only metadata**: table schemas, partition locations, column types, statistics. The actual data remains in S3. Queries retrieve metadata from Catalog (milliseconds), then read data directly from S3 using that metadata. Data Catalog cannot be a bottleneck for data volume.
+
+      D: This is incorrect - Athena's core value proposition is partition pruning and predicate pushdown. Athena analyzes WHERE clause filters, consults Glue Data Catalog partition metadata, and scans only relevant S3 objects. This optimization is precisely how Athena achieves cost-effectiveness for large datasets. Without this capability, Athena would be prohibitively expensive.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/add-crawler.html
+    services:
+      - AWS Glue
+      - AWS Glue Data Catalog
+      - Amazon Athena
+      - Amazon S3
+    concepts:
+      - Glue crawlers
+      - Partition detection
+      - Query optimization
+
+  - id: dis-005
+    type: single
+    text: |
+      An ML team is preparing a training dataset for a computer vision model. The dataset consists of 500,000 images (200 GB total) stored in S3,
+      each with corresponding labels in a separate CSV file. They plan to use a SageMaker built-in image classification algorithm for training.
+
+      Which data format and SageMaker feature combination will provide the FASTEST training start time and optimal throughput?
+    options:
+      - id: A
+        text: Store images as individual JPEG files in S3, use augmented manifest format with Pipe Mode to stream image and label data
+      - id: B
+        text: Convert images to RecordIO-Protobuf format with embedded labels, store in S3, and use File Mode with EBS volume
+      - id: C
+        text: Keep images as individual JPEG files, copy to EFS (Elastic File System), and mount EFS to training instance
+      - id: D
+        text: Compress all images into a single ZIP archive, download to training instance, extract, then begin training
+    correctAnswer: A
+    explanation: |
+      Option A is correct because augmented manifest format with Pipe Mode is specifically designed for this scenario (image classification with external label files) and provides optimal performance.
+
+      **Augmented Manifest Format**:
+      - JSON Lines format (.manifest file) containing S3 paths to images and corresponding labels
+      - Each line: `{"source-ref": "s3://bucket/image001.jpg", "class": "cat"}`
+      - No need to convert images to different format - use original JPEGs
+      - Supports annotation metadata from SageMaker Ground Truth
+
+      **Pipe Mode with Augmented Manifest**:
+      - Streams both image files and labels directly from S3
+      - SageMaker reads manifest file, fetches images on-demand during training
+      - Training starts in seconds (no 200 GB download wait)
+      - Minimal EBS volume required (5 GB typical)
+      - Memory efficient: Only current mini-batch of images in memory
+
+      **Performance benefits**:
+      - Instant training start vs 10-15 minute download in File Mode
+      - 200 GB dataset becomes manageable without large EBS volumes
+      - Reduced instance cost: Smaller storage, shorter billable time
+      - Native support in SageMaker built-in algorithms (Image Classification, Object Detection)
+
+      Why other options are incorrect:
+
+      B: RecordIO-Protobuf format is designed for tabular/numerical data represented as float arrays, not images. While technically possible to encode images as byte arrays in Protobuf, this is not the intended use case and offers no benefits over augmented manifest. Converting 500,000 images to RecordIO is time-consuming and complex. File Mode with 200 GB dataset requires large EBS volume and 10+ minute download time before training starts, eliminating the fast start time requirement.
+
+      C: EFS mounting appears attractive but introduces significant drawbacks:
+      - EFS performance depends on throughput mode and size: Bursting mode only provides 100 MiB/s baseline for files under 1 TiB
+      - 200 GB of images = $60/month EFS storage cost vs $4.60/month S3 Standard cost (13x more expensive)
+      - Network overhead: Training instance still reads over network, similar to S3 but with EFS limitations
+      - Requires VPC configuration and ENI attachment complexity
+      - No advantage over Pipe Mode streaming directly from S3
+
+      D: This is the worst option:
+      - Creates single point of failure (corrupted ZIP = entire dataset lost)
+      - Extract operation on 200 GB ZIP takes 5-10 minutes plus 10-minute download = 15-20 minute start time
+      - Requires 400+ GB EBS volume (200 GB for ZIP + 200 GB for extracted files)
+      - Instance runs during slow extraction, wasting expensive GPU hours
+      - No streaming benefits - full dataset download required
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/augmented-manifest-stream.html
+    services:
+      - Amazon SageMaker
+      - Amazon S3
+    concepts:
+      - Augmented manifest format
+      - Pipe Mode
+      - Image classification data formats
+
+  - id: dis-006
+    type: single
+    text: |
+      A company is building a recommendation engine that requires both real-time features (user's last 5 clicked items)
+      and historical features (user's total purchases over lifetime) for inference. The system serves 10,000 predictions per second.
+      Historical features are computed nightly via batch EMR jobs processing 2 years of data.
+
+      How should the team architect feature storage to meet both latency and data requirements?
+    options:
+      - id: A
+        text: Store all features in SageMaker Feature Store Online Store only, updated by both real-time streams and nightly batch jobs
+      - id: B
+        text: Store all features in SageMaker Feature Store Offline Store only, queried via Athena during each inference request
+      - id: C
+        text: Store real-time features in DynamoDB and historical features in S3, requiring inference code to query both sources
+      - id: D
+        text: Configure SageMaker Feature Store with both Online Store (for real-time features) and Offline Store (for batch features), then synchronize historical features from Offline to Online Store nightly
+    correctAnswer: D
+    explanation: |
+      Option D is correct because it leverages Feature Store's dual-store architecture precisely for this hybrid latency pattern while maintaining feature consistency.
+
+      **Architecture breakdown**:
+
+      1. **Real-time features → Online Store**:
+         - Kinesis Data Streams captures user click events
+         - Lambda function computes last 5 clicked items
+         - PutRecord API writes to Feature Store Online Store
+         - Sub-20ms write latency enables real-time updates
+         - DynamoDB backend provides single-digit millisecond reads during inference
+
+      2. **Historical features → Offline Store → Online Store sync**:
+         - Nightly EMR Spark job processes 2 years of purchase history
+         - Computes lifetime value, purchase frequency, category preferences
+         - Batch ingestion to Feature Store Offline Store (S3 Iceberg tables)
+         - Separate job reads from Offline Store and updates Online Store with latest historical features
+         - Ensures both feature types available in single Online Store for inference
+
+      3. **Inference serving**:
+         - SageMaker endpoint invokes GetRecord API against Online Store
+         - Single query retrieves both real-time and historical features
+         - Sub-10ms latency supports 10,000 predictions/sec requirement
+         - No complex multi-source query logic in inference code
+
+      **Key benefits**:
+      - Unified feature access: One API call retrieves all features
+      - Appropriate storage for each pattern: Online for low-latency, Offline for analytics
+      - Feature consistency: Same feature definitions across training and inference
+      - Simplified inference code: No custom multi-source query logic
+      - Cost-effective: Offline Store uses cheap S3; Online Store only for active features
+
+      Why other options are incorrect:
+
+      A: Storing batch historical features ONLY in Online Store wastes cost - DynamoDB storage ($0.25 per GB-month) is 5x more expensive than S3 ($0.023 per GB-month for Intelligent-Tiering). For 2 years of historical data (potentially TB-scale), this is cost-prohibitive. More importantly, Online Store is not designed for large-scale batch ingestion or analytical queries that EMR jobs might need for feature computation. Offline Store (S3-based) is optimal for batch processing with Spark.
+
+      B: Offline Store is S3-based Iceberg tables designed for analytical queries, not low-latency serving. Querying Athena during each inference request would introduce:
+      - 2-5 second query latency (Athena is not designed for sub-second queries)
+      - $5 per TB scanned cost for every query (10,000 predictions/sec = $millions/day)
+      - Query concurrency limits (20 concurrent queries default in Athena)
+      - Completely violates 10,000 QPS latency requirements
+
+      C: This is the "build it yourself" approach that Feature Store is designed to replace:
+      - Inference code must handle two different APIs (DynamoDB and S3)
+      - No unified feature catalog - features scattered across systems
+      - Schema inconsistencies between real-time and historical features
+      - Training-serving skew risk: Training uses S3 data, inference uses DynamoDB + S3
+      - Operational complexity: Manage DynamoDB provisioning, S3 lifecycle policies separately
+      - No feature lineage or versioning
+
+      Feature Store solves these exact problems by providing unified feature management with appropriate storage backends (Online for serving, Offline for analytics).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-ingest-data.html
+    services:
+      - Amazon SageMaker Feature Store
+      - Amazon EMR
+      - Amazon Kinesis Data Streams
+      - AWS Lambda
+    concepts:
+      - Feature Store dual-store architecture
+      - Online vs Offline stores
+      - Hybrid ingestion patterns
+
+  - id: dis-007
+    type: single
+    text: |
+      An ML platform team manages 50 different machine learning models in production, each with dedicated training data pipelines.
+      Raw data arrives in S3 from various sources (databases, APIs, streaming) in different formats (CSV, JSON, Parquet).
+      The team wants to centralize metadata management and enable data scientists to discover available datasets without contacting data engineers.
+
+      Which approach provides the MOST comprehensive solution for metadata management and data discovery?
+    options:
+      - id: A
+        text: Create a README.md file in each S3 prefix describing the dataset schema, update date, and contact person
+      - id: B
+        text: Implement AWS Glue Data Catalog with crawlers scheduled to run after each data pipeline completes, tag tables with metadata, and provide SageMaker Studio access to the catalog
+      - id: C
+        text: Store all dataset schemas in a DynamoDB table with a custom web UI for search functionality
+      - id: D
+        text: Require data engineers to document schemas in a shared Google Sheet before deploying pipelines
+    correctAnswer: B
+    explanation: |
+      Option B is correct because AWS Glue Data Catalog is purpose-built for centralized metadata management in data lakes, with native integration across all relevant AWS ML and analytics services.
+
+      **Comprehensive benefits of Glue Data Catalog approach**:
+
+      1. **Automated schema discovery**:
+         - Glue crawlers automatically infer schemas from S3 data (CSV, JSON, Parquet, ORC, Avro)
+         - Scheduled runs ensure catalog stays synchronized with data pipeline outputs
+         - Detects schema evolution (new columns, type changes) and updates catalog
+         - Partition discovery automatically maps S3 key structures to queryable partitions
+
+      2. **Centralized metadata repository**:
+         - Single source of truth for all dataset schemas, locations, formats
+         - Column-level metadata: data types, comments, statistics (min/max/null counts)
+         - Table-level properties: creation time, last updated, data format, compression
+         - Supports 1 million+ tables in single catalog (regional scope)
+
+      3. **Native AWS service integration**:
+         - **SageMaker Studio**: Browse catalog, preview data, import directly into Data Wrangler
+         - **Amazon Athena**: Query catalog tables with SQL for feature exploration
+         - **AWS Glue ETL**: Reference catalog tables as sources/destinations
+         - **Amazon EMR**: Access catalog as Hive metastore for Spark jobs
+         - **Amazon Redshift Spectrum**: Query data lake tables alongside warehouse data
+
+      4. **Enhanced data discovery**:
+         - SageMaker Studio catalog browser: Search by table name, column name, or tag
+         - Resource tagging: Add custom tags (team=recommendation-engine, pii=true, quality=validated)
+         - Column-level tagging for governance (sensitive data identification)
+         - Catalog search API for programmatic discovery in ML pipelines
+
+      5. **Data governance and security**:
+         - AWS Lake Formation integration: Column-level access control via catalog
+         - IAM policies control catalog access (read-only for data scientists, write for engineers)
+         - Audit logging via CloudTrail: Track who accessed which tables
+         - Schema validation before model training: Ensure expected columns exist
+
+      **Operational workflow**:
+      1. Data pipeline writes to S3 (any format)
+      2. EventBridge triggers Glue crawler on S3 ObjectCreated event
+      3. Crawler infers schema, creates/updates catalog table
+      4. Data scientist searches catalog in SageMaker Studio
+      5. Imports dataset directly into notebook or Data Wrangler
+      6. Schema available programmatically for automated ML pipelines
+
+      Why other options are incorrect:
+
+      A: README.md files are unstructured, non-queryable, and require manual maintenance:
+      - No programmatic access for ML pipelines to validate schemas
+      - Quickly become outdated as schemas evolve
+      - Cannot search across all datasets (must check each README individually)
+      - No integration with SageMaker, Athena, or other AWS services
+      - Schema changes require manual README updates (often forgotten)
+      - No governance: Anyone with S3 access can modify READMEs
+
+      B: This manual, unstructured approach has fundamental problems:
+      - Spreadsheets are not designed for structured metadata storage
+      - No schema validation (data types could be documented incorrectly)
+      - No access control (anyone with link can edit)
+      - No integration with AWS ML/analytics services
+      - Quickly becomes unmaintainable with 50+ models and growing datasets
+      - Search functionality is primitive (Excel-style text search)
+
+      C: Building custom metadata management is expensive and error-prone:
+      - DynamoDB + custom UI = weeks of development and ongoing maintenance
+      - Reinventing functionality that Glue Data Catalog provides out-of-box
+      - No native integration with SageMaker, Athena, EMR
+      - Schema inference logic must be custom-built for each format
+      - No automatic partition detection or schema evolution handling
+      - Operational burden: UI hosting, API management, database backups
+
+      AWS Glue Data Catalog is specifically designed to solve this exact problem at scale.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html
+    services:
+      - AWS Glue
+      - AWS Glue Data Catalog
+      - Amazon SageMaker Studio
+      - Amazon S3
+    concepts:
+      - Metadata management
+      - Data discovery
+      - Schema inference
+
+  - id: dis-008
+    type: multi
+    correctCount: 3
+    text: |
+      A healthcare analytics company is designing a HIPAA-compliant ML data lake on AWS. The solution must:
+      - Ingest 500 GB of patient records daily from on-premises SFTP servers
+      - Store data in S3 with encryption at rest
+      - Catalog and make data discoverable for approved users
+      - Minimize operational overhead for data engineers
+
+      Which THREE actions should be included in the architecture? (Select THREE)
+    options:
+      - id: A
+        text: Use AWS Transfer Family with SFTP protocol to receive files directly into S3, enabling S3 default encryption with AWS KMS
+      - id: B
+        text: Deploy EC2 instances running SFTP servers, then use scheduled Lambda functions to copy files from EC2 to S3
+      - id: C
+        text: Configure AWS Glue crawlers with KMS encryption enabled to scan S3 data and populate the Data Catalog
+      - id: D
+        text: Implement AWS Lake Formation for centralized access control to Data Catalog tables, with column-level security for PHI fields
+      - id: E
+        text: Store all data in a single S3 bucket without organizing by date or type to simplify access management
+      - id: F
+        text: Use S3 Lifecycle policies to automatically transition historical patient records older than 7 years to S3 Glacier Deep Archive for long-term compliance retention
+    correctAnswer:
+      - A
+      - C
+      - D
+    explanation: |
+      Options A, C, and D together provide a complete, secure, low-operational-overhead solution for HIPAA-compliant data lake ingestion and cataloging.
+
+      **Option A - AWS Transfer Family for SFTP**:
+
+      AWS Transfer Family provides fully managed SFTP, FTPS, and FTP servers with direct S3 integration:
+
+      - **Managed service**: No server provisioning, patching, or scaling required (minimal operational overhead)
+      - **Direct S3 writes**: Files uploaded via SFTP are written directly to S3 (no intermediate storage on EC2)
+      - **Native encryption**: Configure S3 default encryption with AWS KMS (HIPAA compliance requirement)
+      - **Authentication options**: Support for service-managed users, Active Directory, or custom Lambda authorizers
+      - **HIPAA eligible**: AWS Transfer Family is a HIPAA-eligible service under BAA
+      - **Audit logging**: CloudWatch Logs and CloudTrail capture all file transfer activity
+      - **Cost-effective**: Pay per protocol endpoint per hour + data transferred (no EC2 instance costs)
+
+      For 500 GB daily ingestion, Transfer Family is operationally simpler and more secure than managing EC2-based SFTP servers.
+
+      **Option C - Glue Crawlers with KMS Encryption**:
+
+      Glue crawlers automate schema discovery while maintaining encryption:
+
+      - **Automatic schema inference**: Crawlers scan S3 objects and create Data Catalog tables
+      - **KMS integration**: Crawlers can read KMS-encrypted S3 objects if granted decrypt permissions
+      - **Scheduled runs**: Configure nightly crawlers after daily 500 GB ingestion completes
+      - **Metadata security**: Catalog metadata can also be encrypted at rest
+      - **HIPAA compliance**: AWS Glue is HIPAA-eligible under BAA
+      - **Zero operational overhead**: Serverless, no infrastructure to manage
+
+      Ensures catalog stays synchronized with ingested data without manual schema maintenance.
+
+      **Option D - AWS Lake Formation for Access Control**:
+
+      Lake Formation provides centralized, fine-grained data governance required for HIPAA PHI (Protected Health Information):
+
+      - **Column-level security**: Grant access to specific columns (e.g., allow researchers to see diagnosis codes but not patient names)
+      - **Row-level security**: Filter data based on user attributes (e.g., only show patients from specific regions)
+      - **Centralized permissions**: Single control plane for Data Catalog, S3, and services (Athena, EMR, SageMaker)
+      - **Tag-based access control**: Tag columns containing PHI, apply policies based on tags
+      - **Audit logging**: Comprehensive CloudTrail logging of all data access for HIPAA audit requirements
+      - **Data masking**: Redact or mask sensitive columns (SSN, MRN) for specific user groups
+      - **Integrated with Data Catalog**: Permissions apply across all services querying catalog
+
+      For healthcare data with strict regulatory requirements, Lake Formation is essential for demonstrating access control compliance.
+
+      **Why other options are incorrect or incomplete**:
+
+      B: EC2-based SFTP servers introduce significant operational overhead:
+      - Requires patching, scaling, monitoring, and high availability configuration
+      - Must implement custom encryption, authentication, and audit logging
+      - Higher cost than Transfer Family (24/7 EC2 instances vs pay-per-use managed service)
+      - Lambda copying adds complexity, latency, and potential failure points
+      - Does not minimize operational overhead as required
+
+      E: Storing data without organization is a data governance anti-pattern:
+      - Violates data lake best practices (raw/processed/curated layers)
+      - Makes compliance audits difficult (cannot easily identify data from specific time periods)
+      - Poor query performance (cannot use partitioning for time-based analysis)
+      - Access management becomes harder, not simpler (cannot apply policies to specific data subsets)
+      - HIPAA requires data lifecycle management, which is impossible without date-based organization
+
+      F: While S3 Glacier Deep Archive lifecycle policies are a valid cost optimization and compliance strategy (many healthcare regulations require 7-year retention), this option is not essential for the core requirements:
+      - Ingestion (covered by A), cataloging (covered by C), and access control (covered by D) are higher priorities
+      - Lifecycle policies can be added later without impacting initial architecture
+      - The question asks for THREE actions; A, C, D provide complete solution for stated requirements
+
+      However, F would be an excellent addition for a comprehensive solution (if the question asked for four actions).
+    awsDocLink: https://docs.aws.amazon.com/transfer/latest/userguide/what-is-aws-transfer-family.html
+    services:
+      - AWS Transfer Family
+      - Amazon S3
+      - AWS Glue
+      - AWS Lake Formation
+      - AWS KMS
+    concepts:
+      - HIPAA compliance
+      - Encrypted data ingestion
+      - Fine-grained access control
+      - Managed SFTP
+
+  - id: dis-009
+    type: single
+    text: |
+      A data science team is experimenting with different feature engineering approaches for a time-series forecasting model.
+      They need to store intermediate feature datasets during experimentation and want to optimize for fast iteration cycles
+      rather than production cost efficiency. The datasets are 50-200 GB and accessed multiple times per day during development.
+
+      Which S3 storage configuration is MOST appropriate for this use case?
+    options:
+      - id: A
+        text: S3 Standard storage class with no lifecycle policies during experimentation phase
+      - id: B
+        text: S3 Intelligent-Tiering storage class to automatically optimize costs
+      - id: C
+        text: S3 Standard-IA (Infrequent Access) to reduce storage costs during experimentation
+      - id: D
+        text: S3 One Zone-IA to minimize costs since experiment data doesn't require high durability
+    correctAnswer: A
+    explanation: |
+      Option A is correct because S3 Standard is optimized for frequently accessed data and avoids cost traps that other storage classes introduce for high-access experimentation workloads.
+
+      **Why S3 Standard is optimal for experimentation**:
+
+      1. **No retrieval charges**: S3 Standard has zero data retrieval fees. Data scientists can read datasets multiple times per day without unexpected costs.
+
+      2. **Lowest latency**: First-byte latency of milliseconds, critical for fast iteration during experimentation. No retrieval time overhead.
+
+      3. **No minimum storage duration**: Can delete datasets immediately after experiments conclude without penalty. Other storage classes have minimum duration commitments (30-90 days).
+
+      4. **Predictable costs**: Simple pricing model ($0.023 per GB-month + $0.0004 per 1,000 GET requests). No surprise retrieval charges that can exceed storage savings.
+
+      5. **Experimentation workload characteristics**:
+      - High access frequency: Multiple reads per day for different experiments
+      - Short lifespan: Datasets often deleted after days/weeks when experiments complete
+      - Performance priority: Fast iteration more valuable than minor cost savings
+      - Unpredictable patterns: Access frequency varies by experiment, making "intelligent" tiering unnecessary
+
+      **Cost example (50 GB dataset, 10 reads per day for 7 days)**:
+      - Storage: 50 GB × $0.023 = $1.15 per month (prorated to $0.27 for 7 days)
+      - Retrieval: 70 reads × 50 GB × $0.0004 / 1000 = $0.0014
+      - **Total: $0.27** (negligible for experimentation phase)
+
+      **Transition to cost optimization**: After finalizing feature engineering approach and moving to production training pipelines, implement lifecycle policies to transition historical training datasets to Intelligent-Tiering or Standard-IA.
+
+      Why other options are incorrect:
+
+      B: S3 Intelligent-Tiering adds complexity and potential costs without benefits for this scenario:
+      - Monitoring fee: $0.0025 per 1,000 objects (for 50 GB in 100 MB files = 500 objects = $0.00125/month)
+      - 30-day observation period before transitioning: Datasets accessed "multiple times per day" will never transition to lower tiers (always stay in Frequent Access tier, which costs same as S3 Standard)
+      - Adds unnecessary complexity for short-lived experimentation data
+      - Best for unpredictable long-term storage, not active experimentation
+
+      C: S3 Standard-IA is designed for **infrequent** access (monthly or less), not multiple times per day:
+      - Retrieval charges: $0.01 per GB retrieved (50 GB × 10 reads × 7 days = 3,500 GB retrieved = $35 retrieval charges)
+      - Storage savings: 50 GB × 7 days × ($0.023 - $0.0125) / 30 days = $0.12 saved
+      - **Net cost increase: $35 - $0.12 = $34.88** vs S3 Standard for same workload
+      - 30-day minimum storage duration: If deleted after 7 days, charged for full 30 days
+      - Clearly inappropriate for frequent access pattern
+
+      D: S3 One Zone-IA has same retrieval cost problems as Standard-IA, plus additional risks:
+      - Retrieval charges: $0.01 per GB (same cost trap as Standard-IA)
+      - Single AZ storage: If AZ experiences outage, data unavailable (blocks all experiments)
+      - 99.5% availability SLA vs 99.9% for Standard (3x higher unavailability risk)
+      - Not recommended for any data you cannot easily recreate
+      - Experiment datasets are often result of hours of computation - losing them requires recomputation
+      - Durability concerns: While still 99.999999999% durable within AZ, AZ loss means data loss (unlikely but possible)
+
+      **Best practice**: Use S3 Standard during active development, then implement automated lifecycle transitions when datasets become "cold" (inactive experiments) or move to production (apply cost optimization patterns).
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html
+    services:
+      - Amazon S3
+    concepts:
+      - S3 storage classes
+      - Cost optimization
+      - Experimentation vs production workloads
+
+  - id: dis-010
+    type: single
+    text: |
+      A retail company streams clickstream events from their website to Amazon Kinesis Data Streams for real-time analytics.
+      The stream has 20 shards and receives 18 MB per second of data. A new ML application needs to consume this stream to
+      compute real-time product recommendation features, but the existing analytics application already consumes the stream
+      at full 2 MB/sec per shard read capacity (40 MB/sec total).
+
+      What is the MOST cost-effective way to enable the new ML application to consume the stream without impacting the existing consumer?
+    options:
+      - id: A
+        text: Increase the number of shards from 20 to 40 to double the read capacity for both consumers
+      - id: B
+        text: Enable Enhanced Fan-Out for the new ML application consumer
+      - id: C
+        text: Create a second Kinesis Data Stream with 20 shards and use Kinesis Data Firehose to replicate data from the first stream
+      - id: D
+        text: Configure the new ML application to poll the stream more frequently (1000 ms instead of 5000 ms) to share read capacity
+    correctAnswer: B
+    explanation: |
+      Option B is correct because Enhanced Fan-Out provides dedicated read throughput per consumer without modifying the stream or impacting existing consumers, and is the most cost-effective solution for this scenario.
+
+      **Enhanced Fan-Out explanation**:
+
+      Standard Kinesis consumers share the 2 MB/sec read capacity per shard across all consumers:
+      - Original architecture: 20 shards × 2 MB/sec = 40 MB/sec total read capacity
+      - 1 existing consumer using full 40 MB/sec
+      - Adding 2nd consumer creates contention: Each gets ~20 MB/sec (50% of needed throughput)
+
+      Enhanced Fan-Out provides:
+      - **Dedicated 2 MB/sec per shard per consumer**: No sharing of read capacity
+      - **Push model**: Kinesis pushes records to consumer via HTTP/2 (lower latency than polling)
+      - **Parallel consumers**: Up to 20 Enhanced Fan-Out consumers per stream
+      - **No stream modification**: Existing standard consumer continues working unchanged
+
+      With Enhanced Fan-Out for ML application:
+      - Existing analytics consumer: 40 MB/sec (unchanged, uses standard shared read capacity)
+      - New ML consumer: 40 MB/sec (dedicated Enhanced Fan-Out throughput)
+      - Total read capacity: 80 MB/sec (both applications fully satisfied)
+
+      **Cost analysis**:
+
+      Enhanced Fan-Out pricing (US East):
+      - $0.015 per shard-hour per consumer
+      - $0.013 per GB data retrieved
+
+      For new ML application:
+      - Shard-hour cost: 20 shards × $0.015 × 730 hours/month = $219/month
+      - Data retrieval: 18 MB/sec × 2.6 million sec/month = 46.8 TB/month × $0.013 = $608/month
+      - **Total Enhanced Fan-Out: $827/month**
+
+      **Why this is cost-effective**:
+
+      Option B adds $827/month with zero impact to existing consumer and no operational changes. Compare to alternatives:
+
+      Why other options are incorrect:
+
+      A: Increasing shards from 20 to 40 doubles costs and is operationally disruptive:
+      - Shard cost: 40 shards × $0.015 × 730 hours = $438/month (vs $219 for current 20 shards)
+      - Additional cost: $219/month for unused capacity (only 18 MB/sec ingested, 40 shards support 40 MB/sec)
+      - Resharding operation: Requires UpdateShardCount API call, splits/merges shards (minutes of downtime risk)
+      - Application changes: Existing consumer must adjust to new shard distribution (shard iterator invalidation)
+      - Ongoing waste: Stream is under-provisioned for writes (18 MB/sec vs 40 MB/sec capacity)
+
+      More expensive than Enhanced Fan-Out ($438 vs $219) with operational complexity and no actual benefit.
+
+      C: Creating a second stream is the most expensive and complex option:
+      - Second stream cost: 20 shards × $0.015 × 730 hours = $219/month
+      - Data PUT charges for replication: 18 MB/sec ingested twice = double PUT costs
+      - Firehose cost: Cannot replicate between Kinesis Streams (Firehose writes to S3/Redshift/OpenSearch, not Kinesis)
+      - Correct implementation requires Lambda or Flink to read stream 1 and write to stream 2 (additional compute costs)
+      - Lambda cost: ~$150/month for continuous processing at this volume
+      - **Total: $600+ per month** with significant operational complexity
+      - Data duplication: Now maintaining two identical streams
+
+      Far more expensive than Enhanced Fan-Out and operationally complex.
+
+      D: Increasing polling frequency does not increase total read capacity:
+      - Kinesis limit: 5 GetRecords API calls per second per shard (shared across all consumers)
+      - 2 MB/sec per shard read limit is absolute, regardless of polling frequency
+      - More frequent polling by both consumers increases GetRecords calls (higher API request costs)
+      - Likely to hit GetRecords throttling: 2 consumers × 5 calls/sec = 10 calls/sec > 5 call/sec limit
+      - ProvisionedThroughputExceededException errors and backoff logic (degraded performance)
+      - Does not solve the fundamental problem: Total read capacity remains 40 MB/sec shared
+
+      This option makes the problem worse, not better, by introducing throttling.
+    awsDocLink: https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html
+    services:
+      - Amazon Kinesis Data Streams
+    concepts:
+      - Enhanced Fan-Out
+      - Kinesis consumer patterns
+      - Read capacity sharing
+
+  - id: dis-011
+    type: single
+    text: |
+      A genomics research organization processes DNA sequencing data files that are 50-150 GB each. After initial processing and
+      feature extraction, the raw sequencing files are rarely accessed but must be retained for 10 years for regulatory compliance.
+      When files are needed (approximately 1% are accessed per year), researchers require access within 12 hours.
+
+      Which S3 storage class provides the MOST cost-effective solution for these requirements?
+    options:
+      - id: A
+        text: S3 Standard with lifecycle policy to delete after 10 years
+      - id: B
+        text: S3 Intelligent-Tiering with Archive access tiers enabled
+      - id: C
+        text: S3 Glacier Flexible Retrieval (formerly Glacier)
+      - id: D
+        text: S3 Glacier Deep Archive
+    correctAnswer: C
+    explanation: |
+      Option C (S3 Glacier Flexible Retrieval) is correct because it balances low storage cost with the 12-hour retrieval requirement at the best price point.
+
+      **S3 Glacier Flexible Retrieval characteristics**:
+
+      Storage cost:
+      - $0.0036 per GB-month (US East)
+      - For 100 GB file: $0.36 per month, $43.20 over 10 years
+
+      Retrieval options:
+      - **Expedited**: 1-5 minutes, $0.03 per GB + $0.01 per request
+      - **Standard**: 3-5 hours, $0.01 per GB + $0.05 per 1,000 requests (meets 12-hour requirement)
+      - **Bulk**: 5-12 hours, $0.0025 per GB + $0.025 per 1,000 requests (cheapest, still meets requirement)
+
+      **Cost calculation for 10-year retention with 1% annual access**:
+
+      Assume 1,000 files × 100 GB average = 100 TB total dataset:
+
+      Storage cost (10 years):
+      - 100,000 GB × $0.0036 × 120 months = $43,200
+
+      Retrieval cost (1% annually = 10% over 10 years = 100 files):
+      - 100 files × 100 GB × $0.0025 (bulk retrieval) = $250
+      - Requests: 100 × $0.025 / 1000 = $0.0025 (negligible)
+
+      **Total 10-year cost: $43,450**
+
+      **Why this is optimal**:
+      - Meets 12-hour retrieval SLA with bulk retrieval (5-12 hours)
+      - 84% cheaper storage than S3 Standard ($0.0036 vs $0.023 per GB-month)
+      - Retrieval cost reasonable for 1% annual access rate
+      - No minimum object size charges (vs Glacier Instant Retrieval 128 KB minimum)
+
+      Why other options are incorrect:
+
+      A: S3 Standard is dramatically more expensive for long-term archival:
+      - Storage: 100,000 GB × $0.023 × 120 months = $276,000
+      - **$232,550 more expensive** than Glacier Flexible Retrieval over 10 years
+      - No retrieval charges (benefit)
+      - Instant access (benefit)
+      - But for data accessed 1% per year, instant access does not justify 6.4x higher cost
+      - Lifecycle policy to delete is good, but wrong storage class for 10-year retention
+
+      B: S3 Intelligent-Tiering with Archive tiers has unnecessary overhead:
+      - Monitoring fee: $0.0025 per 1,000 objects = $2.50/month for 1 million objects
+      - Frequent Access tier (first 30 days): $0.023 per GB-month
+      - Archive Access tier (after 90 days): $0.0036 per GB-month (same as Glacier Flexible)
+      - Archive Instant Access tier (after 90 days, if configured): $0.004 per GB-month
+
+      Cost analysis:
+      - First 30 days in Frequent Access: Pays full S3 Standard cost ($0.023 per GB-month)
+      - Days 30-90 in Infrequent Access: $0.0125 per GB-month
+      - After 90 days in Archive Access: $0.0036 per GB-month (same as Glacier Flexible)
+      - Monitoring overhead: $2.50/month = $300 over 10 years
+
+      For data that will never be accessed after initial upload (rare 1% access), paying Standard rates for 30 days and monitoring fees for 10 years is wasteful. Intelligent-Tiering is designed for *unpredictable* access patterns, but this scenario is highly predictable (immediate archive, rare retrieval).
+
+      **Total: ~$44,000** (slightly more than Glacier Flexible due to first 90 days and monitoring fees)
+
+      C: S3 Glacier Deep Archive is cheaper for storage but has 12-48 hour retrieval time:
+      - Storage: $0.00099 per GB-month (72% cheaper than Glacier Flexible)
+      - Retrieval: Standard (12 hours), $0.02 per GB + $0.10 per 1,000 requests
+      - Bulk (48 hours): $0.0025 per GB
+
+      **Critical issue**: 12-hour retrieval requirement is at the *minimum* of Glacier Deep Archive Standard retrieval (12-48 hours typical). This is a borderline case:
+      - If researchers need files urgently (within 12 hours guarantee), Deep Archive is risky (could take up to 48 hours)
+      - Standard retrieval also costs 2x more per GB ($0.02 vs $0.01) than Glacier Flexible
+
+      Cost for 100 TB over 10 years:
+      - Storage: 100,000 GB × $0.00099 × 120 months = $11,880
+      - Retrieval (10% over 10 years): 10,000 GB × $0.02 = $200
+      - **Total: $12,080** (cheapest option if retrieval SLA can be relaxed)
+
+      However, "researchers require access within 12 hours" suggests this is a firm requirement, not a flexible guideline. Glacier Deep Archive's 12-48 hour window makes it unsuitable. If the requirement stated "within 24-48 hours," Deep Archive would be the better choice.
+
+      **Key decision**: Glacier Flexible Retrieval (Option C) is the safest choice meeting the stated 12-hour requirement with cost-effective storage. If the scenario explicitly stated "up to 48 hours acceptable," Deep Archive would be optimal.
+    awsDocLink: https://aws.amazon.com/s3/storage-classes/glacier/
+    services:
+      - Amazon S3
+      - S3 Glacier
+    concepts:
+      - S3 storage classes
+      - Long-term archival
+      - Retrieval time vs cost trade-offs
+
+  - id: dis-012
+    type: multi
+    correctCount: 2
+    text: |
+      An ML team is training a natural language processing model using the SageMaker BlazingText built-in algorithm.
+      The training dataset consists of 100 GB of text files in S3. The team wants to optimize training performance and minimize costs.
+
+      Which TWO configurations will provide the BEST performance? (Select TWO)
+    options:
+      - id: A
+        text: Convert text files to RecordIO-Protobuf format before training
+      - id: B
+        text: Use Pipe Mode with augmented manifest format pointing to text files
+      - id: C
+        text: Use File Mode with text files in their original format
+      - id: D
+        text: Enable Pipe Mode and provide text files directly in S3 without format conversion
+      - id: E
+        text: Compress text files into a single TAR.GZ archive and use File Mode
+    correctAnswer:
+      - C
+      - D
+    explanation: |
+      Options C and D are both correct because BlazingText natively supports text files in both File Mode and Pipe Mode without requiring format conversion, and both approaches work well for this algorithm.
+
+      **Option C - File Mode with text files**:
+
+      File Mode is a valid choice for 100 GB datasets:
+      - BlazingText accepts plain text files (one sentence per line for supervised mode, or one document per line for Word2Vec)
+      - Download time: ~5-10 minutes for 100 GB with good network bandwidth
+      - For 100 GB dataset, download overhead is acceptable (not excessive like 500+ GB datasets)
+      - Algorithm can read text files directly from EBS volume
+      - No preprocessing or conversion required
+      - Best for iterative development: Downloaded once, multiple epochs read from local disk
+
+      **Option D - Pipe Mode with text files**:
+
+      Pipe Mode is also fully supported by BlazingText:
+      - BlazingText is one of SageMaker built-in algorithms optimized for Pipe Mode streaming
+      - Accepts text files directly - no RecordIO conversion needed
+      - Streams from S3 during training, reducing startup time to seconds
+      - Lower EBS volume requirements (5-10 GB vs 100+ GB)
+      - Best for: Large datasets, cost optimization (lower storage costs), faster training start
+
+      **Both options are correct** because:
+      - BlazingText supports both modes equally well with text files
+      - 100 GB is the transition point where either mode is reasonable:
+        - File Mode: Acceptable download time, good for multiple epochs/experiments
+        - Pipe Mode: Faster start, lower costs, streaming benefits
+      - Algorithm reads text natively in both modes
+
+      The question asks for configurations providing "BEST performance," and both C and D achieve excellent performance for different optimization goals:
+      - C: Optimizes for repeated local reads (multi-epoch training, experimentation)
+      - D: Optimizes for startup time and storage costs
+
+      Why other options are incorrect:
+
+      A: Converting text files to RecordIO-Protobuf is unnecessary and counterproductive:
+      - BlazingText natively reads text files (one sentence/document per line)
+      - RecordIO-Protobuf is designed for numerical/tabular data, not text
+      - Conversion adds complexity, preprocessing time, and storage for duplicate data
+      - No performance benefit - BlazingText is optimized for text input
+      - RecordIO is beneficial for algorithms like Linear Learner, XGBoost (numerical features), not text algorithms
+
+      B: Augmented manifest format is designed for image/video data with labels, not text:
+      - Augmented manifest (.manifest JSON Lines file) contains S3 paths to media files and annotations
+      - Primary use case: SageMaker Ground Truth labeling jobs for Computer Vision
+      - Supported by: Image Classification, Object Detection, Semantic Segmentation algorithms
+      - BlazingText for text classification expects text files directly, not manifest pointers to text files
+      - Adding unnecessary indirection layer provides no benefit
+
+      E: Compressing into single TAR.GZ archive is an anti-pattern:
+      - Single archive creates extraction bottleneck: Must download full 100 GB, then extract (adds 5-10 minutes)
+      - Requires additional EBS space during extraction (200 GB: 100 GB archive + 100 GB extracted)
+      - No parallelization: Cannot read from archive during extraction
+      - Single point of failure: Corrupted archive = entire dataset inaccessible
+      - SageMaker File Mode can download multiple S3 objects in parallel, but TAR.GZ is single object
+      - BlazingText expects directory of text files, requiring custom extraction logic
+
+      **Best practice**: For BlazingText and text-based algorithms:
+      - Development/experimentation: File Mode with text files (Option C)
+      - Production training: Pipe Mode with text files (Option D)
+      - Never: RecordIO conversion, augmented manifest, or TAR archives
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/blazingtext.html
+    services:
+      - Amazon SageMaker
+      - Amazon S3
+    concepts:
+      - BlazingText algorithm
+      - File Mode vs Pipe Mode
+      - Text data formats
+
+  - id: dis-013
+    type: single
+    text: |
+      A financial institution is implementing a real-time fraud detection system that processes credit card transactions.
+      The system must make predictions within 100 milliseconds of transaction occurrence. ML engineers plan to use features like:
+      - Customer's transaction count in last 5 minutes (real-time)
+      - Customer's average transaction amount over last 30 days (batch, updated daily)
+      - Customer's account age and credit limit (static, updated monthly)
+
+      How should the team design feature storage to meet the 100ms latency requirement?
+    options:
+      - id: A
+        text: Store all features in Amazon DynamoDB with separate tables for real-time, daily, and monthly features
+      - id: B
+        text: Store all features in SageMaker Feature Store Online Store, ingesting real-time features via Kinesis/Lambda and batch features via EMR/Glue
+      - id: C
+        text: Store real-time features in ElastiCache Redis and batch features in Amazon RDS, requiring inference code to query both
+      - id: D
+        text: Store all features in S3 Parquet files and query using Athena during each inference request
+    correctAnswer: B
+    explanation: |
+      Option B is correct because SageMaker Feature Store Online Store is specifically architected for low-latency feature serving with unified access to features from multiple ingestion sources.
+
+      **Why Feature Store Online Store is optimal**:
+
+      1. **Sub-10ms latency**:
+         - Backed by Amazon DynamoDB with provisioned throughput
+         - GetRecord API returns all features for a customer in single call
+         - Consistent single-digit millisecond response times at scale
+         - Well within 100ms total inference latency budget (typical: 5-8ms for feature retrieval)
+
+      2. **Unified feature access**:
+         - All three feature types (real-time, daily, monthly) stored in same feature group
+         - Single GetRecord call retrieves complete feature vector
+         - Inference code does not need to query multiple systems
+         - Eliminates complexity of joining features from disparate sources
+
+      3. **Flexible ingestion patterns**:
+         **Real-time features**:
+         ```
+         Transaction Stream → Kinesis Data Streams → Lambda → Feature Store PutRecord
+         ```
+         Lambda maintains running counts per customer in memory/DynamoDB, computes 5-minute window aggregation, writes to Feature Store
+
+         **Daily batch features**:
+         ```
+         S3 Transaction History → EMR Spark → Compute 30-day averages → Feature Store Spark Connector → Online Store
+         ```
+         Nightly EMR job processes previous 30 days, updates Online Store with fresh aggregations
+
+         **Monthly static features**:
+         ```
+         Account Database → AWS Glue → Feature Store → Online Store
+         ```
+         Monthly Glue job syncs account data from source system
+
+      4. **Feature consistency**:
+         - Same feature definitions used in training (Offline Store) and inference (Online Store)
+         - Eliminates training-serving skew
+         - Feature lineage tracking ensures reproducibility
+
+      5. **Operational simplicity**:
+         - Managed service: No infrastructure provisioning for feature serving
+         - Automatic scaling: Handles variable transaction volumes
+         - Integrated monitoring: CloudWatch metrics for latency and throughput
+
+      **Latency breakdown for 100ms budget**:
+      - API Gateway/Load Balancer: 5-10ms
+      - Feature Store GetRecord: 5-8ms
+      - SageMaker endpoint inference: 20-40ms
+      - Response formatting and network: 10-20ms
+      - **Total: 40-78ms** (comfortably within 100ms SLA)
+
+      Why other options are incorrect:
+
+      A: DynamoDB with separate tables adds complexity and latency:
+      - Requires 3 separate GetItem API calls (one per feature table)
+      - Each call: 5-10ms = 15-30ms total just for feature retrieval
+      - Inference code must implement joining logic across tables
+      - Schema management across 3 tables (vs unified schema in Feature Store)
+      - No feature catalog or lineage tracking
+      - No integration with SageMaker training (must export to S3 manually)
+      - Training-serving skew risk: Training uses S3 data, inference uses DynamoDB
+
+      While technically feasible and meeting latency requirement, this is "build it yourself" approach that Feature Store is designed to replace. Not wrong, but not optimal.
+
+      C: ElastiCache Redis + RDS combination has multiple problems:
+      - **Redis latency**: Sub-millisecond for cache hits, but...
+      - **RDS latency**: 5-20ms for database queries (depends on query complexity, indexing, connection pooling)
+      - Requires 2 separate queries: Redis for real-time, RDS for batch/static
+      - RDS query must be optimized: Indexed customer_id lookups, connection pooling configured
+      - Risk of cache misses: If real-time feature not in Redis (cold start, TTL expiration), must recompute or fetch from source
+      - Operational overhead: Manage Redis cluster (sizing, eviction policies), RDS instance sizing, query optimization
+      - No feature versioning or lineage
+
+      While Redis+RDS can meet latency requirements with careful tuning, it adds significant operational complexity compared to managed Feature Store.
+
+      D: S3 + Athena is fundamentally unsuitable for real-time inference:
+      - **Athena latency**: 2-5 seconds minimum per query (query queueing, metadata lookup, S3 scan, result return)
+      - Athena is designed for interactive analytics, not low-latency serving
+      - Cost: $5 per TB scanned - 100ms requirement = ~10 requests/sec = $millions in Athena costs for production fraud detection
+      - Concurrency limits: 20 concurrent queries default (insufficient for high-throughput inference)
+      - 20-50x over latency budget - completely unsuitable
+
+      This option demonstrates misunderstanding of Athena's purpose (analytics) vs inference serving requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-getting-started.html
+    services:
+      - Amazon SageMaker Feature Store
+      - Amazon Kinesis Data Streams
+      - AWS Lambda
+      - Amazon EMR
+    concepts:
+      - Low-latency feature serving
+      - Real-time vs batch features
+      - Feature Store Online Store
+
+  - id: dis-014
+    type: single
+    text: |
+      An IoT analytics company collects sensor data from 100,000 devices, each sending 1 KB of telemetry every 10 seconds.
+      The data must be ingested in real-time, stored in S3 for historical analysis, and made available for batch ML model training.
+      The team wants to minimize operational complexity.
+
+      Which architecture BEST meets these requirements?
+    options:
+      - id: A
+        text: Devices → Amazon Kinesis Data Streams → AWS Lambda → Amazon S3 → AWS Glue Crawler → Training
+      - id: B
+        text: Devices → Amazon Kinesis Data Streams → Amazon Kinesis Data Firehose → Amazon S3 → AWS Glue Crawler → Training
+      - id: C
+        text: Devices → Amazon SQS → AWS Lambda → Amazon S3 → Manual schema definition → Training
+      - id: D
+        text: Devices → Amazon API Gateway → AWS Lambda → Amazon DynamoDB → DynamoDB Streams → S3 Export → Training
+    correctAnswer: B
+    explanation: |
+      Option B is correct because it uses managed services end-to-end with minimal custom code, automatically handles streaming ingestion and S3 delivery, and requires the least operational overhead.
+
+      **Architecture analysis**:
+
+      **Ingestion throughput calculation**:
+      - Devices: 100,000
+      - Frequency: Every 10 seconds = 0.1 messages/sec per device
+      - Total throughput: 100,000 devices × 0.1 msg/sec = 10,000 messages/sec
+      - Data volume: 10,000 msg/sec × 1 KB = 10 MB/sec
+
+      **Kinesis Data Streams (first component)**:
+      - Handles 10,000 msg/sec, 10 MB/sec easily
+      - Required shards: max(10 MB/sec ÷ 1, 10,000 msg/sec ÷ 1,000) = 10 shards
+      - Provides real-time ingestion buffer
+      - Retains data 24 hours - 365 days for replay if downstream issues occur
+      - Enables multiple consumers if needed later (real-time analytics, alerting)
+
+      **Kinesis Data Firehose (delivery to S3)**:
+      - Managed service: Automatically reads from Data Streams, delivers to S3
+      - No Lambda code required: Direct integration eliminates custom consumer logic
+      - Buffering: Accumulates data (e.g., 5 minutes or 128 MB) before writing to S3
+      - Reduces S3 PUT requests: Batches small messages into larger S3 objects (cost optimization)
+      - Built-in transformations: Optional Lambda for data enrichment/filtering (if needed)
+      - Format conversion: Can convert JSON to Parquet before S3 write (query optimization)
+      - Compression: Built-in GZIP/Snappy compression (storage cost reduction)
+      - Partitioning: Dynamic S3 key prefixes based on timestamp (e.g., year=2026/month=01/day=11/hour=14/)
+
+      **S3 (storage layer)**:
+      - Data automatically delivered by Firehose with optimal batching
+      - Organized with Hive-style partitions for efficient querying
+      - Serves as data lake for historical analysis and training
+
+      **Glue Crawler (metadata)**:
+      - Scheduled to run hourly/daily after Firehose delivers new data
+      - Automatically detects partitions from S3 key structure
+      - Creates/updates Data Catalog tables for Athena/EMR queries
+      - No manual schema management
+
+      **Training**:
+      - SageMaker reads directly from S3 using Data Catalog metadata
+      - Athena/EMR can perform feature engineering queries
+      - Parquet format (if Firehose conversion enabled) optimizes training data loads
+
+      **Operational simplicity**:
+      - Zero custom consumer code (Firehose handles everything)
+      - Automatic scaling for both Kinesis services
+      - Automatic partitioning and batching
+      - Managed schema discovery
+      - Minimal monitoring required
+
+      Why other options are incorrect:
+
+      A: Lambda between Kinesis Data Streams and S3 adds unnecessary complexity:
+      - Requires custom Lambda code to consume Kinesis records and write to S3
+      - Must implement: Kinesis shard iteration, batch aggregation logic, S3 key partitioning, error handling, retry logic
+      - Lambda concurrency management: Need to tune reserved concurrency to match Kinesis shards
+      - Potential for data loss if Lambda fails and records exceed Kinesis retention
+      - S3 write pattern: Lambda writes small objects frequently (higher PUT costs, poor query performance)
+      - Operational overhead: Monitor Lambda errors, timeouts, throttling; tune memory and timeout settings
+
+      Kinesis Data Firehose eliminates all this complexity with a managed service that does exactly this job. Option A essentially asks you to manually implement what Firehose provides out-of-box.
+
+      C: SQS introduces bottlenecks and operational issues:
+      - SQS is not designed for high-throughput streaming: While it can handle 10,000 msg/sec, it's not optimal for continuous data streams
+      - Requires custom Lambda code for S3 writes (same complexity as Option A)
+      - Message retention: Max 14 days (vs Kinesis 365 days) - less replay capability
+      - No native partitioning: Lambda must implement S3 key partitioning logic
+      - No built-in batching: Lambda must accumulate messages to avoid small S3 objects
+      - Manual schema definition: No automatic Glue Crawler integration pattern
+      - Loss of streaming semantics: SQS is message queue, not streaming platform
+
+      SQS is excellent for decoupling and job queues, but wrong tool for streaming telemetry ingestion.
+
+      D: API Gateway + DynamoDB + S3 Export is over-engineered and expensive:
+      - API Gateway: $3.50 per million requests = 10,000 msg/sec × 2.6M sec/month = 26 billion requests/month = $91,000/month just for API Gateway
+      - DynamoDB: Write capacity for 10,000 writes/sec = ~$4,000/month provisioned (or expensive on-demand)
+      - DynamoDB Streams: Requires Lambda to consume and write to S3 (custom code)
+      - DynamoDB S3 Export: Point-in-time exports (not continuous streaming), exports full table snapshot
+      - Cost explosion: 26M requests/month at API GW + DynamoDB writes + Lambda processing = $100,000+/month
+      - Kinesis Data Streams: 10 shards = $360/month (300x cheaper)
+
+      This architecture is designed for low-volume API-driven workloads, not high-throughput streaming telemetry.
+    awsDocLink: https://aws.amazon.com/firehose/
+    services:
+      - Amazon Kinesis Data Streams
+      - Amazon Kinesis Data Firehose
+      - Amazon S3
+      - AWS Glue
+    concepts:
+      - Streaming ingestion patterns
+      - Managed vs custom consumers
+      - IoT data pipelines
+
+  - id: dis-015
+    type: multi
+    correctCount: 2
+    text: |
+      A machine learning team is designing a data pipeline to prepare training data for a recommendation model. The pipeline must:
+      - Join customer data from Amazon RDS (PostgreSQL) with clickstream events from S3
+      - Filter out test accounts and bot traffic
+      - Aggregate features at the customer level (e.g., total clicks per category)
+      - Convert CSV clickstream data to Parquet format
+      - Process 500 GB of data daily
+
+      Which TWO AWS services should be used for this ETL workload? (Select TWO)
+    options:
+      - id: A
+        text: AWS Glue ETL jobs with Spark to perform joins, filtering, aggregations, and format conversion
+      - id: B
+        text: AWS Lambda functions to read CSV files from S3, process row by row, and write Parquet to S3
+      - id: C
+        text: Amazon Athena CREATE TABLE AS SELECT (CTAS) queries to perform transformations and write Parquet output
+      - id: D
+        text: AWS Step Functions to orchestrate the multi-step pipeline workflow
+      - id: E
+        text: Amazon SageMaker Processing Jobs with custom Python scripts for transformations
+    correctAnswer:
+      - A
+      - D
+    explanation: |
+      Options A and D together provide a complete, scalable, and cost-effective solution for this ETL workload.
+
+      **Option A - AWS Glue ETL with Spark**:
+
+      AWS Glue is purpose-built for this exact scenario (large-scale ETL with joins, aggregations, format conversion):
+
+      **Joining RDS and S3 data**:
+      - Glue ETL can read from RDS PostgreSQL using JDBC connection
+      - Reads S3 CSV files as Spark DataFrame
+      - Performs distributed join across datasets:
+      ```python
+      customers_df = glueContext.create_dynamic_frame.from_catalog(
+          database="rds-catalog", table_name="customers"
+      )
+      clickstream_df = glueContext.create_dynamic_frame.from_catalog(
+          database="s3-catalog", table_name="clickstream"
+      )
+      joined_df = customers_df.join(clickstream_df, "customer_id")
+      ```
+
+      **Filtering**:
+      - Use Spark SQL WHERE clauses or filter transformations
+      - Distributed filtering across Spark executors (scales to 500 GB easily)
+
+      **Aggregations**:
+      - GroupBy transformations for customer-level aggregations:
+      ```python
+      aggregated = joined_df.groupBy("customer_id", "category").agg(
+          count("click_id").alias("total_clicks"),
+          avg("dwell_time").alias("avg_dwell_time")
+      )
+      ```
+
+      **Format conversion**:
+      - Native Parquet writing with compression:
+      ```python
+      glueContext.write_dynamic_frame.from_options(
+          frame=aggregated,
+          connection_type="s3",
+          format="parquet",
+          connection_options={"path": "s3://bucket/output/"}
+      )
+      ```
+
+      **Scalability**:
+      - Auto-scaling: Glue can scale from 2 to 100 DPUs based on data volume
+      - For 500 GB daily, estimate 10-20 DPUs for 1-2 hour processing window
+      - Cost: 10 DPUs × 1 hour × $0.44/DPU-hour = $4.40 per day
+
+      **Option D - AWS Step Functions for orchestration**:
+
+      Step Functions provides workflow orchestration for multi-step pipelines:
+
+      **Workflow definition**:
+      ```json
+      {
+        "StartAt": "CrawlRDS",
+        "States": {
+          "CrawlRDS": { "Type": "Task", "Resource": "arn:aws:states:::glue:startCrawler", ... },
+          "CrawlS3": { "Type": "Task", "Resource": "arn:aws:states:::glue:startCrawler", ... },
+          "RunGlueETL": { "Type": "Task", "Resource": "arn:aws:states:::glue:startJobRun", ... },
+          "TriggerTraining": { "Type": "Task", "Resource": "arn:aws:states:::sagemaker:createTrainingJob", ... }
+        }
+      }
+      ```
+
+      **Orchestration benefits**:
+      - Visual workflow editor: DAG visualization of pipeline steps
+      - Error handling: Retry logic, catch blocks for failures
+      - Parallel execution: Run independent steps concurrently (e.g., crawl RDS and S3 simultaneously)
+      - State management: Pass output from one step as input to next
+      - Monitoring: CloudWatch integration, execution history, duration tracking
+      - Scheduling: EventBridge integration for daily 2 AM execution
+      - Conditional logic: Skip steps based on previous results (e.g., only train if data quality checks pass)
+
+      **Integration with Glue**:
+      - Native Glue StartJobRun API integration
+      - Wait for job completion before next step
+      - Pass Glue job parameters dynamically
+
+      **Alternative orchestration** (both valid):
+      - AWS Glue Workflows: Built-in orchestration within Glue console (simpler for Glue-only pipelines)
+      - Amazon Managed Workflows for Apache Airflow (MWAA): More complex workflows requiring Python DAGs
+
+      Step Functions is optimal for this scenario because it orchestrates multiple AWS services (Glue, potentially SageMaker for training trigger) with visual workflows and enterprise error handling.
+
+      Why other options are less optimal or incorrect:
+
+      B: AWS Lambda is unsuitable for 500 GB data processing:
+      - Lambda limits: 15-minute max execution time, 10 GB memory, 512 MB /tmp storage
+      - 500 GB cannot fit in Lambda's constraints
+      - Row-by-row processing on 500 GB would require millions of Lambda invocations (high cost, complexity)
+      - No distributed joins: Lambda is stateless; joining RDS and S3 requires custom coordination
+      - Writing Parquet: Lambda can use PyArrow, but aggregations across 500 GB require distributed processing
+      - Cost: Millions of Lambda invocations at $0.20 per 1M requests + GB-second compute = $100+ per day
+
+      Lambda is excellent for < 1 GB transformations, event-driven processing, and real-time use cases. Not for large-scale batch ETL.
+
+      C: Amazon Athena CTAS is a valid option but less flexible than Glue:
+      - Can perform SQL transformations and write Parquet
+      - Cannot directly join RDS tables: Must export RDS to S3 first (requires separate step)
+      - Cost: $5 per TB scanned = 500 GB × $5 / 1000 = $2.50 per day (cheaper than Glue)
+      - Less flexible for complex logic: SQL-only (no Python UDFs, limited custom transformations)
+      - No built-in scheduling: Requires external orchestrator (Step Functions, Glue Workflows)
+
+      **Athena is a reasonable alternative** for pure S3-to-S3 transformations with SQL logic. However, the RDS join requirement makes Glue more suitable (native JDBC connectivity). If RDS data was already in S3, Athena CTAS would be an excellent choice.
+
+      E: SageMaker Processing Jobs are designed for ML-specific data processing:
+      - Can run custom Python scripts with ML libraries (Scikit-learn, Pandas, Spark)
+      - Supports distributed processing via Spark container
+      - More expensive than Glue: $0.096-$0.192 per hour for ml.m5.4xlarge (Glue: $0.44 per DPU-hour ≈ ml.m5.xlarge equivalent)
+      - Best use case: Feature engineering tightly coupled with SageMaker training (same pipeline)
+      - Requires more custom code than Glue ETL's high-level APIs
+
+      Valid option but Glue is more cost-effective and purpose-built for ETL. SageMaker Processing is ideal when ETL logic is complex and ML-specific (e.g., using Scikit-learn transformers that will be serialized with model).
+
+      **Summary**: A (Glue ETL) + D (Step Functions) provides the best combination of scalability, cost-effectiveness, and operational simplicity for this 500 GB daily ETL workload with joins, aggregations, and format conversion.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api.html
+    services:
+      - AWS Glue
+      - AWS Step Functions
+      - Amazon RDS
+      - Amazon S3
+    concepts:
+      - ETL workflows
+      - Pipeline orchestration
+      - Large-scale data transformation
+
+  - id: dis-016
+    type: single
+    text: |
+      A data science team wants to analyze the correlation between data freshness and model performance for their recommendation system.
+      They need to track when each feature value was last updated and retrieve historical feature values as they existed at specific points in time
+      for reproducibility in experiments.
+
+      Which SageMaker Feature Store capability enables this requirement?
+    options:
+      - id: A
+        text: Feature Store maintains an automatic changelog of all feature updates in the Online Store with rollback capability
+      - id: B
+        text: Feature Store records event_time metadata with each feature update, and Offline Store supports point-in-time queries via Athena
+      - id: C
+        text: Feature Store versions are created manually using tags, and historical versions are stored in separate feature groups
+      - id: D
+        text: Feature Store integrates with AWS Backup to create daily snapshots of all feature values for time-travel queries
+    correctAnswer: B
+    explanation: |
+      Option B is correct because SageMaker Feature Store automatically tracks event_time metadata with each record and provides point-in-time query capabilities through the Offline Store.
+
+      **Event Time metadata**:
+
+      Every Feature Store record includes required metadata fields:
+      - **Record Identifier**: Unique key for entity (e.g., customer_id, product_id)
+      - **Event Time**: Timestamp indicating when the feature values were observed or computed
+      - **Ingestion Time** (automatic): Timestamp when Feature Store received the record
+
+      Example record structure:
+      ```python
+      record = [
+          {'FeatureName': 'customer_id', 'ValueAsString': '12345'},
+          {'FeatureName': 'event_time', 'ValueAsString': '2026-01-11T14:30:00Z'},
+          {'FeatureName': 'total_purchases_30d', 'ValueAsString': '15'},
+          {'FeatureName': 'avg_transaction_value', 'ValueAsString': '89.50'}
+      ]
+      ```
+
+      **Point-in-Time Correctness**:
+
+      The Offline Store (S3-based Apache Iceberg tables) maintains complete history of all feature updates with event_time:
+
+      ```
+      customer_id | event_time           | total_purchases_30d | avg_transaction_value
+      12345       | 2026-01-01T00:00:00 | 10                  | 75.00
+      12345       | 2026-01-05T12:00:00 | 12                  | 82.00
+      12345       | 2026-01-11T14:30:00 | 15                  | 89.50
+      ```
+
+      **Time-Travel Queries**:
+
+      Using SageMaker SDK or Athena, retrieve feature values as they existed at specific time:
+
+      ```python
+      from sagemaker.feature_store.feature_store import FeatureStore
+
+      feature_store = FeatureStore()
+
+      # Get features as they existed on 2026-01-05 at 18:00
+      historical_features = feature_store.create_dataset(
+          base=feature_group,
+          record_identifier_value='12345',
+          event_time_range=(
+              datetime(2026, 1, 5, 18, 0),  # Features as of this time
+              datetime(2026, 1, 5, 18, 0)
+          )
+      ).as_dataframe()
+      ```
+
+      Returns: `total_purchases_30d = 12, avg_transaction_value = 82.00` (values from January 5th)
+
+      **Use cases for data freshness analysis**:
+
+      1. **Feature staleness correlation**:
+         - Query: Retrieve feature values at prediction time vs most recent values
+         - Calculate staleness: `prediction_time - event_time`
+         - Correlate staleness with model accuracy: "Does the model perform worse when features are 24+ hours old?"
+
+      2. **Model reproducibility**:
+         - Reproduce training dataset: Query features as they existed on training date
+         - Eliminates data leakage: Cannot accidentally use future data in historical analysis
+         - Example: "Train model using only features available on 2025-12-01" (for fair backtesting)
+
+      3. **Feature version comparison**:
+         - Compare model performance using feature computation logic from different dates
+         - Isolate impact of feature engineering changes
+
+      **Offline Store implementation**:
+      - Apache Iceberg table format on S3
+      - Supports time-travel queries natively
+      - Compressed Parquet files for storage efficiency
+      - Automatic compaction and optimization
+
+      Why other options are incorrect:
+
+      A: Feature Store Online Store does NOT maintain changelog or rollback capability:
+      - Online Store (DynamoDB-backed) only stores latest feature values per record
+      - Optimized for low-latency reads, not historical tracking
+      - When new record written with same record_identifier, it overwrites previous value
+      - No built-in rollback: Cannot revert to previous feature state
+      - Changelog concept does not exist in Online Store
+
+      Historical tracking is the responsibility of Offline Store, not Online Store.
+
+      C: Manual versioning with tags is not how Feature Store handles history:
+      - Feature Store does not require manual version creation
+      - Tags are metadata labels for feature groups (e.g., "team=recommendations"), not version control
+      - Historical versions are NOT stored in separate feature groups - single feature group contains all history in Offline Store
+      - Automatic versioning happens through event_time timestamps, not manual tagging
+
+      This describes a manual, error-prone approach that Feature Store specifically avoids.
+
+      D: AWS Backup integration is not a Feature Store capability:
+      - Feature Store does not integrate with AWS Backup for snapshots
+      - Daily snapshots would be insufficient granularity (miss intraday feature updates)
+      - Time-travel queries require per-record event_time tracking, not periodic snapshots
+      - Snapshot-based approach cannot answer "what were features at 2026-01-05 14:37" (between snapshots)
+
+      Feature Store uses continuous event_time tracking in Iceberg tables, not discrete snapshots.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-offline-store-data-access.html
+    services:
+      - Amazon SageMaker Feature Store
+      - Amazon Athena
+    concepts:
+      - Event time tracking
+      - Point-in-time correctness
+      - Feature versioning
+      - Time-travel queries
+
+  - id: dis-017
+    type: single
+    text: |
+      An ML team has deployed a SageMaker training job that consumes data from S3 using Pipe Mode with RecordIO-Protobuf format.
+      The training job is running on an ml.p3.8xlarge instance but GPU utilization is only 40% despite the algorithm being GPU-bound.
+      Network monitoring shows consistent 10 Gbps throughput from S3. The team suspects data loading is the bottleneck.
+
+      What is the MOST likely cause and solution?
+    options:
+      - id: A
+        text: S3 bandwidth is insufficient; upgrade to ml.p3dn.24xlarge instance type with 100 Gbps network bandwidth
+      - id: B
+        text: RecordIO-Protobuf deserialization is CPU-bound; increase the number of data loader worker processes in training script
+      - id: C
+        text: Pipe Mode has latency limits; switch to File Mode to enable faster local disk reads after initial download
+      - id: D
+        text: S3 Transfer Acceleration should be enabled on the training data bucket to reduce network latency
+    correctAnswer: B
+    explanation: |
+      Option B is correct because the bottleneck is in CPU-bound deserialization and data preprocessing, not network bandwidth, and increasing data loader workers enables parallel data pipeline processing.
+
+      **Diagnosis reasoning**:
+
+      Given symptoms:
+      - GPU utilization: 40% (GPUs are starved, waiting for data)
+      - Network throughput: 10 Gbps consistent (network is not bottleneck)
+      - Using Pipe Mode: Data streaming from S3 is working
+      - Format: RecordIO-Protobuf (binary format requiring deserialization)
+
+      **Root cause: CPU-bound data pipeline**
+
+      The training flow is:
+      1. Pipe Mode streams RecordIO-Protobuf from S3 → Training instance (10 Gbps ✓ working)
+      2. Training script reads from named pipe → Deserializes Protobuf → Decodes to NumPy arrays → Applies preprocessing (normalization, augmentation)
+      3. Preprocessed batch sent to GPU for forward/backward pass
+
+      If step 2 (deserialization + preprocessing) runs on single CPU core, it becomes bottleneck:
+      - ml.p3.8xlarge: 32 vCPUs, 4 NVIDIA V100 GPUs
+      - Single-threaded data loading cannot keep 4 GPUs saturated
+      - GPUs wait idle while CPU deserializes next batch
+
+      **Solution: Multi-worker data loading**
+
+      PyTorch DataLoader example:
+      ```python
+      from torch.utils.data import DataLoader
+
+      train_loader = DataLoader(
+          dataset,
+          batch_size=256,
+          num_workers=8,  # ← Key parameter
+          pin_memory=True  # Optimize GPU transfer
+      )
+      ```
+
+      TensorFlow example:
+      ```python
+      dataset = tf.data.Dataset.from_generator(...)
+      dataset = dataset.map(
+          parse_function,
+          num_parallel_calls=tf.data.AUTOTUNE  # ← Automatic parallelization
+      )
+      dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Pipeline prefetching
+      ```
+
+      **How workers improve throughput**:
+
+      With `num_workers=8`:
+      - 8 parallel processes deserialize and preprocess batches
+      - While GPU processes batch N, workers prepare batches N+1 through N+8
+      - CPU deserialization parallelized across 8 cores (vs 1 core)
+      - GPU receives continuous stream of ready batches (no waiting)
+      - Expected GPU utilization: 85-95%+
+
+      **Optimal worker count**:
+      - Start with: `num_workers = min(num_cpus / 2, 8-16)`
+      - For ml.p3.8xlarge (32 vCPUs): Try 8-16 workers
+      - Monitor: CPU utilization should increase, GPU utilization should increase
+      - Too many workers: Diminishing returns due to process overhead
+
+      Why other options are incorrect:
+
+      A: Network bandwidth is already sufficient at 10 Gbps:
+      - RecordIO-Protobuf data: Assume 50 GB training dataset, 1-hour training = 50 GB / 3600 sec = 14 MB/sec = 0.11 Gbps
+      - Even with continuous streaming, 10 Gbps >> 0.11 Gbps required
+      - ml.p3.8xlarge has 10 Gbps bandwidth, which is not saturated
+      - ml.p3dn.24xlarge costs $31.218/hour vs $12.24/hour (2.5x more expensive)
+      - Problem is CPU deserialization, not network throughput
+
+      Upgrading instance type wastes money without addressing root cause.
+
+      C: File Mode does not solve CPU deserialization bottleneck:
+      - File Mode still requires deserializing RecordIO-Protobuf from local EBS
+      - Deserialization is CPU-bound regardless of storage location (S3 vs EBS)
+      - File Mode advantages: Random access, multiple epochs from cache
+      - File Mode does NOT increase deserialization throughput
+      - Switching to File Mode adds 10+ minute download time without fixing GPU starvation
+
+      This is a misconception that local disk is always faster. The bottleneck is CPU processing, not I/O.
+
+      D: S3 Transfer Acceleration is for long-distance transfers (cross-continent):
+      - Training instance and S3 bucket in same AWS region: Direct connection over AWS backbone (optimal latency)
+      - Transfer Acceleration routes via CloudFront edge locations (beneficial for internet uploads, not intra-region)
+      - No benefit for same-region S3 access
+      - Does not address CPU deserialization bottleneck
+      - Additional cost: $0.04-$0.08 per GB for acceleration (wasted money)
+
+      Transfer Acceleration is useful for uploading training data from on-premises to S3, not for SageMaker-to-S3 streaming within region.
+
+      **Verification after fix**:
+
+      After increasing `num_workers=8`:
+      - GPU utilization: 40% → 90%+ (GPUs no longer starved)
+      - CPU utilization: 20% → 60% (more cores active for deserialization)
+      - Training throughput: 2.5x improvement (measured in samples/sec)
+      - Cost: No additional cost (utilizing existing instance capacity)
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-access-training-data.html
+    services:
+      - Amazon SageMaker
+      - Amazon S3
+    concepts:
+      - Pipe Mode performance tuning
+      - Data loading parallelism
+      - GPU utilization optimization
+      - Training bottleneck diagnosis

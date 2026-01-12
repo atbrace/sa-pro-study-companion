@@ -1,0 +1,874 @@
+questions:
+  - id: mt-001
+    type: single
+    text: |
+      A machine learning engineer is training a computer vision model on a 500 GB image dataset using
+      Amazon SageMaker. The training job uses an ml.p3.2xlarge instance with a 100 GB EBS volume.
+      The training job fails during initialization with an error indicating insufficient disk space.
+
+      What is the MOST cost-effective solution to resolve this issue?
+    options:
+      - id: A
+        text: Increase the EBS volume size to 600 GB to accommodate the full dataset
+      - id: B
+        text: Use Pipe input mode to stream data from S3 without downloading the entire dataset
+      - id: C
+        text: Upgrade to an ml.p3.8xlarge instance with more storage capacity
+      - id: D
+        text: Split the dataset into smaller chunks and train multiple models sequentially
+    correctAnswer: B
+    explanation: |
+      Pipe mode is the most cost-effective solution because it streams data directly from S3 to the
+      training algorithm without downloading the entire dataset to the instance's EBS volume. This
+      eliminates the disk space requirement while maintaining training performance for sequential
+      data access patterns common in computer vision training.
+
+      Option A (increasing EBS volume) would work but incurs additional storage costs. Option C
+      (larger instance) is more expensive and doesn't directly address the storage issue - instance
+      size doesn't determine EBS volume capacity. Option D (splitting dataset) complicates training
+      and may produce inferior models compared to training on the complete dataset.
+
+      Pipe mode is particularly effective for large datasets (> 100 GB) and can reduce training
+      costs by enabling smaller EBS volumes while maintaining or improving training startup time.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-access-training-data.html
+    services:
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Input modes (File vs Pipe)
+      - Training job configuration
+      - Cost optimization
+
+  - id: mt-002
+    type: single
+    text: |
+      A data science team is training a large language model with 20 billion parameters. The model
+      does not fit in the memory of a single ml.p3.16xlarge instance (64 GB GPU memory across 8 V100 GPUs).
+      The team needs to distribute the model across multiple GPUs to enable training.
+
+      Which distributed training strategy should the team use?
+    options:
+      - id: A
+        text: SageMaker distributed data parallel (SMDDP) library to replicate the model across instances
+      - id: B
+        text: SageMaker distributed model parallel (SMP) library with tensor parallelism and pipeline parallelism
+      - id: C
+        text: Increase the batch size to utilize all available GPU memory more efficiently
+      - id: D
+        text: Use gradient accumulation to simulate distributed training on a single instance
+    correctAnswer: B
+    explanation: |
+      Model parallelism is required when a model is too large to fit in a single GPU's memory. The
+      SageMaker distributed model parallel (SMP) library is specifically designed for this scenario,
+      providing tensor parallelism (splitting individual layers across GPUs) and pipeline parallelism
+      (splitting the model into sequential stages). For a 20B parameter model, SMP enables partitioning
+      the model across multiple GPUs and instances.
+
+      Option A (data parallel) is incorrect because data parallelism requires the full model to fit
+      on each GPU - it distributes data, not the model. Option C (larger batch size) doesn't address
+      the fundamental issue that the model itself exceeds GPU memory. Option D (gradient accumulation)
+      helps with batch size constraints but doesn't solve model size limitations.
+
+      SMP supports advanced techniques like 3D parallelism (combining tensor, pipeline, and data
+      parallelism) for extremely large models, and integrates with sharded data parallelism (FSDP)
+      to further reduce memory consumption.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-parallel-intro.html
+    services:
+      - SageMaker Distributed Model Parallel
+    concepts:
+      - Model parallelism
+      - Tensor parallelism
+      - Pipeline parallelism
+      - Large model training
+
+  - id: mt-003
+    type: multi
+    correctCount: 3
+    text: |
+      A machine learning engineer is configuring a SageMaker training job to use managed spot training
+      for a model that takes approximately 10 hours to train on on-demand instances. The training
+      algorithm supports checkpointing.
+
+      Which three actions are necessary to successfully implement managed spot training? (Select THREE)
+    options:
+      - id: A
+        text: Set use_spot_instances=True in the training job configuration
+      - id: B
+        text: Configure MaxWaitTimeInSeconds to be greater than MaxRunTimeInSeconds
+      - id: C
+        text: Implement checkpointing to save training state to /opt/ml/checkpoints/
+      - id: D
+        text: Use only instance types that support Spot instances (exclude ml.p4d instances)
+      - id: E
+        text: Configure checkpoint S3 URI in the training job checkpoint configuration
+      - id: F
+        text: Enable automatic model tuning to optimize spot instance selection
+    correctAnswer: [A, B, E]
+    explanation: |
+      Managed spot training requires three key configurations:
+
+      1. Enable spot instances (A): Set use_spot_instances=True to request Spot instances instead
+      of on-demand instances.
+
+      2. Configure appropriate wait times (B): MaxWaitTimeInSeconds must be greater than
+      MaxRunTimeInSeconds to accommodate potential Spot interruptions. A typical ratio is 2-3× to
+      allow for interruption recovery time.
+
+      3. Configure checkpoint S3 location (E): Specify checkpoint_s3_uri so SageMaker can sync
+      checkpoints from the local path to S3 and restore them after interruptions.
+
+      Option C is partially correct - implementing checkpointing is necessary for custom algorithms,
+      but the question states the algorithm already supports checkpointing. The key requirement is
+      configuring where checkpoints are stored (E).
+
+      Option D is incorrect - all SageMaker training instance types support Spot pricing, including
+      ml.p4d. Option F is incorrect - automatic model tuning is a separate feature for hyperparameter
+      optimization, not related to spot instance management.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    services:
+      - SageMaker Managed Spot Training
+    concepts:
+      - Managed spot training configuration
+      - Checkpointing
+      - Cost optimization
+
+  - id: mt-004
+    type: single
+    text: |
+      A company is running hyperparameter tuning jobs to optimize a deep learning model. They have
+      configured 50 maximum training jobs with 10 maximum parallel jobs using random search strategy.
+      After 30 jobs complete, the best validation accuracy has plateaued at 87% for the last 15 jobs.
+
+      What action would MOST efficiently improve the tuning results?
+    options:
+      - id: A
+        text: Increase MaxParallelTrainingJobs to 20 to run more jobs simultaneously
+      - id: B
+        text: Switch to Bayesian optimization strategy to learn from previous results
+      - id: C
+        text: Enable early stopping to terminate poorly performing jobs faster
+      - id: D
+        text: Increase MaxNumberOfTrainingJobs to 100 to explore more hyperparameter combinations
+    correctAnswer: B
+    explanation: |
+      Switching to Bayesian optimization is most efficient when the tuning job has plateaued because
+      Bayesian optimization learns from previous job results to intelligently explore the hyperparameter
+      space. It builds a probability model of the objective metric and uses this to choose promising
+      hyperparameter combinations, rather than randomly sampling like the current strategy.
+
+      Random search doesn't learn from results - each job is independent. Since the job has plateaued
+      after 30 trials, continuing with random search is unlikely to find significantly better
+      configurations efficiently. Bayesian optimization would focus exploration on regions near the
+      current best result (87% accuracy).
+
+      Option A (more parallel jobs) doesn't improve exploration quality. Option C (early stopping)
+      saves time but doesn't address the exploration strategy issue. Option D (more jobs) would
+      eventually find better configurations but is inefficient compared to Bayesian optimization's
+      intelligent search.
+
+      Note: For Bayesian optimization to work effectively, reduce MaxParallelTrainingJobs (e.g., to
+      2-5) so later jobs can learn from earlier results.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    services:
+      - SageMaker Automatic Model Tuning
+    concepts:
+      - Hyperparameter tuning strategies
+      - Bayesian optimization
+      - Random search
+
+  - id: mt-005
+    type: single
+    text: |
+      A machine learning engineer is training an XGBoost model on a tabular dataset with 5 million
+      rows and 200 features. The current training configuration uses an ml.m5.xlarge instance and
+      takes 45 minutes to complete. The engineer wants to reduce training time.
+
+      Which instance type change would provide the BEST performance improvement for this workload?
+    options:
+      - id: A
+        text: ml.p3.2xlarge (GPU instance)
+      - id: B
+        text: ml.c5.4xlarge (compute-optimized instance)
+      - id: C
+        text: ml.r5.xlarge (memory-optimized instance)
+      - id: D
+        text: ml.g4dn.xlarge (GPU instance optimized for inference)
+    correctAnswer: B
+    explanation: |
+      XGBoost is a CPU-based gradient boosting algorithm that benefits from compute-optimized instances
+      rather than GPU instances. The ml.c5.4xlarge provides significantly more CPU cores and compute
+      capacity compared to ml.m5.xlarge (16 vCPUs vs 4 vCPUs), which will parallelize tree building
+      and data processing more effectively.
+
+      XGBoost's tree construction is inherently CPU-bound and does not benefit from GPU acceleration
+      in most cases. The algorithm parallelizes across CPU cores, making compute-optimized instances
+      with high CPU counts ideal.
+
+      Option A and D (GPU instances) are incorrect because XGBoost's built-in algorithm in SageMaker
+      is CPU-based and won't utilize GPUs effectively, resulting in wasted cost. Option C (memory-
+      optimized) provides more memory but not more compute capacity - the dataset at 5M rows × 200
+      features is moderate and unlikely to be memory-constrained on m5.xlarge.
+
+      For tree-based algorithms (XGBoost, RandomForest, LightGBM), prioritize CPU core count over
+      GPU acceleration or memory capacity for tabular data workloads.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost.html
+    services:
+      - Amazon SageMaker Training Jobs
+      - SageMaker XGBoost
+    concepts:
+      - Instance type selection
+      - Compute-optimized instances
+      - XGBoost training
+
+  - id: mt-006
+    type: single
+    text: |
+      A data scientist is training a neural network and notices that training loss continues to decrease
+      while validation loss starts increasing after epoch 15. The model achieves 98% training accuracy
+      but only 82% validation accuracy by epoch 30.
+
+      Which technique would MOST effectively address this issue?
+    options:
+      - id: A
+        text: Increase the learning rate to speed up convergence
+      - id: B
+        text: Implement early stopping to halt training when validation loss stops improving
+      - id: C
+        text: Increase the number of training epochs to 50 to improve model performance
+      - id: D
+        text: Use a larger batch size to stabilize gradient updates
+    correctAnswer: B
+    explanation: |
+      This scenario describes classic overfitting - the model is memorizing the training data
+      (evidenced by increasing training accuracy and decreasing training loss) while failing to
+      generalize to validation data (evidenced by increasing validation loss). Early stopping is the
+      most direct solution to prevent overfitting by halting training when validation performance
+      stops improving.
+
+      Early stopping would monitor validation loss and stop training around epoch 15 (when validation
+      loss started increasing), preventing the model from continuing to overfit. This also saves
+      compute costs by avoiding unnecessary training epochs.
+
+      Option A (increasing learning rate) would likely worsen the problem or cause training
+      instability. Option C (more epochs) would exacerbate overfitting further. Option D (larger
+      batch size) might improve training stability but doesn't address the fundamental overfitting
+      issue.
+
+      Additional techniques to complement early stopping include: L2 regularization, dropout, data
+      augmentation, or reducing model complexity. However, early stopping is the most direct solution
+      to the immediate problem of training for too many epochs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-ex-tuning-job.html
+    services:
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Overfitting
+      - Early stopping
+      - Regularization techniques
+
+  - id: mt-007
+    type: multi
+    correctCount: 2
+    text: |
+      A machine learning team is training a large-scale image classification model using SageMaker
+      distributed data parallel training across 8 ml.p3.16xlarge instances (64 V100 GPUs total).
+      They observe that training throughput (images/second) scales well from 1 to 4 instances but
+      shows diminishing returns beyond 4 instances.
+
+      Which TWO actions would MOST likely improve scaling efficiency? (Select TWO)
+    options:
+      - id: A
+        text: Increase the batch size to improve GPU utilization across more instances
+      - id: B
+        text: Enable gradient compression in the SageMaker data parallel configuration
+      - id: C
+        text: Switch to model parallelism instead of data parallelism
+      - id: D
+        text: Reduce the number of training epochs to compensate for slower scaling
+      - id: E
+        text: Use ml.p4d.24xlarge instances with faster inter-instance networking
+    correctAnswer: [B, E]
+    explanation: |
+      Poor scaling efficiency in distributed data parallel training is typically caused by communication
+      overhead (gradient synchronization between instances). Two effective solutions:
+
+      Option B (gradient compression): Reduces the amount of data transferred during AllReduce gradient
+      synchronization, directly addressing communication bottlenecks. SageMaker's data parallel library
+      supports gradient compression to minimize network traffic without significantly impacting model
+      convergence.
+
+      Option E (ml.p4d instances): These instances have 400 Gbps networking (via AWS EFA - Elastic
+      Fabric Adapter) compared to p3.16xlarge's 100 Gbps, dramatically reducing gradient synchronization
+      time. P4d instances are specifically designed for large-scale distributed training with optimized
+      inter-instance communication.
+
+      Option A (larger batch size) might improve GPU utilization but can hurt model convergence and
+      doesn't address the network communication bottleneck. Option C (model parallelism) is for models
+      too large to fit in memory, not for improving data parallel scaling. Option D (fewer epochs)
+      reduces training quality rather than fixing the scaling issue.
+
+      Additional optimizations include: using mixed precision training to reduce gradient size,
+      optimizing data loading to prevent CPU bottlenecks, and adjusting gradient synchronization
+      frequency.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-parallel-config.html
+    services:
+      - SageMaker Distributed Data Parallel
+    concepts:
+      - Distributed training scaling
+      - Gradient compression
+      - Instance networking
+      - Communication overhead
+
+  - id: mt-008
+    type: single
+    text: |
+      A company trains machine learning models nightly in a batch process. Training jobs typically
+      take 3-4 hours and are not time-critical as long as they complete before the next business day.
+      The company wants to minimize training costs.
+
+      Which combination of SageMaker features would provide the GREATEST cost savings?
+    options:
+      - id: A
+        text: Use on-demand instances with automatic model tuning to find the fastest hyperparameters
+      - id: B
+        text: Use managed spot training with checkpointing enabled and MaxWaitTimeInSeconds set to 12 hours
+      - id: C
+        text: Use SageMaker Inference Recommender to select the least expensive instance type
+      - id: D
+        text: Use distributed training to reduce wall-clock training time
+    correctAnswer: B
+    explanation: |
+      Managed spot training can reduce training costs by up to 90% compared to on-demand instances,
+      making it the most cost-effective option. The scenario is ideal for spot training because:
+
+      1. Training is not time-critical (12-hour window accommodates interruptions)
+      2. Jobs are long-running (3-4 hours), making spot savings substantial
+      3. Regular nightly schedule allows for flexible completion times
+
+      Setting MaxWaitTimeInSeconds to 12 hours (much greater than the 3-4 hour training time) ensures
+      jobs can tolerate multiple spot interruptions and still complete before business hours.
+      Checkpointing enables resuming from interruptions without starting over.
+
+      Option A (on-demand + tuning) doesn't reduce instance costs and tuning adds cost. Option C
+      (Inference Recommender) is for deployment optimization, not training. Option D (distributed
+      training) reduces wall-clock time but increases total compute cost (more instances × shorter
+      time ≈ similar or higher cost).
+
+      Typical spot savings for this workload: 70-90% cost reduction, even accounting for potential
+      interruptions and checkpoint overhead. For a $100/night on-demand training cost, spot training
+      would cost $10-30/night.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    services:
+      - SageMaker Managed Spot Training
+    concepts:
+      - Cost optimization
+      - Managed spot training
+      - Checkpointing
+
+  - id: mt-009
+    type: single
+    text: |
+      A machine learning engineer is configuring hyperparameter tuning for a neural network. They need
+      to tune the learning rate, which typically performs well across multiple orders of magnitude
+      (0.0001 to 0.1).
+
+      Which hyperparameter range configuration is MOST appropriate?
+    options:
+      - id: A
+        text: ContinuousParameterRange with MinValue='0.0001', MaxValue='0.1', ScalingType='Linear'
+      - id: B
+        text: ContinuousParameterRange with MinValue='0.0001', MaxValue='0.1', ScalingType='Logarithmic'
+      - id: C
+        text: IntegerParameterRange with MinValue='1', MaxValue='1000', ScalingType='Logarithmic'
+      - id: D
+        text: CategoricalParameterRange with Values=['0.0001', '0.001', '0.01', '0.1']
+    correctAnswer: B
+    explanation: |
+      Logarithmic scaling is most appropriate for learning rate hyperparameters that span multiple
+      orders of magnitude. The learning rate range 0.0001 to 0.1 spans three orders of magnitude,
+      and logarithmic scaling ensures the tuning job samples values evenly across these orders of
+      magnitude rather than concentrating on larger values.
+
+      With logarithmic scaling, the tuning job will explore values like:
+      - 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1
+
+      This gives equal exploration opportunity to small learning rates (0.0001-0.001) and large
+      learning rates (0.01-0.1).
+
+      Option A (linear scaling) would heavily bias sampling toward larger values (most samples would
+      be > 0.05), missing potentially optimal small learning rates. Option C (integer range) is
+      inappropriate for continuous learning rate values. Option D (categorical) works but limits
+      exploration to only 4 discrete values, potentially missing optimal values between these points.
+
+      General rule: Use logarithmic scaling for hyperparameters where the ratio between values matters
+      more than absolute differences (learning rates, regularization parameters, epsilon values). Use
+      linear scaling when absolute differences matter (number of layers, hidden units).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-define-ranges.html
+    services:
+      - SageMaker Automatic Model Tuning
+    concepts:
+      - Hyperparameter ranges
+      - Logarithmic scaling
+      - Learning rate tuning
+
+  - id: mt-010
+    type: single
+    text: |
+      A data scientist is training a custom PyTorch model using SageMaker. They want to track custom
+      metrics like F1-score and precision during training to monitor in CloudWatch. The training
+      script prints these metrics to stdout in the format "F1-score: 0.85" and "Precision: 0.82".
+
+      What configuration is required to capture these metrics in CloudWatch?
+    options:
+      - id: A
+        text: Install the CloudWatch agent in the training container and configure metric collection
+      - id: B
+        text: Define metric_definitions with regex patterns to parse the metric values from logs
+      - id: C
+        text: Use SageMaker Debugger to automatically capture all printed metrics
+      - id: D
+        text: Write metrics to /opt/ml/metrics/metrics.json file during training
+    correctAnswer: B
+    explanation: |
+      SageMaker captures custom metrics from training job logs by parsing stdout/stderr using regex
+      patterns defined in metric_definitions. For the given metric format, you would configure:
+
+      ```python
+      metric_definitions = [
+          {'Name': 'F1-score', 'Regex': 'F1-score: ([0-9.]+)'},
+          {'Name': 'Precision', 'Regex': 'Precision: ([0-9.]+)'}
+      ]
+      ```
+
+      SageMaker automatically sends container logs to CloudWatch Logs, parses them using the provided
+      regex patterns, and publishes matching values as CloudWatch metrics. These metrics can then be
+      viewed in the SageMaker console, CloudWatch, or used for hyperparameter tuning objectives.
+
+      Option A (CloudWatch agent) is unnecessary - SageMaker automatically streams logs to CloudWatch.
+      Option C (Debugger) captures tensor data, not arbitrary printed metrics. Option D is not a
+      supported mechanism - SageMaker reads metrics from stdout/stderr, not from files.
+
+      Best practice: Use consistent metric naming and formatting in your training scripts. The regex
+      pattern should capture only the numeric value (the capturing group in parentheses), not the
+      entire line.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/training-metrics.html
+    services:
+      - Amazon SageMaker Training Jobs
+      - Amazon CloudWatch
+    concepts:
+      - Training metrics
+      - Metric definitions
+      - CloudWatch integration
+
+  - id: mt-011
+    type: multi
+    correctCount: 3
+    text: |
+      A machine learning team is implementing checkpointing for a custom TensorFlow training script
+      that will run on SageMaker with managed spot training. The training job trains for 50 epochs
+      and takes approximately 6 hours to complete.
+
+      Which THREE implementation practices should the team follow? (Select THREE)
+    options:
+      - id: A
+        text: Save checkpoints to /opt/ml/checkpoints/ directory
+      - id: B
+        text: Include epoch number, model weights, optimizer state, and learning rate scheduler state in checkpoints
+      - id: C
+        text: Save a checkpoint after every batch to ensure minimal data loss during interruptions
+      - id: D
+        text: Configure CheckpointConfig with S3Uri pointing to an S3 bucket location
+      - id: E
+        text: Implement logic to resume training from the latest checkpoint when restarting
+      - id: F
+        text: Disable checkpointing during the final 10 epochs to improve training speed
+    correctAnswer: [A, B, D]
+    explanation: |
+      Proper checkpointing implementation requires three key practices:
+
+      Option A: SageMaker automatically syncs checkpoints from /opt/ml/checkpoints/ to S3. Using this
+      standard path ensures seamless integration with SageMaker's checkpoint management.
+
+      Option B: Complete training state must be saved to enable proper resumption. This includes:
+      - Model weights (to restore model state)
+      - Optimizer state (to continue gradient updates correctly)
+      - Epoch number (to know where to resume)
+      - Learning rate scheduler state (to maintain learning rate schedule)
+      - Random number generator states (for reproducibility)
+
+      Option D: CheckpointConfig specifies the S3 location where SageMaker uploads checkpoints. This
+      enables checkpoint persistence across spot interruptions and allows training to resume from
+      the latest checkpoint.
+
+      Option C is incorrect - checkpointing after every batch creates excessive I/O overhead and S3
+      costs. For a 6-hour job, checkpoint every 10-30 minutes (or every epoch) is appropriate.
+
+      Option E sounds correct but is implicit - SageMaker automatically restores checkpoints from S3
+      to /opt/ml/checkpoints/ when training resumes, so you only need to implement checkpoint loading
+      logic, not the restoration mechanism.
+
+      Option F is incorrect - disabling checkpointing near the end increases risk of lost work if
+      interruption occurs during final epochs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-checkpoints.html
+    services:
+      - Amazon SageMaker Training Jobs
+      - SageMaker Managed Spot Training
+    concepts:
+      - Checkpointing implementation
+      - Training state preservation
+      - Fault tolerance
+
+  - id: mt-012
+    type: single
+    text: |
+      A company is training a recommendation model using the Factorization Machines algorithm on a
+      dataset with 10 million sparse user-item interaction records. The feature vectors have 100,000
+      dimensions but are 99% sparse. Training currently takes 8 hours on an ml.c5.2xlarge instance.
+
+      Which optimization would MOST effectively reduce training time?
+    options:
+      - id: A
+        text: Switch to File mode instead of Pipe mode to enable random access to training data
+      - id: B
+        text: Use RecordIO-Protobuf format to efficiently encode sparse data
+      - id: C
+        text: Increase to an ml.c5.9xlarge instance to provide more CPU and memory resources
+      - id: D
+        text: Enable distributed training across multiple instances
+    correctAnswer: B
+    explanation: |
+      RecordIO-Protobuf format is specifically optimized for sparse data and is the recommended format
+      for SageMaker's Factorization Machines algorithm. This format efficiently encodes sparse feature
+      vectors by storing only non-zero values and their indices, dramatically reducing data size and
+      I/O overhead compared to dense representations.
+
+      For 99% sparse data with 100,000 dimensions, RecordIO-Protobuf would encode each record using
+      approximately 1% of the space required by dense formats (CSV, JSON), improving:
+      - Data transfer speed from S3
+      - Deserialization performance
+      - Memory consumption
+      - Overall training throughput
+
+      Factorization Machines is designed to work with sparse data, and using RecordIO-Protobuf allows
+      the algorithm to process data in its native sparse representation without unnecessary
+      densification.
+
+      Option A (File mode) might help with some access patterns but doesn't address the fundamental
+      sparse data encoding inefficiency. Option C (larger instance) provides more resources but
+      doesn't optimize data representation. Option D (distributed training) adds complexity and may
+      not provide linear speedup for this dataset size.
+
+      General guideline: For sparse data (> 90% sparse), always use RecordIO-Protobuf format with
+      SageMaker built-in algorithms that support it.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/fact-machines.html
+    services:
+      - SageMaker Factorization Machines
+    concepts:
+      - Sparse data handling
+      - RecordIO-Protobuf format
+      - Data format optimization
+
+  - id: mt-013
+    type: single
+    text: |
+      A machine learning engineer is running a hyperparameter tuning job using the Hyperband strategy.
+      The objective is to minimize validation loss. After 20 training jobs, the engineer notices that
+      several jobs were stopped after only 5 epochs (out of a maximum 50 epochs), even though their
+      validation loss at epoch 5 was competitive with other jobs.
+
+      What is the MOST likely explanation for this behavior?
+    options:
+      - id: A
+        text: The training jobs encountered errors and failed early
+      - id: B
+        text: Hyperband automatically stops jobs that are not improving fast enough compared to other jobs at the same stage
+      - id: C
+        text: The MaxParallelTrainingJobs limit was reached, causing jobs to be terminated
+      - id: D
+        text: Early stopping detected overfitting and terminated the jobs to prevent wasted compute
+    correctAnswer: B
+    explanation: |
+      Hyperband is a multi-fidelity optimization strategy that dynamically allocates training resources
+      based on early performance. It works by:
+
+      1. Running multiple hyperparameter configurations with limited resources (few epochs)
+      2. Evaluating intermediate results at checkpoints (e.g., epoch 5, 10, 20)
+      3. Progressively allocating more resources (more epochs) only to the best-performing configurations
+      4. Automatically stopping underperforming configurations, even if they seem "competitive"
+
+      The key insight of Hyperband is that hyperparameter configurations showing slower improvement
+      rates early in training are unlikely to become optimal with more training. By stopping these
+      jobs early, Hyperband redirects compute resources to more promising configurations, achieving
+      faster overall convergence (up to 3× faster than Bayesian or random search).
+
+      A job with "competitive" validation loss at epoch 5 might still be stopped if its improvement
+      rate (slope of loss curve) is lower than other configurations at the same stage.
+
+      Option A (errors) would show in job status as "Failed". Option C (parallel limit) would show
+      jobs in "Waiting" state, not "Stopped". Option D (early stopping) is a different feature that
+      monitors convergence, not relative performance compared to other jobs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    services:
+      - SageMaker Automatic Model Tuning
+    concepts:
+      - Hyperband strategy
+      - Multi-fidelity optimization
+      - Early stopping mechanisms
+
+  - id: mt-014
+    type: single
+    text: |
+      A data scientist is training a ResNet-50 model for image classification using PyTorch on SageMaker.
+      The training uses an ml.p3.8xlarge instance (4 V100 GPUs) with a batch size of 32 per GPU. GPU
+      utilization is only 45% according to CloudWatch metrics, and training is slower than expected.
+
+      Which action would MOST likely increase GPU utilization and training speed?
+    options:
+      - id: A
+        text: Reduce the batch size to 16 to enable faster gradient computation
+      - id: B
+        text: Increase the batch size to 64 or 128 per GPU to maximize GPU throughput
+      - id: C
+        text: Enable mixed precision training using torch.cuda.amp
+      - id: D
+        text: Switch to data parallel training across multiple instances
+    correctAnswer: B
+    explanation: |
+      Low GPU utilization (45%) with a relatively small batch size (32) indicates the GPU is
+      underutilized - it can process more data per forward/backward pass. Modern GPUs like V100 achieve
+      peak performance with larger batch sizes that maximize parallel computation and memory bandwidth
+      utilization.
+
+      For ResNet-50 on V100 GPUs, typical optimal batch sizes are 64-256 per GPU. Increasing batch
+      size to 64 or 128 would:
+      - Increase GPU compute utilization (more parallel operations)
+      - Improve memory bandwidth efficiency (fewer kernel launches)
+      - Increase training throughput (images/second)
+
+      V100 GPUs have 16 GB memory and ResNet-50 is relatively small, so there's ample headroom to
+      increase batch size before hitting memory constraints.
+
+      Option A (reduce batch size) would further decrease GPU utilization. Option C (mixed precision)
+      is beneficial but would be even more effective combined with larger batch sizes - mixed precision
+      reduces memory consumption, allowing even larger batches. Option D (multi-instance) doesn't
+      address the underutilization of current GPUs.
+
+      Important: When increasing batch size, consider adjusting learning rate (linear scaling rule:
+      multiply LR by batch size increase factor) to maintain convergence characteristics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-training-algo-running-container.html
+    services:
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - GPU utilization
+      - Batch size optimization
+      - Training performance
+
+  - id: mt-015
+    type: multi
+    correctCount: 2
+    text: |
+      A machine learning team is training a transformer-based language model with 6 billion parameters
+      using SageMaker. The model fits in the memory of a single ml.p4d.24xlarge instance (8 A100 GPUs,
+      40 GB each) but training is taking longer than expected. The team wants to reduce training time.
+
+      Which TWO strategies would effectively reduce training time without requiring code changes to
+      the model architecture? (Select TWO)
+    options:
+      - id: A
+        text: Enable SageMaker distributed data parallel training across multiple instances
+      - id: B
+        text: Use SageMaker Training Compiler to optimize the training computation graph
+      - id: C
+        text: Switch to model parallelism to distribute the model across instances
+      - id: D
+        text: Enable mixed precision training using bfloat16 or float16
+      - id: E
+        text: Reduce the number of training epochs to complete training faster
+    correctAnswer: [B, D]
+    explanation: |
+      Two strategies can reduce training time without model architecture changes:
+
+      Option B (Training Compiler): SageMaker Training Compiler optimizes deep learning models by
+      compiling the training computation graph, applying graph-level optimizations (operator fusion,
+      memory planning, layout optimization). For transformer models, Training Compiler can provide
+      up to 50% training speedup with no code changes required - simply enable compiler_config in
+      the estimator.
+
+      Option D (Mixed precision): Using float16 or bfloat16 instead of float32 provides:
+      - 2× faster computation on A100 Tensor Cores
+      - 40-50% memory savings (enabling larger batch sizes for further speedup)
+      - Minimal accuracy impact with proper loss scaling
+      Modern frameworks (PyTorch AMP, TensorFlow mixed_precision) make this a simple configuration
+      change without modifying model architecture.
+
+      Option A (data parallel) is effective but since the model fits in one instance, the question
+      asks for optimization of current setup. Data parallel would require multiple instances and is
+      better when scaling beyond single-instance limits.
+
+      Option C (model parallelism) is for models too large to fit in single-instance memory - not
+      applicable here since the model already fits.
+
+      Option E (fewer epochs) reduces training quality rather than optimizing training efficiency.
+
+      Best practice: Combine both strategies (Training Compiler + mixed precision) for maximum speedup.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/training-compiler.html
+    services:
+      - SageMaker Training Compiler
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Training optimization
+      - Mixed precision training
+      - Compilation optimization
+
+  - id: mt-016
+    type: single
+    text: |
+      A company is running automated hyperparameter tuning jobs daily for multiple models. Each tuning
+      job runs 100 training jobs with Bayesian optimization. The team notices that tuning jobs for
+      similar models (e.g., image classifiers with different datasets) often explore the same
+      suboptimal hyperparameter ranges before converging.
+
+      Which SageMaker feature would help reduce redundant exploration and accelerate tuning?
+    options:
+      - id: A
+        text: Enable automatic early stopping to terminate poorly performing jobs faster
+      - id: B
+        text: Use warm start tuning to leverage results from previous tuning jobs
+      - id: C
+        text: Switch to Hyperband strategy to allocate resources more efficiently
+      - id: D
+        text: Increase MaxParallelTrainingJobs to explore more hyperparameters simultaneously
+    correctAnswer: B
+    explanation: |
+      Warm start tuning allows you to leverage knowledge from previous hyperparameter tuning jobs
+      when starting new tuning jobs. This is ideal when tuning similar models or the same model with
+      slightly different data, as it enables the new tuning job to "start warm" rather than from
+      scratch.
+
+      How warm start works:
+      1. You specify up to 5 parent tuning jobs when creating a new tuning job
+      2. SageMaker uses results from parent jobs to inform Bayesian optimization in the new job
+      3. The new job avoids re-exploring hyperparameter regions known to be suboptimal
+      4. Convergence to optimal hyperparameters is faster (fewer total training jobs needed)
+
+      For the described scenario (daily tuning of similar models), each day's tuning job can use
+      previous days' results as parent jobs, progressively building knowledge about optimal
+      hyperparameter regions for this class of models.
+
+      Option A (early stopping) saves compute on individual jobs but doesn't transfer knowledge between
+      tuning jobs. Option C (Hyperband) is faster but still explores from scratch each time. Option D
+      (more parallel jobs) doesn't reduce redundant exploration, just speeds up random exploration.
+
+      Warm start configurations:
+      - IDENTICAL_DATA_AND_ALGORITHM: Same model and data, refining previous tuning
+      - TRANSFER_LEARNING: Similar models or datasets, transferring hyperparameter knowledge
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    services:
+      - SageMaker Automatic Model Tuning
+    concepts:
+      - Warm start tuning
+      - Hyperparameter optimization
+      - Transfer learning
+
+  - id: mt-017
+    type: single
+    text: |
+      A machine learning engineer is training a custom scikit-learn model using SageMaker. The training
+      data is stored in S3 as multiple CSV files totaling 50 GB. The training script needs to read
+      all data into memory for preprocessing before training begins. The current training job uses
+      an ml.m5.2xlarge instance (32 GB RAM) and fails with an out-of-memory error.
+
+      What is the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Upgrade to ml.m5.4xlarge (64 GB RAM) to accommodate the full dataset in memory
+      - id: B
+        text: Switch to an ml.r5.2xlarge memory-optimized instance with 64 GB RAM
+      - id: C
+        text: Modify the training script to use incremental learning with partial_fit to process data in batches
+      - id: D
+        text: Enable SageMaker data parallel training to distribute data across multiple instances
+    correctAnswer: B
+    explanation: |
+      Memory-optimized instances (ml.r5 family) provide the most cost-effective solution for memory-
+      constrained workloads. The ml.r5.2xlarge offers 64 GB RAM (double the ml.m5.2xlarge) at a lower
+      price than ml.m5.4xlarge for equivalent memory capacity.
+
+      Cost comparison for 64 GB RAM:
+      - ml.m5.4xlarge: 16 vCPUs, 64 GB RAM, higher price
+      - ml.r5.2xlarge: 8 vCPUs, 64 GB RAM, lower price, optimized for memory-intensive workloads
+
+      For workloads where memory is the constraint (not CPU), r5 instances provide better price-per-GB-
+      RAM ratio. The reduced CPU count (8 vs 16 cores) is acceptable for scikit-learn, which often
+      doesn't scale perfectly to 16+ cores anyway.
+
+      Option A (ml.m5.4xlarge) would work but costs more for the same memory capacity. Option C
+      (incremental learning) requires significant code changes and may not be appropriate for all
+      scikit-learn algorithms (many don't support partial_fit). Option D (data parallel) is for deep
+      learning frameworks, not scikit-learn, and adds unnecessary complexity.
+
+      General guidance: When memory is the constraint, choose memory-optimized instances (r5, r6i)
+      over general-purpose instances (m5, m6i) for better cost efficiency.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks-available-instance-types.html
+    services:
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Instance type selection
+      - Memory-optimized instances
+      - Cost optimization
+
+  - id: mt-018
+    type: multi
+    correctCount: 3
+    text: |
+      A data scientist is implementing L2 regularization for a neural network training job to address
+      overfitting. The model is implemented in PyTorch and will be trained using SageMaker automatic
+      model tuning.
+
+      Which THREE practices should be followed for effective L2 regularization tuning? (Select THREE)
+    options:
+      - id: A
+        text: Define the L2 regularization strength (weight_decay) as a hyperparameter with logarithmic scaling
+      - id: B
+        text: Set the L2 regularization range from 0.00001 to 10 to explore multiple orders of magnitude
+      - id: C
+        text: Apply weight decay to all parameters including batch normalization layers
+      - id: D
+        text: Monitor both training loss and validation loss to verify regularization reduces overfitting
+      - id: E
+        text: Use a categorical hyperparameter range with values [0.0001, 0.001, 0.01, 0.1]
+      - id: F
+        text: Disable regularization during the initial epochs and enable it only after epoch 10
+    correctAnswer: [A, B, D]
+    explanation: |
+      Effective L2 regularization tuning requires three key practices:
+
+      Option A (logarithmic scaling): L2 regularization strength spans multiple orders of magnitude
+      (like learning rates), making logarithmic scaling essential for balanced exploration. This
+      ensures equal sampling across small values (0.00001) and large values (10).
+
+      Option B (wide range): Starting with a wide range (0.00001 to 10) ensures comprehensive
+      exploration from essentially no regularization (0.00001) to very strong regularization (10).
+      After initial tuning, narrow the range around promising values for fine-tuning.
+
+      Option D (monitor losses): The purpose of regularization is preventing overfitting. Monitor
+      both training and validation loss to verify that:
+      - Training loss increases slightly (regularization adds penalty)
+      - Validation loss decreases (better generalization)
+      - Gap between training and validation narrows (reduced overfitting)
+
+      Option C is incorrect - batch normalization layers should typically exclude weight decay as they
+      already provide regularization effects. Most frameworks allow excluding specific parameter groups.
+
+      Option E (categorical) is not wrong but less effective than continuous logarithmic ranges,
+      which enable discovering optimal values between the specified points.
+
+      Option F is incorrect - regularization should be applied from the beginning of training to guide
+      the optimization process. Starting regularization mid-training can disrupt learned patterns.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-ex-tuning-job.html
+    services:
+      - SageMaker Automatic Model Tuning
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - L2 regularization
+      - Hyperparameter tuning
+      - Overfitting prevention
+      - Regularization best practices

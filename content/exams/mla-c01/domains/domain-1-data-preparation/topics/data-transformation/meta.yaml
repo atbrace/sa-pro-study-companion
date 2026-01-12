@@ -1,0 +1,42 @@
+id: data-transformation
+name: Data Transformation Pipelines
+shortName: Transformation
+examTask: task-1-2
+description: Transform data and perform feature engineering using AWS Glue, SageMaker Data Wrangler, and related services. Learn ETL patterns, encoding techniques, and scalable transformation pipelines for machine learning workloads.
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - AWS Glue
+  - AWS Glue DataBrew
+  - Amazon SageMaker Data Wrangler
+  - Amazon SageMaker Processing
+  - Amazon EMR
+  - AWS Step Functions
+
+keyConcepts:
+  - ETL pipeline design
+  - Feature engineering techniques
+  - Categorical encoding methods
+  - Normalization and standardization
+  - Data quality transformations
+  - PySpark and Pandas transformations
+  - Serverless data processing
+  - Workflow orchestration
+
+awsDocLinks:
+  - title: AWS Glue ETL Programming Guide
+    url: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-intro-tutorial.html
+    type: doc
+  - title: Amazon SageMaker Data Wrangler Documentation
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler.html
+    type: doc
+  - title: AWS Glue DataBrew User Guide
+    url: https://docs.aws.amazon.com/databrew/latest/dg/what-is.html
+    type: doc
+  - title: SageMaker Processing Jobs for Data Transformation
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+    type: doc
+  - title: Machine Learning Lens - Feature Engineering
+    url: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/feature-engineering.html
+    type: whitepaper

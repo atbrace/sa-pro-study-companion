@@ -1,0 +1,42 @@
+id: feature-engineering
+name: Feature Engineering Techniques
+shortName: Feature Engineering
+examTask: task-1-2
+description: Master feature engineering techniques including encoding methods, scaling, normalization, time series feature extraction, and automated feature engineering using SageMaker Data Wrangler, Feature Store, and scikit-learn extensions. Learn to transform raw data into meaningful features that improve model performance.
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Data Wrangler
+  - Amazon SageMaker Feature Store
+  - Amazon SageMaker Processing
+  - Amazon SageMaker Autopilot
+  - SageMaker scikit-learn extension
+
+keyConcepts:
+  - Categorical encoding (one-hot, ordinal, target, similarity)
+  - Feature scaling and normalization (standard, robust, min-max)
+  - Time series feature engineering (lag features, rolling windows, datetime extraction)
+  - Text featurization (TF-IDF, character statistics, vectorization)
+  - Dimensionality reduction (PCA, feature selection)
+  - Feature Store online and offline stores
+  - Automated feature engineering with Autopilot
+  - Training-serving skew prevention
+  - Feature reusability and sharing
+
+awsDocLinks:
+  - title: "Transform Data with SageMaker Data Wrangler"
+    url: "https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html"
+    type: doc
+  - title: "Create, Store, and Share Features with Feature Store"
+    url: "https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html"
+    type: doc
+  - title: "SageMaker Processing for Feature Engineering"
+    url: "https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html"
+    type: doc
+  - title: "Automate Feature Engineering Pipelines with SageMaker"
+    url: "https://aws.amazon.com/blogs/machine-learning/automate-feature-engineering-pipelines-with-amazon-sagemaker/"
+    type: blog
+  - title: "Prepare Time Series Data with Data Wrangler"
+    url: "https://aws.amazon.com/blogs/machine-learning/prepare-time-series-data-with-amazon-sagemaker-data-wrangler/"
+    type: blog

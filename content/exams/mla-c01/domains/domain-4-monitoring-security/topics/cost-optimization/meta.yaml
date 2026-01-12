@@ -1,0 +1,51 @@
+id: cost-optimization
+name: Cost Optimization for ML Workloads
+shortName: Cost Optimization
+examTask: task-4-2
+description: Monitor compute resources, optimize instance utilization, implement cost management strategies including Savings Plans, spot instances, right-sizing endpoints, and serverless inference for ML workloads with AWS Cost Explorer and SageMaker cost optimization features.
+estimatedStudyTime: 75
+difficulty: intermediate
+keyServices:
+  - Amazon SageMaker
+  - AWS Cost Explorer
+  - AWS Budgets
+  - Amazon CloudWatch
+  - AWS Savings Plans
+  - Amazon EC2 Spot Instances
+  - AWS Inferentia
+  - AWS Trainium
+keyConcepts:
+  - Machine Learning Savings Plans
+  - Managed spot training
+  - Checkpoint strategies
+  - Instance right-sizing
+  - Serverless inference
+  - Multi-model endpoints
+  - Auto-scaling endpoints
+  - Cost allocation tags
+  - SageMaker Inference Recommender
+  - Training job optimization
+  - Storage cost optimization
+  - Purpose-built ML accelerators
+awsDocLinks:
+  - title: Amazon SageMaker Pricing
+    url: https://aws.amazon.com/sagemaker/pricing/
+    type: doc
+  - title: Machine Learning Savings Plans
+    url: https://aws.amazon.com/savingsplans/ml-pricing/
+    type: doc
+  - title: Managed Spot Training in SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    type: doc
+  - title: SageMaker Serverless Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    type: doc
+  - title: ML Best Practices - Cost Optimization
+    url: https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-public-sector-organizations/cost-optimization.html
+    type: whitepaper
+  - title: Inference Cost Optimization Best Practices
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    type: doc
+  - title: SageMaker Inference Recommender
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    type: doc

@@ -1,0 +1,57 @@
+id: inference-optimization
+name: Inference Optimization Techniques
+shortName: Inference Optimization
+examTask: task-3-1
+description: >
+  Master advanced techniques for optimizing ML model inference on Amazon SageMaker, including
+  multi-model and multi-container endpoints, model compilation with SageMaker Neo, instance
+  selection using Inference Recommender, and auto-scaling strategies for cost-effective,
+  high-performance deployments.
+estimatedStudyTime: 75
+difficulty: advanced
+keyServices:
+  - Amazon SageMaker Multi-Model Endpoints
+  - Amazon SageMaker Multi-Container Endpoints
+  - Amazon SageMaker Neo
+  - Amazon SageMaker Inference Recommender
+  - Amazon SageMaker Serverless Inference
+  - Amazon SageMaker Asynchronous Inference
+  - AWS Inferentia
+  - AWS Trainium
+  - Amazon CloudWatch
+keyConcepts:
+  - Multi-model endpoint architecture and caching
+  - Multi-container endpoint invocation patterns
+  - Model compilation and optimization with Neo
+  - Instance selection and right-sizing strategies
+  - Auto-scaling policies and metrics
+  - Inference cost optimization techniques
+  - Latency and throughput optimization
+  - Serverless and asynchronous inference patterns
+  - Hardware acceleration with Inferentia and Trainium
+  - Batch transform optimization
+awsDocLinks:
+  - title: Multi-model endpoints
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html
+    type: doc
+  - title: Multi-container endpoints
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-container-endpoints.html
+    type: doc
+  - title: Model performance optimization with SageMaker Neo
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    type: doc
+  - title: Amazon SageMaker Inference Recommender
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    type: doc
+  - title: Automatic scaling of Amazon SageMaker models
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/endpoint-auto-scaling.html
+    type: doc
+  - title: Inference cost optimization best practices
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    type: doc
+  - title: Deploy models with Amazon SageMaker Serverless Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    type: doc
+  - title: Asynchronous inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html
+    type: doc

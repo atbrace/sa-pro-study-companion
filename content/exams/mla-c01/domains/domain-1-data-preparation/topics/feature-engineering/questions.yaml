@@ -1,0 +1,892 @@
+questions:
+  - id: fe-001
+    type: single
+    text: |
+      A data scientist is building a fraud detection model using customer transaction data. The dataset includes a 'merchant_category' field with over 5,000 unique categories, some with spelling variations (e.g., "Restaurant", "Resturant", "Restaurants"). The team needs to encode this categorical feature for training a neural network model while handling the high cardinality and spelling inconsistencies.
+
+      Which encoding method should be used?
+    options:
+      - id: A
+        text: One-hot encoding with drop_last=True to reduce dimensionality
+      - id: B
+        text: Ordinal encoding with alphabetically sorted categories
+      - id: C
+        text: Similarity encoding using 3-gram tokenization
+      - id: D
+        text: Target encoding with cross-validation to prevent overfitting
+    correctAnswer: C
+    explanation: |
+      Similarity encoding is the correct choice for this scenario because it addresses both challenges: high cardinality (5,000+ categories) and spelling variations. Similarity encoding in SageMaker Data Wrangler uses 3-gram tokenization with min-hash encoding to create low-dimensional embeddings that map similar strings to similar vectors. This makes it robust to typos ("Restaurant" and "Resturant" receive similar encodings) while maintaining low dimensionality (default 30 dimensions vs. 5,000 for one-hot encoding).
+
+      Why other options are incorrect:
+      - A: One-hot encoding would create 5,000+ sparse dimensions, causing the curse of dimensionality, computational inefficiency, and difficulty training neural networks. It also doesn't handle spelling variations.
+      - B: Ordinal encoding assumes an ordered relationship between categories (e.g., low < medium < high), which doesn't apply to merchant categories. Alphabetical ordering is arbitrary and would cause the model to learn meaningless patterns.
+      - D: While target encoding handles high cardinality well, it requires the target variable (fraud labels) and risks overfitting with rare categories. It also doesn't address spelling variations, treating "Restaurant" and "Resturant" as completely different categories.
+
+      Similarity encoding is specifically designed for large categorical variables with noisy data, making it ideal for this use case.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Similarity encoding
+      - High cardinality encoding
+      - Categorical feature engineering
+
+  - id: fe-002
+    type: single
+    text: |
+      A machine learning engineer is preparing features for a linear regression model to predict housing prices. The dataset includes features with different scales: 'square_feet' (500-5000), 'number_of_bedrooms' (1-6), 'year_built' (1950-2023), and 'distance_to_school_km' (0.1-15.5). Several outliers exist in the 'square_feet' feature due to data entry errors (e.g., 50000 instead of 5000).
+
+      Which feature scaling method should be applied to ensure the model performs well despite the outliers?
+    options:
+      - id: A
+        text: Standard scaler to normalize all features to zero mean and unit variance
+      - id: B
+        text: Robust scaler using median and interquartile range (IQR)
+      - id: C
+        text: Min-max scaler to transform all features to the [0, 1] range
+      - id: D
+        text: Max absolute scaler to preserve zero entries
+    correctAnswer: B
+    explanation: |
+      Robust scaler is the correct choice because it uses median and interquartile range (IQR) instead of mean and standard deviation, making it resistant to outliers. The formula (value - median) / IQR ensures that extreme values in 'square_feet' (like 50000) do not skew the scaling parameters, unlike standard scaler or min-max scaler which are highly sensitive to outliers.
+
+      Linear regression is a gradient-based algorithm that requires feature scaling to ensure features with different magnitudes contribute appropriately to the model. The robust scaler ensures proper scaling while minimizing the influence of data entry errors.
+
+      Why other options are incorrect:
+      - A: Standard scaler uses mean and standard deviation, which are heavily influenced by outliers. The data entry errors would shift the mean and inflate the standard deviation, resulting in poor scaling for the majority of non-outlier values.
+      - C: Min-max scaler transforms features to [0, 1] by using the minimum and maximum values. Outliers define the range bounds, causing the majority of values to be compressed into a small portion of the [0, 1] range, reducing the model's ability to distinguish between normal observations.
+      - D: Max absolute scaler is designed to preserve sparsity in sparse data (many zero values). Housing price features are not sparse, and this scaler would still be sensitive to outliers defining the maximum absolute value.
+
+      For robust outlier handling during scaling, robust scaler is the best choice.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Robust scaler
+      - Feature scaling
+      - Outlier handling
+
+  - id: fe-003
+    type: multi
+    correctCount: 2
+    text: |
+      A data science team is building a recommendation system that requires real-time feature lookups during inference and historical feature data for training models. Features include user behavior metrics (click_rate, purchase_frequency) and item attributes (category, price_tier) that are updated hourly via batch processing jobs. The team wants to prevent training-serving skew and enable feature reuse across multiple ML projects.
+
+      Which SageMaker Feature Store configurations should be implemented? (Select TWO.)
+    options:
+      - id: A
+        text: Configure both online and offline stores for the feature group
+      - id: B
+        text: Configure offline store only and query using Amazon Athena for inference
+      - id: C
+        text: Use streaming ingestion via PutRecord API for hourly batch updates
+      - id: D
+        text: Use batch ingestion via SageMaker Processing jobs for hourly updates
+      - id: E
+        text: Store feature engineering logic only in Lambda functions for flexibility
+    correctAnswer:
+      - A
+      - D
+    explanation: |
+      Options A and D are correct for this scenario.
+
+      A is correct because the requirement explicitly states the need for "real-time feature lookups during inference" (online store) and "historical feature data for training models" (offline store). Configuring both stores provides:
+      - Online store: Low-latency millisecond reads for real-time inference via GetRecord API
+      - Offline store: Complete historical records in Parquet format on S3 for training and batch inference, queryable via Athena
+      This dual-mode approach supports the complete ML lifecycle.
+
+      D is correct because hourly batch updates are best handled by batch ingestion using SageMaker Processing jobs. Processing jobs can efficiently process large datasets, compute features at scale using frameworks like PySpark or scikit-learn, and ingest results into both online and offline Feature Store simultaneously. Batch ingestion is appropriate for periodic updates (hourly, daily) rather than continuous streaming.
+
+      Why other options are incorrect:
+      - B: Offline store alone does not support real-time inference requirements. Athena queries have query latency (seconds to minutes), not the low millisecond latency required for real-time recommendation systems.
+      - C: PutRecord API is designed for streaming ingestion (small batches of records pushed continuously as new data arrives), not for hourly batch updates of large datasets. While technically possible, it's inefficient compared to batch processing and doesn't align with the described update pattern.
+      - E: Storing feature engineering logic only in Lambda functions increases the risk of training-serving skew (different code paths for training vs. inference). Feature Store centralizes feature definitions and ensures consistent feature computation. While Lambda can trigger feature updates, the engineering logic should be version-controlled and integrated with Feature Store for consistency.
+
+      The combination of dual-store configuration and batch processing provides the scalability, latency, and consistency required.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html
+    services:
+      - Amazon SageMaker Feature Store
+      - Amazon SageMaker Processing
+    concepts:
+      - Feature Store online store
+      - Feature Store offline store
+      - Batch ingestion
+      - Training-serving skew prevention
+
+  - id: fe-004
+    type: single
+    text: |
+      A machine learning team is developing a time series forecasting model to predict daily product demand for the next 30 days. The historical sales data spans 3 years with daily observations. The data scientist needs to create features that capture recent sales trends and seasonal patterns (weekly and yearly seasonality).
+
+      Which feature engineering approach best captures these temporal patterns?
+    options:
+      - id: A
+        text: Create lag features for the past 7, 14, and 30 days, and extract datetime components (day_of_week, month, quarter) from the timestamp
+      - id: B
+        text: Apply PCA to reduce the dimensionality of the time series to 10 principal components
+      - id: C
+        text: Use one-hot encoding to encode the date field into separate binary columns
+      - id: D
+        text: Calculate only the rolling mean with a 365-day window to capture yearly trends
+    correctAnswer: A
+    explanation: |
+      Option A is correct because it addresses both requirements: recent trends and seasonal patterns.
+
+      Lag features for the past 7, 14, and 30 days capture autoregressive patterns and recent sales trends. For example, lag-7 provides the sales value from one week ago, helping the model learn weekly patterns. Lag-14 and lag-30 capture medium-term trends. These lag features are fundamental for time series forecasting as past values often predict future values.
+
+      Extracting datetime components (day_of_week, month, quarter) from the timestamp captures seasonality:
+      - day_of_week: Weekly seasonality (e.g., higher sales on weekends)
+      - month: Monthly patterns (e.g., seasonal product demand)
+      - quarter: Quarterly and yearly seasonality
+
+      Data Wrangler's Featurize Datetime transformation can extract these components with options for cyclic encoding (recommended for neural networks) or ordinal encoding (recommended for tree-based models).
+
+      Why other options are incorrect:
+      - B: PCA is designed for dimensionality reduction of cross-sectional features (multiple correlated variables), not for capturing temporal patterns in time series. PCA would destroy the temporal structure and relationships needed for forecasting. It doesn't create lag features or extract seasonality.
+      - C: One-hot encoding the date field would create thousands of binary columns (one per unique date), causing extreme dimensionality and providing no generalization to future dates not seen in training. Dates are continuous temporal variables, not categorical.
+      - D: A 365-day rolling mean only captures long-term yearly trends and would be extremely slow to react to recent changes. It completely misses weekly seasonality and recent trend information. A single rolling window is insufficient for comprehensive time series forecasting.
+
+      Combining lag features with datetime component extraction is a standard and effective approach for time series feature engineering in SageMaker Data Wrangler.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/prepare-time-series-data-with-amazon-sagemaker-data-wrangler/
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Lag features
+      - Datetime feature extraction
+      - Time series forecasting
+      - Seasonality
+
+  - id: fe-005
+    type: single
+    text: |
+      A data scientist is preparing image data for training a computer vision model using SageMaker Data Wrangler. The dataset contains images with varying dimensions and lighting conditions. The scientist needs to standardize image sizes and improve model robustness to lighting variations during training.
+
+      Which Data Wrangler transformations should be applied?
+    options:
+      - id: A
+        text: ResizeImage to standardize dimensions and EnhanceImage to adjust brightness and contrast
+      - id: B
+        text: Apply one-hot encoding to pixel values and standard scaler to normalize brightness
+      - id: C
+        text: Use PCA to reduce image dimensionality and TF-IDF vectorization for pixel patterns
+      - id: D
+        text: Convert images to text using character statistics transformation
+    correctAnswer: A
+    explanation: |
+      Option A is correct because it uses appropriate image-specific transformations available in SageMaker Data Wrangler.
+
+      ResizeImage standardizes image dimensions, which is essential because most ML frameworks require consistent input sizes. Different image dimensions would cause errors or require padding/cropping during training.
+
+      EnhanceImage adjusts brightness, contrast, and other visual properties, which serves as data augmentation to improve model robustness. By training on images with varying brightness and contrast, the model learns features invariant to lighting conditions, improving generalization to real-world variations.
+
+      Data Wrangler provides built-in image transformations via the imgaug library, including:
+      - ResizeImage: Standardize dimensions
+      - EnhanceImage: Adjust visual properties
+      - CorruptImage: Add noise for robustness
+      - Brightness, ColorChannels, Grayscale, Rotate: Additional augmentations
+
+      These transformations are designed for image data and integrate directly with Data Wrangler's visual interface.
+
+      Why other options are incorrect:
+      - B: One-hot encoding and standard scaler are designed for tabular features, not images. One-hot encoding pixel values (0-255) would create 256 binary columns per pixel, resulting in astronomical dimensionality. While pixel normalization exists (e.g., dividing by 255), standard scaler on raw pixels is not the correct approach for standardizing image sizes or handling lighting variations.
+      - C: PCA can be applied to images for dimensionality reduction, but it doesn't standardize image dimensions or address lighting variations as required. TF-IDF vectorization is a text featurization technique, completely inappropriate for image pixel data.
+      - D: Character statistics transformation is for text data (word count, character ratios, etc.), not images. Images are not text and cannot be converted using text transformations.
+
+      Use image-specific transformations for image preprocessing.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Image transformation
+      - Data augmentation
+      - ResizeImage
+      - EnhanceImage
+
+  - id: fe-006
+    type: single
+    text: |
+      A company is building a customer churn prediction model using XGBoost. The dataset contains numeric features (account_balance, months_since_signup, support_tickets_count) and categorical features (subscription_tier with values: Free, Basic, Premium, Enterprise). The data scientist is deciding whether to apply feature scaling to the numeric features.
+
+      What is the correct approach for feature scaling with XGBoost?
+    options:
+      - id: A
+        text: Apply standard scaler to all numeric features because XGBoost is sensitive to feature scales
+      - id: B
+        text: Apply min-max scaler to normalize numeric features to [0, 1] range for consistency
+      - id: C
+        text: Do not apply feature scaling because XGBoost is a tree-based algorithm that is scale-invariant
+      - id: D
+        text: Apply robust scaler only to features with outliers and standard scaler to others
+    correctAnswer: C
+    explanation: |
+      Option C is correct. XGBoost is a tree-based ensemble algorithm (gradient boosted decision trees) that is inherently scale-invariant. Tree-based models make splitting decisions based on feature value thresholds, and these decisions are not affected by the scale or range of features.
+
+      How tree-based algorithms work: At each node, the algorithm tests conditions like "is account_balance > 5000?" The answer is the same whether account_balance is raw (range 0-100000) or scaled (range 0-1). The tree structure and splits remain unchanged, so scaling provides no benefit.
+
+      In contrast, gradient-based algorithms (linear regression, logistic regression, neural networks, SVM) use feature values directly in mathematical computations where magnitude matters. Features with larger scales would dominate the gradient updates without scaling.
+
+      Tree-based algorithms that do NOT require scaling:
+      - Decision Trees
+      - Random Forest
+      - XGBoost, LightGBM, CatBoost (gradient boosted trees)
+
+      Algorithms that DO require scaling:
+      - Linear models (Linear Regression, Logistic Regression)
+      - Neural Networks
+      - Support Vector Machines (SVM)
+      - K-Nearest Neighbors (k-NN)
+      - K-Means clustering
+
+      Why other options are incorrect:
+      - A: Incorrect reasoning. XGBoost is not sensitive to feature scales, so applying standard scaler provides no benefit and adds unnecessary preprocessing complexity.
+      - B: Min-max scaling is also unnecessary for XGBoost. While it wouldn't harm model performance significantly (tree splits would still be the same), it adds preprocessing overhead without benefit.
+      - D: Even if outliers exist, robust scaler is not needed for XGBoost. Tree-based algorithms naturally handle outliers well because they partition the feature space rather than computing weighted sums. Outliers simply end up in specific leaf nodes.
+
+      For XGBoost and other tree-based algorithms, skip feature scaling to simplify preprocessing pipelines.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost.html
+    services:
+      - Amazon SageMaker XGBoost
+    concepts:
+      - Feature scaling
+      - Tree-based algorithms
+      - Algorithm-specific preprocessing
+
+  - id: fe-007
+    type: multi
+    correctCount: 3
+    text: |
+      A data engineering team is designing a feature engineering pipeline for a production ML system. Raw data arrives in Amazon S3 daily as CSV files. The team needs to transform the data using Data Wrangler transformations, ingest features into Feature Store for reuse across multiple models, and schedule the pipeline to run daily at 2 AM UTC.
+
+      Which components should be included in the architecture? (Select THREE.)
+    options:
+      - id: A
+        text: Export Data Wrangler flow as a SageMaker Processing job
+      - id: B
+        text: Use Amazon EventBridge rule to trigger the processing job daily at 2 AM UTC
+      - id: C
+        text: Configure the processing job to ingest transformed features into Feature Store
+      - id: D
+        text: Use AWS Glue ETL jobs instead of SageMaker Processing for better performance
+      - id: E
+        text: Store features only in Amazon S3 without using Feature Store
+    correctAnswer:
+      - A
+      - B
+      - C
+    explanation: |
+      Options A, B, and C together create a complete automated feature engineering pipeline.
+
+      A is correct because Data Wrangler flows can be exported directly as SageMaker Processing job code. This allows transformations developed visually in Data Wrangler to scale to production workloads. The processing job executes the same transformations on the full dataset, maintaining consistency between development and production. Data Wrangler supports export to Processing jobs, Python scripts, SageMaker Pipelines, and Feature Store.
+
+      B is correct because Amazon EventBridge (formerly CloudWatch Events) provides scheduled rule execution. An EventBridge rule configured with a cron expression (cron(0 2 * * ? *) for 2 AM UTC daily) can trigger the SageMaker Processing job automatically. This eliminates manual intervention and ensures timely feature updates. EventBridge integrates natively with SageMaker Processing as a target.
+
+      C is correct because the requirement explicitly states the need to "ingest features into Feature Store for reuse across multiple models." The processing job can be configured to write transformed features directly to Feature Store (both online and offline stores) using the Feature Store SDK. This enables feature discovery, sharing, and prevents training-serving skew by centralizing feature definitions.
+
+      Why other options are incorrect:
+      - D: AWS Glue ETL jobs are designed for general-purpose data transformation and integration, but the question specifically requires using Data Wrangler transformations. Data Wrangler exports to SageMaker Processing jobs, not Glue. While Glue could technically perform transformations, it would require rewriting Data Wrangler logic and wouldn't leverage the existing Data Wrangler flow. SageMaker Processing provides equivalent or better performance for ML feature engineering workloads and integrates seamlessly with Feature Store.
+      - E: Storing features only in S3 contradicts the requirement to "ingest features into Feature Store for reuse." While S3 can store features, it doesn't provide Feature Store's benefits: centralized feature discovery, metadata management, online/offline store separation, training-serving consistency, and feature versioning. Feature Store's offline store uses S3 as the underlying storage but adds critical ML-specific capabilities.
+
+      This architecture pattern (Data Wrangler → Processing → Feature Store + EventBridge scheduling) is a recommended best practice for production feature engineering on AWS.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/automate-feature-engineering-pipelines-with-amazon-sagemaker/
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+      - Amazon SageMaker Feature Store
+      - Amazon EventBridge
+    concepts:
+      - Feature engineering pipeline
+      - Automated scheduling
+      - Data Wrangler export
+      - Feature Store ingestion
+
+  - id: fe-008
+    type: single
+    text: |
+      A machine learning engineer is preparing text data from customer reviews for sentiment analysis. The reviews contain phrases like "best product", "worst experience", "amazing quality", etc. The engineer needs to convert these text reviews into numerical features for training a logistic regression model, prioritizing words that are distinctive to specific documents over common words.
+
+      Which text featurization technique should be used?
+    options:
+      - id: A
+        text: Character statistics to count words, characters, and special character ratios
+      - id: B
+        text: TF-IDF vectorization with Count Vectorizer and IDF application
+      - id: C
+        text: One-hot encoding to create binary features for each unique word
+      - id: D
+        text: Ordinal encoding to assign integer values to each word based on frequency
+    correctAnswer: B
+    explanation: |
+      Option B is correct. TF-IDF (Term Frequency-Inverse Document Frequency) vectorization is specifically designed to prioritize distinctive words over common ones, making it ideal for this scenario.
+
+      How TF-IDF works:
+      - Term Frequency (TF): Measures how often a word appears in a document
+      - Inverse Document Frequency (IDF): Measures how unique a word is across all documents (rare words have high IDF, common words have low IDF)
+      - TF-IDF Score: TF × IDF emphasizes words that are frequent in specific documents but rare across the corpus
+
+      In sentiment analysis, distinctive words like "amazing", "terrible", "excellent" (which appear in specific sentiment contexts) receive higher TF-IDF scores than common words like "the", "is", "and" (which appear everywhere). This helps the logistic regression model focus on sentiment-bearing words.
+
+      SageMaker Data Wrangler provides TF-IDF vectorization with:
+      - Tokenization options (standard or custom regex)
+      - Count Vectorizer (filters by term/document frequency, max vocabulary size)
+      - Hashing Vectorizer (faster alternative using hash functions)
+      - IDF application with configurable minimum document frequency
+      - Output formats: Vector (sparse, memory-efficient) or Flattened columns
+
+      Why other options are incorrect:
+      - A: Character statistics (word count, character count, capital ratio, digit ratio) provide high-level text metrics but don't capture the semantic content of specific words. Counting total words doesn't distinguish "amazing product" from "terrible product." These features are supplementary, not primary for sentiment analysis.
+      - C: One-hot encoding treats each unique word as a separate category, creating one binary column per word in the vocabulary. For text data, this results in extremely high dimensionality (thousands to millions of columns) and loses information about word importance. One-hot encoding also doesn't differentiate between common and distinctive words.
+      - D: Ordinal encoding assigns integer values based on frequency, implying an ordered relationship between words (most frequent = highest value). This is inappropriate for text because word frequency doesn't represent an inherent ordering, and the model would incorrectly learn mathematical relationships between the integer values.
+
+      TF-IDF is the standard approach for converting text to numerical features for traditional ML algorithms like logistic regression.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - TF-IDF vectorization
+      - Text featurization
+      - Sentiment analysis preprocessing
+
+  - id: fe-009
+    type: single
+    text: |
+      A data scientist is working with an imbalanced dataset for fraud detection where fraudulent transactions represent only 2% of the total data (98% legitimate, 2% fraud). The scientist wants to balance the dataset to improve model recall for the minority fraud class. The dataset has 100,000 total samples.
+
+      Which data balancing technique in SageMaker Data Wrangler should be used to generate synthetic fraud samples while minimizing overfitting?
+    options:
+      - id: A
+        text: Random oversampling to duplicate fraud samples until class balance is achieved
+      - id: B
+        text: Random undersampling to reduce legitimate transactions to match fraud count
+      - id: C
+        text: SMOTE (Synthetic Minority Oversampling Technique) to generate synthetic fraud samples through interpolation
+      - id: D
+        text: Apply class weights to the model instead of resampling the data
+    correctAnswer: C
+    explanation: |
+      Option C is correct. SMOTE (Synthetic Minority Oversampling Technique) generates synthetic minority class samples through interpolation between existing samples, providing better generalization than simple duplication.
+
+      How SMOTE works:
+      - For numeric features: Creates weighted averages between neighboring minority samples
+      - For non-numeric features: Probabilistically copies values from real samples
+      - Result: New synthetic samples that are similar but not identical to existing fraud cases
+
+      Benefits for this scenario:
+      - Avoids exact duplication overfitting that occurs with random oversampling
+      - Preserves all fraud samples (critical when fraud is only 2% of data)
+      - Increases training set size and diversity
+      - Helps the model learn decision boundaries around fraud patterns
+
+      With only 2,000 fraud samples (2% of 100,000), discarding data through undersampling would be wasteful. SMOTE creates new training examples while maintaining the original fraud patterns.
+
+      Why other options are incorrect:
+      - A: Random oversampling creates exact duplicates of minority samples until balance is achieved. With only 2,000 fraud samples, achieving balance would require duplicating each fraud sample approximately 49 times. This leads to severe overfitting because the model sees identical samples repeatedly, memorizing specific fraud cases rather than learning generalizable patterns.
+      - B: Random undersampling would reduce 98,000 legitimate transactions to 2,000 to match fraud count, discarding 96,000 valuable training samples (96% of the data). This massive information loss would severely degrade model performance, especially for learning the legitimate transaction patterns. Undersampling is only viable when the majority class is extremely large and redundant.
+      - D: While class weights are a valid alternative approach (penalizing misclassification of the minority class more heavily), this option is not a Data Wrangler balancing technique as specified in the question. Class weights are a model-level hyperparameter, not a data transformation. The question specifically asks for a Data Wrangler technique to balance the dataset.
+
+      SageMaker Data Wrangler provides all three balancing methods (random oversampling, random undersampling, SMOTE), with SMOTE being the most sophisticated approach for reducing overfitting.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - SMOTE
+      - Data balancing
+      - Imbalanced classification
+      - Overfitting prevention
+
+  - id: fe-010
+    type: single
+    text: |
+      A machine learning team has deployed a demand forecasting model to production. After several months, the model's performance has degraded significantly. Investigation reveals that the distribution of input features has shifted: the 'price' feature now has a mean of $150 (compared to $100 during training) and the 'discount_percentage' feature range has expanded from 0-20% to 0-40%. The model was trained using standard scaler for feature normalization.
+
+      What is the MOST likely cause of the performance degradation, and what should be done?
+    options:
+      - id: A
+        text: The model is overfitting; retrain with more regularization and additional data
+      - id: B
+        text: Feature drift has occurred; retrain the model with recent data that reflects current distributions and update the scaler parameters
+      - id: C
+        text: The inference data contains outliers; apply robust scaler instead of standard scaler during preprocessing
+      - id: D
+        text: The model architecture is insufficient; switch to a deep learning model with more capacity
+    correctAnswer: B
+    explanation: |
+      Option B is correct. Feature drift (also called data drift or covariate shift) occurs when the statistical distribution of input features changes between training and production. The observed shifts in price mean ($100 → $150) and discount range (0-20% → 0-40%) represent significant distributional changes.
+
+      Why this causes performance degradation with standard scaler:
+      - During training, standard scaler computed mean and standard deviation from the original distribution (price mean = $100, discount range 0-20%)
+      - During inference, the same fixed scaler parameters are applied to the new distribution
+      - New prices around $150 are scaled as outliers (many standard deviations above the old mean)
+      - Discount percentages from 20-40% fall outside the range the model was trained on
+      - The model receives feature values in regions of the feature space it never saw during training, causing poor predictions
+
+      The correct solution:
+      1. Retrain the model with recent data reflecting current distributions (new price mean, new discount range)
+      2. Recompute scaler parameters (mean, std) from the recent data
+      3. Use updated scaler parameters for both the new training data and future inference data
+      4. Implement monitoring to detect future feature drift
+
+      This is a common production ML challenge that Feature Store and SageMaker Model Monitor help address by tracking feature distributions over time.
+
+      Why other options are incorrect:
+      - A: Overfitting occurs when a model performs well on training data but poorly on test data due to memorizing training examples. The symptoms described (feature distribution shifts) indicate data drift, not overfitting. Overfitting would have been apparent during initial model evaluation, not months after deployment when distributions changed.
+      - C: While robust scaler is designed for outliers, the issue here is distributional shift, not random outliers. Robust scaler computed on the old training distribution would still use old median and IQR values, which don't reflect the new price and discount distributions. The solution requires retraining with current data, regardless of scaler type.
+      - D: The model architecture is not necessarily insufficient. A simpler model trained on current data will outperform a complex model trained on outdated data. The issue is temporal data mismatch, not model capacity. Adding model complexity without addressing data drift would not solve the problem and could worsen overfitting.
+
+      Feature drift monitoring and periodic retraining are essential practices for production ML systems.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker
+    concepts:
+      - Feature drift
+      - Data drift
+      - Model monitoring
+      - Feature scaling
+      - Production ML best practices
+
+  - id: fe-011
+    type: multi
+    correctCount: 2
+    text: |
+      A data scientist is developing a PCA (Principal Component Analysis) transformation in SageMaker Data Wrangler to reduce dimensionality from 100 numeric features to a smaller set of components for training a neural network. The features have different units (e.g., currency, counts, percentages) and different scales (ranging from 0-1 to 0-10000).
+
+      Which configurations should be applied when using PCA in Data Wrangler to ensure meaningful dimensionality reduction? (Select TWO.)
+    options:
+      - id: A
+        text: Set Center to True to use mean as the center point
+      - id: B
+        text: Set Scale to True to use unit standard deviation
+      - id: C
+        text: Set Center to False to preserve the original feature scales
+      - id: D
+        text: Specify the exact number of principal components (e.g., 20)
+      - id: E
+        text: Set variance threshold to 50% to retain only the most important component
+    correctAnswer:
+      - A
+      - B
+    explanation: |
+      Options A and B are both necessary for meaningful PCA when features have different units and scales.
+
+      A is correct (Center = True): Centering shifts features to have zero mean by subtracting the mean from each feature. This is essential for PCA because:
+      - PCA identifies directions of maximum variance, and these directions are meaningful only when features are centered
+      - Without centering, PCA would be dominated by the offset of the mean, not the true variance patterns
+      - Centering is the default (True) in Data Wrangler PCA for this reason
+
+      B is correct (Scale = True): Scaling standardizes features to unit variance (standard deviation = 1) by dividing by the standard deviation. This is critical when features have different units and scales because:
+      - Without scaling, features with larger scales (0-10000) would dominate the principal components over features with smaller scales (0-1)
+      - PCA maximizes variance, so high-magnitude features would contribute disproportionately
+      - Standardization ensures all features contribute equally regardless of their original scale
+      - This is especially important with mixed units (currency, counts, percentages)
+      - Scaling is the default (True) in Data Wrangler PCA
+
+      Together, centering and scaling perform standard scaling (z-score normalization) on each feature before applying PCA, which is the recommended preprocessing for PCA when features have different scales.
+
+      Why other options are incorrect:
+      - C: Setting Center to False would preserve original offsets and scales, causing PCA to be dominated by high-magnitude features and mean offsets rather than true variance patterns. This defeats the purpose of PCA for dimensionality reduction across mixed-scale features.
+      - D: While specifying the exact number of components (e.g., 20) is a valid configuration option, it's not a requirement for "meaningful dimensionality reduction." An alternative is to use the variance threshold percentage (e.g., 95%) to automatically determine the number of components needed to explain a desired amount of variance. The question asks what "should be applied to ensure meaningful reduction," and centering/scaling are requirements, while the component count is a tunable parameter.
+      - E: Setting variance threshold to 50% would retain only enough components to explain 50% of the total variance, discarding the other 50%. This is too aggressive for most use cases. Typical variance thresholds are 90-99% to preserve most information while reducing dimensionality. The default in Data Wrangler is 95%, which is a balanced choice.
+
+      Always center and scale features before applying PCA when features have different units or scales.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - PCA
+      - Dimensionality reduction
+      - Feature scaling
+      - Centering
+
+  - id: fe-012
+    type: single
+    text: |
+      A company is building a real-time recommendation engine that needs to retrieve user preference features (favorite_categories, recent_clicks, purchase_history) with low latency during API requests. The same features are also used for weekly batch training jobs to retrain recommendation models. Features are updated continuously as users interact with the platform.
+
+      How should the feature storage be configured in SageMaker Feature Store?
+    options:
+      - id: A
+        text: Configure online store only and query it for both real-time inference and batch training
+      - id: B
+        text: Configure offline store only and query using Athena for both inference and training
+      - id: C
+        text: Configure both online and offline stores, use streaming ingestion via PutRecord API, retrieve from online store for inference and offline store for training
+      - id: D
+        text: Store features in Amazon ElastiCache for real-time access and Amazon S3 for batch training
+    correctAnswer: C
+    explanation: |
+      Option C is correct because it leverages the complementary capabilities of both Feature Store modes for this dual-latency scenario.
+
+      Why online store is needed:
+      - Real-time recommendation API requests require low millisecond latency feature retrieval
+      - Online store provides low-latency reads via GetRecord API calls
+      - Stores only the latest feature values (current user preferences)
+      - Optimized for high-throughput writes and low-latency reads
+
+      Why offline store is needed:
+      - Weekly batch training requires access to historical feature values
+      - Offline store maintains complete historical records in S3 (Parquet format)
+      - Supports efficient batch queries via Athena for training dataset creation
+      - Enables point-in-time queries to retrieve features as they existed at specific timestamps
+
+      Why streaming ingestion (PutRecord API):
+      - Features are "updated continuously as users interact with the platform" (streaming data)
+      - PutRecord API pushes small batches of records synchronously as events occur
+      - Maintains real-time feature freshness in the online store
+      - Simultaneously appends to offline store for historical tracking
+      - Appropriate for continuous user interaction events (clicks, purchases)
+
+      This configuration pattern is specifically designed for ML systems requiring both real-time inference and batch training.
+
+      Why other options are incorrect:
+      - A: Online store only does not provide historical data for training. The online store retains only the latest values, overwriting previous versions. Batch training typically requires historical feature values at specific points in time (e.g., features as they existed when each historical purchase occurred), which only the offline store provides.
+      - B: Offline store only cannot support real-time inference latency requirements. Athena queries operate on S3 data with query latency in seconds to minutes, far exceeding the millisecond latency needed for real-time API responses. Querying S3 for every inference request would create unacceptable latency and cost.
+      - D: While ElastiCache and S3 could technically provide similar low-latency/batch capabilities, the question specifically asks about SageMaker Feature Store configuration. Using ElastiCache + S3 would require custom implementation of feature versioning, metadata management, consistency between stores, and integration with SageMaker training jobs—all capabilities that Feature Store provides natively. Feature Store is the purpose-built, managed solution for this use case.
+
+      The dual-store configuration with streaming ingestion is the recommended pattern for ML systems with both real-time and batch requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html
+    services:
+      - Amazon SageMaker Feature Store
+    concepts:
+      - Feature Store online store
+      - Feature Store offline store
+      - Streaming ingestion
+      - Real-time inference
+      - Batch training
+
+  - id: fe-013
+    type: single
+    text: |
+      A data scientist is using SageMaker Autopilot to automatically build a classification model. The dataset contains numeric features, categorical features with various cardinalities, datetime columns, and some missing values. The data scientist wants to understand what feature engineering transformations Autopilot applies automatically.
+
+      Which statement accurately describes Autopilot's feature engineering capabilities?
+    options:
+      - id: A
+        text: Autopilot only handles missing values and normalization; all other feature engineering must be done manually before submitting the dataset
+      - id: B
+        text: Autopilot automatically handles missing values, extracts information from datetime columns, encodes categorical features, and normalizes numeric features, generating notebooks documenting all transformations
+      - id: C
+        text: Autopilot requires all feature engineering to be completed using Data Wrangler before training; it does not perform any automatic transformations
+      - id: D
+        text: Autopilot applies the same feature engineering transformations to all model candidates, without variation
+    correctAnswer: B
+    explanation: |
+      Option B is correct. SageMaker Autopilot performs comprehensive automated feature engineering as a core capability, with full transparency into the transformations applied.
+
+      Autopilot's automatic feature engineering includes:
+
+      1. Missing value handling: Automatically fills in missing data using appropriate imputation strategies based on data types
+
+      2. Datetime feature extraction: Extracts temporal information from datetime columns (e.g., day of week, month, year, hour) to capture temporal patterns
+
+      3. Categorical encoding: Encodes categorical features using appropriate methods based on cardinality and data characteristics
+
+      4. Numeric normalization: Normalizes numeric features to ensure consistent scales across features
+
+      5. Problem type detection: Automatically identifies whether the task is binary classification, multi-class classification, or regression, and applies problem-appropriate transformations
+
+      6. Transparency: Generates Jupyter notebooks documenting all feature engineering decisions and transformations, allowing users to:
+         - Inspect the exact transformations applied
+         - Understand why specific methods were chosen
+         - Modify and reuse the feature engineering code
+         - Generate SHAP values for feature importance analysis
+
+      Each Autopilot candidate consists of two steps:
+      - Step 1: Feature engineering pipeline (transforms the dataset)
+      - Step 2: Model training and tuning (trains a model on engineered features)
+
+      Different candidates may use different feature engineering strategies, allowing Autopilot to explore multiple preprocessing approaches.
+
+      Why other options are incorrect:
+      - A: This severely understates Autopilot's capabilities. Autopilot goes far beyond basic missing value handling and normalization, automatically performing datetime extraction, categorical encoding, and other advanced transformations. The statement implies users must manually engineer most features, which contradicts Autopilot's core value proposition of automated ML.
+      - C: This is completely incorrect. While Autopilot can integrate custom Data Wrangler flows (bring your own transformations), it does not require them. Autopilot is designed to work with raw data, automatically performing necessary feature engineering. Requiring Data Wrangler preprocessing would eliminate the "automated" aspect of Autopilot.
+      - D: Autopilot evaluates multiple feature engineering strategies across different model candidates, not a single uniform approach. Different candidates may use different encoding methods, normalization techniques, or feature selection strategies. This exploration across the feature engineering and model space is how Autopilot discovers high-performing pipelines.
+
+      Autopilot's automated feature engineering with transparency makes it accessible for users with varying ML expertise while maintaining control and explainability.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-automate-model-development.html
+    services:
+      - Amazon SageMaker Autopilot
+    concepts:
+      - Automated feature engineering
+      - AutoML
+      - Feature engineering transparency
+      - SageMaker Autopilot
+
+  - id: fe-014
+    type: single
+    text: |
+      A machine learning engineer is building a model to predict customer lifetime value (CLV). The dataset includes an 'education_level' feature with values: 'High School', 'Associate Degree', 'Bachelor Degree', 'Master Degree', 'Doctorate'. There is a clear ordering relationship: higher education levels generally correlate with higher CLV.
+
+      Which encoding method should be applied to the 'education_level' feature?
+    options:
+      - id: A
+        text: One-hot encoding to create separate binary columns for each education level
+      - id: B
+        text: Ordinal encoding to preserve the ordering relationship (High School=0, Associate=1, Bachelor=2, Master=3, Doctorate=4)
+      - id: C
+        text: Target encoding using the mean CLV for each education level
+      - id: D
+        text: Similarity encoding to handle variations in education level descriptions
+    correctAnswer: B
+    explanation: |
+      Option B is correct. Ordinal encoding is the appropriate choice when categorical features have an inherent ordering relationship that is meaningful for the prediction task.
+
+      Why ordinal encoding is correct:
+      - Education levels have a natural progression: High School < Associate < Bachelor < Master < Doctorate
+      - The ordered relationship is meaningful for CLV prediction (higher education often correlates with higher income and customer value)
+      - Ordinal encoding assigns integer values (0, 1, 2, 3, 4) that preserve this ordering
+      - Models can learn the monotonic relationship between education level and CLV
+      - Reduces dimensionality compared to one-hot encoding (1 feature vs. 5 features)
+
+      SageMaker Data Wrangler provides ordinal encoding with options to:
+      - Automatically detect ordering based on category names
+      - Manually specify custom ordering
+      - Handle missing values (Skip, Keep, Error, Replace with NaN)
+
+      When to use ordinal encoding:
+      - Ordinal categorical variables: education level, rating (low/medium/high), size (S/M/L/XL), satisfaction level
+      - Clear meaningful ordering relationship exists
+      - The numeric spacing assumption is reasonable (e.g., each education level increment has similar impact)
+
+      Why other options are incorrect:
+      - A: One-hot encoding treats education levels as independent nominal categories without ordering (High School, Associate, Bachelor, Master, Doctorate as separate unrelated categories). This loses the valuable information that Master > Bachelor > Associate > High School. One-hot encoding would require the model to learn the ordering from data rather than encoding it directly, and would create 5 features instead of 1 (curse of dimensionality). While one-hot encoding would still work, it's inefficient and discards known ordering.
+      - C: Target encoding replaces categories with the mean target value (mean CLV per education level). While this can improve model performance, it has risks: overfitting (especially with small sample sizes per category), data leakage if not done carefully with cross-validation, and requires the target variable (not usable for unsupervised tasks). Given that a clear ordering exists and the dataset likely has sufficient samples per education level, ordinal encoding is simpler and more interpretable without the overfitting risks of target encoding.
+      - D: Similarity encoding is designed for high-cardinality categorical variables with noisy data and spelling variations (e.g., "California" vs. "Calfornia"). Education levels have low cardinality (5 categories), standardized values without typos, and clear ordering. Similarity encoding would create 30 embedding dimensions (default) where 1 ordinal dimension suffices, unnecessarily increasing complexity.
+
+      Use ordinal encoding when categorical features have meaningful ordered relationships.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Ordinal encoding
+      - Categorical encoding
+      - Ordinal variables
+
+  - id: fe-015
+    type: multi
+    correctCount: 2
+    text: |
+      A team is implementing a production ML pipeline where Data Wrangler is used to prototype feature transformations, and the transformations must then be deployed at scale for daily batch processing of millions of records. The team wants to maintain consistency between the prototyped transformations and production execution while leveraging distributed processing capabilities.
+
+      Which approaches enable scaling Data Wrangler transformations to production? (Select TWO.)
+    options:
+      - id: A
+        text: Export the Data Wrangler flow as a SageMaker Processing job and schedule it using Amazon EventBridge
+      - id: B
+        text: Manually rewrite all Data Wrangler transformations in AWS Glue PySpark scripts
+      - id: C
+        text: Export the Data Wrangler flow to a SageMaker Pipeline and integrate it as a processing step
+      - id: D
+        text: Use Data Wrangler's visual interface to process production data directly in SageMaker Studio
+      - id: E
+        text: Export transformations to Amazon EMR clusters for Hadoop-based processing
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Options A and C are both correct methods for scaling Data Wrangler transformations to production while maintaining consistency with prototyped transformations.
+
+      A is correct: Exporting the Data Wrangler flow as a SageMaker Processing job allows the exact transformations developed visually to execute at scale. The export generates Python code (using PySpark, pandas, or scikit-learn) that replicates the Data Wrangler transformations. This code runs in a SageMaker Processing job, which supports:
+      - Distributed processing for millions of records using multi-instance configurations
+      - Automatic scaling based on data volume
+      - Integration with S3 for input/output
+      - Scheduling via Amazon EventBridge for daily batch execution (as specified in the question)
+
+      This approach ensures transformation consistency (same logic as prototype) and production scalability.
+
+      C is correct: Exporting to a SageMaker Pipeline integrates Data Wrangler transformations into an end-to-end ML workflow. The pipeline includes:
+      - Processing step: Executes Data Wrangler transformations at scale
+      - Training step: Trains model on transformed features
+      - Evaluation step: Validates model performance
+      - Deployment step: Deploys model to endpoint
+
+      SageMaker Pipelines provide:
+      - Automated workflow orchestration
+      - Parameterization for different datasets or configurations
+      - Versioning and tracking of transformation logic
+      - Integration with Feature Store for feature ingestion
+      - CI/CD integration for production ML workflows
+
+      Both approaches maintain fidelity to the Data Wrangler prototype by exporting the exact transformation code.
+
+      Why other options are incorrect:
+      - B: Manually rewriting transformations in AWS Glue introduces risk of inconsistency between the Data Wrangler prototype and production implementation. Human error during rewriting could cause subtle differences in transformation logic, leading to training-serving skew or incorrect feature computation. While Glue can technically perform the transformations, the question asks for approaches that "maintain consistency," which manual rewriting violates. Data Wrangler provides direct export options that guarantee consistency.
+      - D: Data Wrangler's visual interface in SageMaker Studio is designed for prototyping and exploration on sample datasets, not production batch processing of millions of records. The visual interface has limited scalability and is intended for interactive development, not automated daily batch jobs. Production workloads require exported code running in Processing jobs or Pipelines.
+      - E: While Amazon EMR supports distributed processing, Data Wrangler does not natively export to EMR. Exporting to EMR would require custom integration work similar to option B (manual rewriting), introducing consistency risks. Data Wrangler provides direct export to SageMaker Processing and Pipelines, which are the recommended production paths.
+
+      Use Data Wrangler's native export capabilities (Processing jobs, Pipelines) to maintain transformation consistency from prototype to production.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Data Wrangler export
+      - Production scaling
+      - Transformation consistency
+      - ML pipeline automation
+
+  - id: fe-016
+    type: single
+    text: |
+      A data scientist is preparing a time series dataset of hourly temperature readings for a forecasting model. The dataset has irregular gaps: some hours are missing readings due to sensor malfunctions. The scientist needs to impute the missing values in a way that preserves the smooth temporal transitions of temperature.
+
+      Which missing value imputation method should be used for this time series data?
+    options:
+      - id: A
+        text: Forward fill to propagate the last valid observation forward to fill gaps
+      - id: B
+        text: Constant value imputation using the global mean temperature
+      - id: C
+        text: Linear interpolation to estimate missing values based on surrounding observations
+      - id: D
+        text: Most common value imputation using the mode of the temperature distribution
+    correctAnswer: C
+    explanation: |
+      Option C is correct. Linear interpolation estimates missing values by drawing a straight line between surrounding valid observations, which preserves smooth temporal transitions in continuous variables like temperature.
+
+      How linear interpolation works:
+      - If temperature is 20°C at hour 10 and 24°C at hour 14, missing hours 11, 12, 13 are interpolated as 21°C, 22°C, 23°C respectively
+      - Creates smooth transitions that reflect gradual temperature changes
+      - Assumes relatively linear change between observations (reasonable for hourly temperature)
+
+      Why this is appropriate for temperature time series:
+      - Temperature changes gradually over time (no sudden jumps between hours under normal conditions)
+      - Interpolation preserves temporal continuity and smooth trends
+      - Captures the expected physical behavior of temperature evolution
+
+      SageMaker Data Wrangler provides interpolation methods for time series, including linear, polynomial, and spline interpolation via pandas integration.
+
+      Why other options are incorrect:
+      - A: Forward fill (also called last observation carried forward) propagates the previous valid value to all subsequent missing positions until the next valid observation. Example: [20°C, missing, missing, 24°C] becomes [20°C, 20°C, 20°C, 24°C]. This creates artificial plateaus and step changes rather than smooth transitions. While forward fill is appropriate for features that change infrequently (e.g., status flags, categorical states), it's inappropriate for continuous variables like temperature that evolve gradually.
+      - B: Constant value imputation using the global mean temperature (e.g., replacing all missing values with 22°C) ignores temporal context entirely. This would create discontinuities: if temperature was 20°C at hour 10, jumped to 22°C (mean) for missing hours, then jumped to 24°C at hour 14, the time series would show unrealistic fluctuations. Global mean imputation is suitable for cross-sectional data without temporal dependencies, not time series.
+      - D: Most common value (mode) imputation is designed for categorical variables, not continuous numeric variables. Temperature is continuous and can take many decimal values; the "mode" of a temperature distribution is ill-defined or would represent a single arbitrary value (e.g., 21.3°C). Replacing missing temperatures with the most frequently occurring temperature value makes no temporal sense and would create the same discontinuity issues as option B.
+
+      For continuous time series variables with smooth evolution (temperature, stock prices, sensor readings), use interpolation methods to preserve temporal continuity.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Missing value imputation
+      - Time series imputation
+      - Linear interpolation
+      - Temporal continuity
+
+  - id: fe-017
+    type: single
+    text: |
+      A machine learning engineer is developing features for a neural network model to predict click-through rates on advertisements. The dataset includes datetime features (ad_impression_timestamp), numeric features (ad_position, user_age), and categorical features (device_type, ad_category). The engineer needs to prepare features for optimal neural network training.
+
+      Which feature engineering approach is MOST appropriate for this neural network model?
+    options:
+      - id: A
+        text: Apply standard scaler to numeric features, ordinal encoding to categorical features, and skip datetime processing
+      - id: B
+        text: Apply standard scaler to numeric features, one-hot encoding to categorical features, and featurize datetime with cyclic encoding for temporal components
+      - id: C
+        text: Skip scaling for numeric features, apply target encoding to categorical features, and extract datetime components with ordinal encoding
+      - id: D
+        text: Apply min-max scaler to all features including categorical and datetime features
+    correctAnswer: B
+    explanation: |
+      Option B is correct because it applies appropriate preprocessing techniques for each feature type when training a neural network.
+
+      Why each component is correct:
+
+      1. Standard scaler for numeric features:
+         - Neural networks use gradient descent optimization, which is sensitive to feature scales
+         - Features with different magnitudes (ad_position: 1-10, user_age: 18-80) would cause unbalanced gradient updates
+         - Standard scaling (zero mean, unit variance) ensures all numeric features contribute equally during backpropagation
+         - Neural networks perform better with normalized inputs
+
+      2. One-hot encoding for categorical features:
+         - Categorical features (device_type, ad_category) have no inherent ordering
+         - One-hot encoding creates binary features that neural networks can process effectively
+         - Neural network layers learn weights for each category independently
+         - Avoids the false ordering assumption of ordinal encoding
+
+      3. Featurize datetime with cyclic encoding:
+         - Datetime features (ad_impression_timestamp) contain temporal patterns (hour of day, day of week) relevant for click prediction
+         - Cyclic encoding (sine/cosine transformations) is recommended for neural networks in Data Wrangler
+         - Captures the cyclical nature of time: hour 23 is close to hour 0, day 7 is close to day 1
+         - Example: hour_sin = sin(2π × hour / 24), hour_cos = cos(2π × hour / 24)
+         - Linear networks and deep networks benefit from cyclic encoding over ordinal encoding
+
+      This combination prepares features optimally for neural network gradient-based learning.
+
+      Why other options are incorrect:
+      - A: Skipping datetime processing wastes valuable temporal information. Timestamps contain patterns like "clicks are higher on weekends" or "evening hours have more engagement." Ordinal encoding for categorical features (assigning integers to device_type) implies false ordering relationships that would confuse the neural network. One-hot encoding is more appropriate.
+      - C: Skipping scaling for numeric features causes gradient descent issues (features with larger scales dominate weight updates). Target encoding increases overfitting risk and requires the target variable during encoding. Ordinal encoding for datetime components (e.g., hour = 0 to 23) doesn't capture cyclical patterns: hour 23 should be close to hour 0, but with ordinal encoding they are 23 units apart. Cyclic encoding is superior for neural networks.
+      - D: Min-max scaler is inappropriate for categorical and datetime features. Categorical features (strings like "mobile", "desktop") cannot be directly min-max scaled—they must first be encoded. While min-max scaling of numeric features would work for neural networks, it's less robust to outliers than standard scaling, and the statement implies scaling raw categorical/datetime features, which is nonsensical.
+
+      Neural networks require: scaled numeric features, properly encoded categorical features, and cyclic-encoded temporal features.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler-transform.html
+    services:
+      - Amazon SageMaker Data Wrangler
+    concepts:
+      - Neural network preprocessing
+      - Feature scaling for neural networks
+      - Cyclic encoding
+      - One-hot encoding
+      - Standard scaler
+
+  - id: fe-018
+    type: single
+    text: |
+      A company has multiple data science teams working on different ML projects that share common features. Team A built a 'customer_lifetime_value' feature from raw transaction data. Team B now needs the same feature for a churn prediction model, but the feature engineering code is in Team A's private notebook and not easily discoverable or reusable. The company wants to prevent duplicated feature engineering efforts and ensure consistent feature definitions across teams.
+
+      Which SageMaker service should be implemented to enable feature discoverability and reuse?
+    options:
+      - id: A
+        text: Amazon S3 with a well-organized folder structure and naming conventions
+      - id: B
+        text: Amazon SageMaker Feature Store with feature group metadata and tags
+      - id: C
+        text: AWS Glue Data Catalog to track feature schemas and locations
+      - id: D
+        text: Amazon DynamoDB to store feature values with documentation in the table schema
+    correctAnswer: B
+    explanation: |
+      Option B is correct. Amazon SageMaker Feature Store is specifically designed for feature discoverability, sharing, and reuse across teams and projects.
+
+      How Feature Store enables feature reuse:
+
+      1. **Feature Discovery**: Feature Store provides browsing and searching capabilities across feature groups:
+         - Search by feature group name (e.g., "customer_lifetime_value")
+         - Filter by descriptions, tags, creation date, record identifiers
+         - Browse all feature groups in the Feature Store catalog
+
+      2. **Metadata Management**: Feature groups include rich metadata:
+         - Descriptions: Document what features represent and how they're computed
+         - Tags: Categorize by domain (customer, product), owner (Team A), data source, version, etc.
+         - Feature definitions: Schema showing feature names and data types
+         - Timestamps: Track when features were created and last updated
+
+      3. **Centralized Repository**: All teams can access authorized feature groups:
+         - Team B can discover Team A's customer_lifetime_value feature
+         - Query the feature group for both online (real-time) and offline (batch) use cases
+         - Reuse existing features instead of re-engineering from scratch
+
+      4. **Consistent Definitions**: Centralized storage ensures:
+         - Single source of truth for feature computation logic
+         - Prevents inconsistent implementations across teams
+         - Reduces training-serving skew (same feature definition for training and inference)
+
+      5. **Access Control**: IAM policies control which teams can discover, read, or write features, enabling secure sharing
+
+      This directly solves the stated problem: preventing duplicated feature engineering and ensuring consistent definitions.
+
+      Why other options are incorrect:
+      - A: While S3 with organized folders can store feature data, it lacks discoverability, metadata management, and search capabilities. Teams would need to know exact S3 paths, and there's no centralized catalog to browse available features. S3 doesn't provide feature-specific metadata (descriptions, tags, feature schemas) or versioning for ML features. Teams would still struggle to discover and reuse features.
+      - C: AWS Glue Data Catalog tracks table schemas and data locations for general ETL and analytics workloads, but it's not purpose-built for ML features. It lacks ML-specific capabilities like online/offline store separation, low-latency feature retrieval for inference, feature versioning with event time, and integration with SageMaker training jobs. While Glue could technically store metadata, it doesn't solve the full feature reuse problem.
+      - D: DynamoDB is a NoSQL database for storing data with low-latency access, but it's not designed for feature discoverability or ML workflows. Teams would need to know table names, and there's no centralized search or browsing interface. DynamoDB doesn't provide feature-specific metadata management, integration with SageMaker training, or the offline/online store pattern needed for ML. It would require custom development to replicate Feature Store capabilities.
+
+      SageMaker Feature Store is the AWS-managed, purpose-built solution for feature discovery, sharing, and reuse across ML teams.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html
+    services:
+      - Amazon SageMaker Feature Store
+    concepts:
+      - Feature discovery
+      - Feature reusability
+      - Feature Store metadata
+      - Cross-team collaboration

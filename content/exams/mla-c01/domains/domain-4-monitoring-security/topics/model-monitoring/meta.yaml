@@ -1,0 +1,41 @@
+id: model-monitoring
+name: Model Monitoring in Production
+shortName: Model Monitoring
+examTask: task-4-1
+description: Monitor model inference performance, track accuracy, latency, and throughput metrics, detect data drift and model degradation using Amazon SageMaker Model Monitor with automated baseline creation, constraint validation, and CloudWatch integration.
+estimatedStudyTime: 90
+difficulty: intermediate
+keyServices:
+  - Amazon SageMaker Model Monitor
+  - Amazon CloudWatch
+  - Amazon S3
+  - Amazon SageMaker Endpoints
+  - Amazon SageMaker Clarify
+keyConcepts:
+  - Data quality monitoring
+  - Model quality monitoring
+  - Bias drift detection
+  - Feature attribution drift
+  - Baseline creation
+  - Constraint violations
+  - Monitoring schedules
+  - Ground truth ingestion
+  - Custom monitoring scripts
+  - Real-time endpoint monitoring
+  - Batch transform monitoring
+awsDocLinks:
+  - title: Amazon SageMaker Model Monitor Overview
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    type: doc
+  - title: How Model Monitor Works
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works-model-monitor.html
+    type: doc
+  - title: Data Quality Monitoring
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    type: doc
+  - title: Model Quality Metrics and CloudWatch
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    type: doc
+  - title: Bias Drift Monitoring with Clarify
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    type: doc

@@ -1,0 +1,735 @@
+questions:
+  - id: cicd-001
+    type: single
+    text: |
+      A data science team trains fraud detection models weekly. Currently, they manually evaluate each model, compare metrics to the production baseline, and if performance is better, they manually create a SageMaker endpoint. The team wants to automate this workflow while maintaining the ability to review models before production deployment.
+
+      Which solution provides the MOST automated approach while preserving human oversight?
+    options:
+      - id: A
+        text: Use a SageMaker Pipeline with a Condition Step that evaluates model metrics. If metrics exceed thresholds, automatically register the model as Approved in Model Registry. Configure EventBridge to trigger a CodePipeline that deploys approved models to production.
+      - id: B
+        text: Use a SageMaker Pipeline with a Register Model step that sets status to PendingManualApproval. Configure EventBridge to monitor Model Registry and send SNS notifications when new models are registered. After manual approval in the console, use CodePipeline to deploy to staging and production with a manual approval gate between environments.
+      - id: C
+        text: Schedule a weekly Lambda function that starts a SageMaker training job. After training completes, use another Lambda to evaluate the model and send an email to the team lead. The team lead manually creates endpoints using the SageMaker console.
+      - id: D
+        text: Use AWS Step Functions to orchestrate training, evaluation, and deployment. Include a human task step that requires approval before deployment. After approval, use Step Functions to directly create SageMaker endpoints.
+    correctAnswer: B
+    explanation: |
+      Option B provides the optimal balance of automation and human oversight. The SageMaker Pipeline automates training, evaluation, and registration. Setting status to PendingManualApproval ensures human review before deployment. EventBridge-triggered notifications ensure reviewers are promptly informed. CodePipeline automates the deployment process after approval, including safe deployment to staging first, then production after a second approval gate. This matches the MLOps best practice of "automate everything, but verify critical decisions."
+
+      Option A removes human oversight entirely by automatically approving models, which contradicts the requirement to "maintain the ability to review models before production deployment."
+
+      Option C provides minimal automation - only the training is scheduled, everything else remains manual including evaluation, comparison, and endpoint creation.
+
+      Option D could work but is less aligned with AWS MLOps best practices. Step Functions is better suited for orchestrating multi-service workflows, while SageMaker Pipelines is purpose-built for ML workflows with native Model Registry integration and lineage tracking. Additionally, Step Functions doesn't provide the same level of deployment automation and safe deployment patterns as CodePipeline with CodeDeploy.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon SageMaker Model Registry
+      - Amazon EventBridge
+      - AWS CodePipeline
+    concepts:
+      - Model approval workflows
+      - MLOps automation
+      - Human-in-the-loop review
+
+  - id: cicd-002
+    type: multi
+    correctCount: 2
+    text: |
+      A financial services company requires all ML models to undergo compliance review before production deployment. The review must include model performance metrics, training data lineage, and feature importance. Models that fail review must be rejected with documented reasons. The company wants to minimize manual steps while maintaining audit trails.
+
+      Which TWO actions should be included in the approval workflow? (Select TWO)
+    options:
+      - id: A
+        text: Register models in SageMaker Model Registry with custom metadata properties containing compliance information such as data source, feature versions, and regulatory classification.
+      - id: B
+        text: Use SageMaker Clarify to generate model explainability reports and attach them to the model package as metadata before registration.
+      - id: C
+        text: Store all model artifacts in S3 with versioning disabled to prevent unauthorized modifications to approved models.
+      - id: D
+        text: Configure EventBridge to trigger a Lambda function when models are registered with PendingManualApproval status. The Lambda should send SNS notifications to compliance reviewers with links to model metadata and approval API endpoints.
+      - id: E
+        text: Create a custom SageMaker Project template that excludes Model Registry to ensure all deployments go through the company's existing change management system.
+    correctAnswer: [A, D]
+    explanation: |
+      Options A and D together create a comprehensive, auditable approval workflow:
+
+      Option A: Model Registry's custom metadata properties enable storing compliance-relevant information (data lineage, regulatory classification, data retention policies) directly with the model version. This ensures all information reviewers need is centralized and versioned with the model, supporting audit requirements.
+
+      Option D: EventBridge-triggered notifications automate the review request process while maintaining human decision-making. Lambda can retrieve model metadata, construct comprehensive review packages, and provide approval APIs that log who approved/rejected and when, creating the audit trail required for compliance.
+
+      Option B, while valuable for model explainability, is not directly part of the approval workflow architecture - it's a pre-registration step that generates artifacts to attach as metadata (covered by option A).
+
+      Option C is incorrect and dangerous. S3 versioning should be ENABLED for model artifacts to maintain immutable audit trails and support rollback capabilities. Disabling versioning would harm compliance, not help it.
+
+      Option E contradicts AWS MLOps best practices. Model Registry is designed specifically to support governance and compliance use cases with approval workflows, lineage tracking, and audit trails. Excluding it would require rebuilding these capabilities in the existing change management system.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-version.html
+    services:
+      - Amazon SageMaker Model Registry
+      - Amazon EventBridge
+      - AWS Lambda
+      - Amazon SNS
+    concepts:
+      - Model governance
+      - Compliance workflows
+      - Audit trails
+      - Model metadata
+
+  - id: cicd-003
+    type: single
+    text: |
+      A company uses SageMaker Pipelines to train recommendation models. Training completes successfully, but the pipeline occasionally registers models with poor performance due to data quality issues that weren't caught during preprocessing. The team wants to prevent low-quality models from being registered in Model Registry.
+
+      What is the MOST effective approach to validate model quality before registration?
+    options:
+      - id: A
+        text: Add a Condition Step after the training step that evaluates model metrics from the evaluation report. Only proceed to Register Model step if metrics exceed minimum thresholds. For failed conditions, send SNS notifications and terminate the pipeline.
+      - id: B
+        text: Configure CloudWatch alarms on training job metrics and manually stop pipelines that show poor performance trends.
+      - id: C
+        text: Use a Lambda step to query the model artifacts and inspect the trained model file size. Reject models smaller than expected as likely failures.
+      - id: D
+        text: Add a Processing step that runs batch inference on a validation dataset, then manually review the predictions before deciding whether to register the model.
+    correctAnswer: A
+    explanation: |
+      Option A implements the correct pattern for automated model quality gates in SageMaker Pipelines:
+
+      The Condition Step evaluates metrics produced during the evaluation phase (accuracy, AUC, RMSE, F1, business metrics) against predefined thresholds. The step uses JsonGet to extract metrics from the evaluation report PropertyFile. If conditions are met, the pipeline continues to Register Model. If conditions fail, the pipeline can branch to alternative steps (SNS notification, logging) and avoid registration entirely.
+
+      This approach prevents poor models from entering Model Registry automatically, provides immediate feedback to data scientists, maintains full automation for good models, and creates an audit trail of why models were rejected (threshold violations logged in pipeline execution history).
+
+      Option B requires manual intervention and doesn't prevent registration, defeating the purpose of automation.
+
+      Option C uses an unreliable proxy (file size) instead of actual model performance metrics. Model size doesn't correlate with quality - a small model might outperform a large one.
+
+      Option D reintroduces manual steps, slowing iteration and creating bottlenecks. Quality gates should be automated based on metrics, with manual review reserved for approval decisions, not quality validation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-steps.html
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon SageMaker Model Registry
+    concepts:
+      - Condition steps
+      - Model validation
+      - Quality gates
+      - Pipeline automation
+
+  - id: cicd-004
+    type: single
+    text: |
+      A retail company has separate AWS accounts for data science (Account A) and production applications (Account B). Data scientists in Account A train and register models in Model Registry. Application teams in Account B need to deploy these models to production SageMaker endpoints. The company requires that production teams cannot modify or retrain models, only deploy pre-approved versions.
+
+      How should the ML engineer configure cross-account access?
+    options:
+      - id: A
+        text: Create a resource policy on the Model Package Group in Account A granting DescribeModelPackage, DescribeModelPackageGroup, and CreateModel permissions to Account B. Application teams in Account B reference the model package ARN from Account A when creating endpoints.
+      - id: B
+        text: Export model artifacts from Model Registry in Account A to an S3 bucket in Account B. Application teams create models and endpoints using the copied artifacts.
+      - id: C
+        text: Use AWS Organizations to merge both accounts under a single management account, then use IAM roles that span both accounts.
+      - id: D
+        text: Create an IAM role in Account A that Account B can assume to access Model Registry. Grant the role full SageMaker permissions to enable deployment.
+    correctAnswer: A
+    explanation: |
+      Option A implements the correct cross-account Model Registry pattern:
+
+      Model Package Group resource policies in Account A grant specific permissions to Account B. The policy includes DescribeModelPackage (to view model details and approval status), DescribeModelPackageGroup (to list versions), and CreateModel (to create SageMaker models from the package for deployment). Application teams in Account B then reference the cross-account model package ARN (arn:aws:sagemaker:region:accountA:model-package/group-name/version) when creating endpoints.
+
+      This approach maintains separation of concerns - Account A controls model training and approval, Account B controls deployment. It provides granular permissions (read-only access to models, no training/modification), supports audit trails (CloudTrail logs cross-account API calls), and leverages native Model Registry features rather than workarounds.
+
+      Option B breaks Model Registry integration, losing lineage tracking, approval workflows, and metadata. It also creates data consistency issues (models in Account B could diverge from registered versions).
+
+      Option C is organizationally unrealistic and architecturally inappropriate. Merging accounts eliminates the security boundary between data science experimentation and production.
+
+      Option D grants overly broad permissions. "Full SageMaker permissions" would allow Account B to create training jobs, modify models, and change approval status, violating the requirement that production teams can only deploy, not modify.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-deploy.html
+    services:
+      - Amazon SageMaker Model Registry
+      - AWS IAM
+    concepts:
+      - Cross-account deployment
+      - Resource policies
+      - Least-privilege access
+      - Separation of concerns
+
+  - id: cicd-005
+    type: multi
+    correctCount: 3
+    text: |
+      A machine learning team is designing a CI/CD pipeline for computer vision models. The pipeline must automatically train models when new labeled data arrives in S3, evaluate model performance, and deploy to production if accuracy improves by at least 2% over the current production model. The pipeline should support rollback if deployed models cause latency spikes.
+
+      Which THREE components are required for this solution? (Select THREE)
+    options:
+      - id: A
+        text: EventBridge rule that triggers when new objects are created in the training data S3 bucket, invoking a Lambda function that starts the SageMaker Pipeline execution.
+      - id: B
+        text: SageMaker Pipeline with Condition Step that compares new model accuracy to production baseline, only registering models that exceed the 2% improvement threshold.
+      - id: C
+        text: CodePipeline deployment stage that uses AWS CodeDeploy with Blue/Green deployment to the production endpoint, configured with CloudWatch alarms for latency that trigger automatic rollback.
+      - id: D
+        text: AWS Batch job that copies training data from S3 to EBS volumes attached to SageMaker training instances to improve I/O performance.
+      - id: E
+        text: Step Functions state machine that orchestrates model deployment, endpoint updates, and sends SNS notifications upon completion.
+      - id: F
+        text: AWS Glue crawler that catalogs new training data in the Glue Data Catalog before training begins.
+    correctAnswer: [A, B, C]
+    explanation: |
+      Options A, B, and C together provide the complete automated workflow:
+
+      Option A: EventBridge S3 event rule enables event-driven automation. When new labeled data arrives (s3:ObjectCreated event), Lambda parses the event, validates data format, and triggers SageMaker Pipeline execution with the new data location as a parameter. This eliminates manual pipeline triggering and ensures models are trained with the freshest data.
+
+      Option B: Condition Step implements the 2% improvement requirement. The pipeline evaluates the new model on a held-out test set, retrieves the current production model's accuracy from CloudWatch metrics or DynamoDB, compares them, and only registers models meeting the threshold. This prevents unnecessary deployments and ensures production improvements.
+
+      Option C: CodeDeploy Blue/Green deployment provides safe production deployment with automatic rollback. The new model is deployed to a "Green" endpoint while the current "Blue" endpoint continues serving traffic. CloudWatch alarms monitor latency (p99, p50) during canary traffic shifting. If latency exceeds thresholds, CodeDeploy automatically routes traffic back to Blue and terminates Green, providing the required rollback capability.
+
+      Option D is unnecessary. SageMaker training instances access S3 directly with high throughput. Copying to EBS adds complexity and cost without meaningful performance improvement for most training jobs.
+
+      Option E introduces unnecessary complexity. SageMaker Pipelines already orchestrates training/evaluation/registration. CodePipeline handles deployment. Adding Step Functions creates a third orchestration layer without clear benefit.
+
+      Option F is not required for this workflow. Glue catalogs are useful for data discovery and Athena queries, but the training pipeline already knows the data location from the S3 event. Cataloging would add latency without providing value.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automating-sagemaker-with-eventbridge.html
+    services:
+      - Amazon EventBridge
+      - Amazon SageMaker Pipelines
+      - AWS CodePipeline
+      - AWS CodeDeploy
+      - AWS Lambda
+    concepts:
+      - Event-driven automation
+      - Conditional model registration
+      - Blue/Green deployment
+      - Automatic rollback
+      - Continuous training
+
+  - id: cicd-006
+    type: single
+    text: |
+      A healthcare company requires that all changes to ML model deployment configurations (instance types, autoscaling policies, data capture settings) be peer-reviewed and version-controlled before deployment. The company uses Git for source control and wants deployment to be automatic after code review approval.
+
+      Which approach best satisfies these requirements?
+    options:
+      - id: A
+        text: Define SageMaker endpoint configurations in CloudFormation templates stored in CodeCommit. Use CodePipeline with a source stage monitoring the repository. When pull requests are merged after peer review, CodePipeline automatically deploys the updated CloudFormation stack.
+      - id: B
+        text: Use the SageMaker console to create endpoint configurations. Export the configuration as JSON and email it to team members for review. After approval, manually apply the configuration.
+      - id: C
+        text: Store endpoint configurations in DynamoDB. Build a custom web portal where team members can propose changes. Use Lambda functions to enforce approval workflows and deploy configurations after two approvals.
+      - id: D
+        text: Use AWS Config to detect changes to SageMaker endpoints and automatically revert any changes not made through CloudFormation, preventing unauthorized modifications.
+    correctAnswer: A
+    explanation: |
+      Option A implements Infrastructure as Code (IaC) best practices for ML deployments:
+
+      CloudFormation templates define endpoint configurations as code (instance types, autoscaling policies, data capture settings, production variants, update policies). Templates are stored in CodeCommit (or GitHub/GitLab) enabling version control, diff comparison, and audit trails. Changes go through pull request workflows requiring peer review and approval before merging. After merge, CodePipeline automatically detects the change and deploys the updated stack, ensuring deployed configurations match reviewed code.
+
+      This approach provides: version control (full history of configuration changes), peer review (pull request approvals), automation (no manual deployment steps), consistency (deployed state matches repository), rollback capability (revert Git commit and redeploy), and compliance (audit trail of who changed what and who approved).
+
+      Option B lacks version control, automation, and audit trails. Email-based reviews don't scale and are difficult to audit. Manual deployment is error-prone.
+
+      Option C reinvents Git workflows poorly. DynamoDB is not designed for source control, doesn't provide diffing/merging, and building a custom portal adds maintenance burden. Git-based workflows are industry standard for good reasons.
+
+      Option D is a detective control (detects bad changes) rather than a preventive control (prevents bad changes from being made). It doesn't provide peer review, version control, or approval workflows. Additionally, reverting changes automatically could cause production incidents if legitimate changes are reverted.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-whatis.html
+    services:
+      - AWS CloudFormation
+      - AWS CodePipeline
+      - AWS CodeCommit
+      - Amazon SageMaker
+    concepts:
+      - Infrastructure as Code
+      - Peer review workflows
+      - Version control
+      - Automated deployment
+      - Audit trails
+
+  - id: cicd-007
+    type: single
+    text: |
+      An ML operations team manages 50+ models deployed across multiple SageMaker endpoints. They want to automatically retrain models when Model Monitor detects data drift exceeding 15% on more than 3 features. The retraining should only occur if sufficient new training data is available (at least 10,000 new labeled examples).
+
+      What is the MOST efficient architecture for this automated retraining workflow?
+    options:
+      - id: A
+        text: Configure Model Monitor to publish violations to CloudWatch Logs. Use CloudWatch Logs Insights queries to aggregate violations. When thresholds are exceeded, manually start training jobs.
+      - id: B
+        text: Configure Model Monitor to send violation reports to S3. Create an EventBridge rule that triggers when Model Monitor completes. Use a Lambda function to parse the violations report, count drifted features, query S3 for new training data count, and if both thresholds are met, start a SageMaker Pipeline execution for retraining.
+      - id: C
+        text: Schedule a weekly Lambda function that checks all Model Monitor reports for the past week, aggregates drift statistics, queries training data availability, and starts training jobs for models meeting both thresholds.
+      - id: D
+        text: Use Step Functions to poll Model Monitor results every hour. When drift is detected, immediately start retraining without checking data availability, since models should always use the latest data.
+    correctAnswer: B
+    explanation: |
+      Option B provides efficient, event-driven automation with proper validation:
+
+      Model Monitor runs on schedule (hourly/daily) and publishes constraint violation reports to S3. EventBridge monitors for "SageMaker Model Quality Job State Change" events with status "Completed". Lambda function is triggered by the event, retrieves the violations report from S3, parses the JSON to count features with drift > 15%, queries S3 (or Feature Store API) to count new labeled examples since last training, and only if both thresholds are met (drift on 3+ features AND 10,000+ new examples), starts SageMaker Pipeline execution with parameters for the model to retrain.
+
+      This approach is event-driven (responds immediately to drift detection, not on fixed schedule), validates preconditions (checks data availability before training), scales efficiently (one Lambda per model per monitoring run, handles 50+ models), and provides audit trails (Lambda logs show why retraining was/wasn't triggered).
+
+      Option A requires manual intervention, defeating the purpose of automation. Requires operators to monitor CloudWatch Logs Insights queries and manually start jobs.
+
+      Option C uses polling instead of event-driven architecture, causing delays (models drift Monday, retraining doesn't start until next Monday), wastes resources (Lambda runs weekly even if no drift), and doesn't scale well as model count grows.
+
+      Option D ignores the data availability requirement. Training models without sufficient new data wastes compute resources and may produce lower-quality models (overfitting to small samples). Hourly polling is also inefficient - Model Monitor typically runs daily, so most polls find nothing.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon EventBridge
+      - AWS Lambda
+      - Amazon SageMaker Pipelines
+    concepts:
+      - Continuous training
+      - Data drift detection
+      - Event-driven automation
+      - Conditional retraining
+
+  - id: cicd-008
+    type: multi
+    correctCount: 2
+    text: |
+      A company is implementing a SageMaker Project for their recommendation model. The project template must enforce security requirements including: all training data must be encrypted at rest with customer-managed KMS keys, training jobs must run in a VPC with no internet access, and all model artifacts must be scanned for vulnerabilities before deployment.
+
+      Which TWO configurations should be included in the custom project template? (Select TWO)
+    options:
+      - id: A
+        text: Configure the SageMaker Pipeline to include a Processing step that runs after training, using a container image with vulnerability scanning tools to analyze model artifacts and fail the pipeline if vulnerabilities are detected.
+      - id: B
+        text: Set the Pipeline's training step parameters to include VpcConfig with subnet IDs and security group IDs for the isolated VPC, and set EnableNetworkIsolation to true.
+      - id: C
+        text: Configure the S3 bucket policy for training data to require encryption using any KMS key, allowing SageMaker to use the default AWS managed key for cost efficiency.
+      - id: D
+        text: Use AWS Certificate Manager to generate SSL certificates for encrypting training data in transit between S3 and SageMaker training instances.
+      - id: E
+        text: Configure the SageMaker execution role with permissions to use the customer-managed KMS key and set VolumeKmsKeyId and OutputDataConfig.KmsKeyId parameters in the training step to reference the customer-managed key.
+    correctAnswer: [B, E]
+    explanation: |
+      Options B and E together implement the security requirements:
+
+      Option B: VpcConfig parameter specifies the VPC subnets and security groups for training jobs, ensuring training instances launch in the isolated VPC. EnableNetworkIsolation=true prevents training containers from making outbound network calls, blocking internet access. This configuration is defined in the Pipeline's training step and becomes part of the project template, automatically applying to all training runs.
+
+      Option E: Customer-managed KMS encryption requires two configurations. VolumeKmsKeyId encrypts the EBS volume attached to training instances (satisfying "training data encrypted at rest"). OutputDataConfig.KmsKeyId encrypts model artifacts written to S3. The execution role needs kms:Decrypt permission to read encrypted training data from S3 and kms:GenerateDataKey to encrypt outputs. These parameters in the project template ensure all training jobs use the specified customer-managed key.
+
+      Option A, while potentially valuable, uses the wrong approach for vulnerability scanning. Model artifacts are serialized model files (pickle, TensorFlow SavedModel, PyTorch checkpoints), not container images. Vulnerability scanning applies to container images, not model files. The Processing step would need to perform different security checks (model file integrity, embedded code analysis) rather than traditional vulnerability scanning.
+
+      Option C contradicts the requirement for "customer-managed KMS keys." AWS managed keys are not customer-managed - customers cannot control key policies, rotation, or deletion. The S3 bucket policy should specify the specific customer-managed key ARN.
+
+      Option D misunderstands encryption in transit. SageMaker automatically uses TLS for data transfer from S3 to training instances. ACM certificates are for HTTPS endpoints (load balancers, CloudFront), not S3 data transfer. This configuration is unnecessary and doesn't address any stated requirement.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-templates-sm.html
+    services:
+      - Amazon SageMaker Projects
+      - Amazon SageMaker Pipelines
+      - AWS KMS
+      - Amazon VPC
+    concepts:
+      - Security controls
+      - Network isolation
+      - Encryption at rest
+      - Custom project templates
+
+  - id: cicd-009
+    type: single
+    text: |
+      A company deploys models using CodePipeline with Blue/Green deployment via CodeDeploy. After a recent deployment, the new model (Green) shows 2x higher latency than the previous model (Blue). The deployment used Linear10PercentEvery10Minutes traffic shifting and CloudWatch alarms for p99 latency > 500ms. However, the Green endpoint wasn't rolled back despite high latency.
+
+      What is the MOST likely cause, and how should it be fixed?
+    options:
+      - id: A
+        text: CloudWatch alarms were not properly associated with the CodeDeploy deployment group. Fix by configuring the CodeDeploy deployment group's alarm configuration to reference the CloudWatch alarm ARNs for the endpoint metrics.
+      - id: B
+        text: The Linear10PercentEvery10Minutes strategy shifts traffic too slowly to detect issues. Change to AllAtOnce deployment to immediately identify problems.
+      - id: C
+        text: CloudWatch alarms for endpoint latency take 15-20 minutes to populate metrics, longer than the 10-minute traffic shift intervals. The alarms never triggered because insufficient data was available.
+      - id: D
+        text: Blue/Green deployments in SageMaker don't support automatic rollback. Modify the CodePipeline to include a manual approval step after deployment to review metrics before allowing the deployment to complete.
+    correctAnswer: A
+    explanation: |
+      Option A identifies the correct issue and solution:
+
+      CodeDeploy Blue/Green deployments support automatic rollback triggered by CloudWatch alarms, but the alarms must be explicitly associated with the deployment group. The DeploymentGroup configuration includes an AlarmConfiguration section listing CloudWatch alarm ARNs to monitor. During deployment, CodeDeploy monitors these alarms. If any alarm enters ALARM state, CodeDeploy halts traffic shifting and rolls back to the Blue fleet.
+
+      In this scenario, the alarm likely exists and is triggering, but CodeDeploy isn't monitoring it because the association wasn't configured. The fix is to update the CloudFormation template or deployment configuration to reference the alarm ARNs in the CodeDeploy deployment group's alarm configuration.
+
+      Option B makes deployments less safe, not more safe. AllAtOnce immediately shifts 100% of traffic to Green. If Green has problems, 100% of users are affected instead of only 10%. The issue isn't the traffic shifting strategy - it's that rollback isn't happening at all.
+
+      Option C is factually incorrect. SageMaker endpoint metrics are published to CloudWatch in real-time with 1-minute granularity. A 10-minute shift interval provides 10 data points, sufficient for alarm evaluation. The default alarm evaluation is typically 3 consecutive periods, easily achieved within a 10-minute window.
+
+      Option D is incorrect. SageMaker with CodeDeploy fully supports automatic rollback triggered by CloudWatch alarms - it's a core feature of the Blue/Green deployment pattern. Adding manual approval steps eliminates the safety benefit of automatic rollback (problems could affect users for extended periods while waiting for human review).
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/safely-deploying-and-monitoring-amazon-sagemaker-endpoints-with-aws-codepipeline-and-aws-codedeploy/
+    services:
+      - AWS CodeDeploy
+      - AWS CodePipeline
+      - Amazon CloudWatch
+      - Amazon SageMaker
+    concepts:
+      - Blue/Green deployment
+      - Automatic rollback
+      - CloudWatch alarms
+      - Deployment configuration
+
+  - id: cicd-010
+    type: single
+    text: |
+      A data science team uses SageMaker Pipelines for training workflows and AWS Step Functions for multi-step data preparation involving AWS Glue ETL, Athena queries, and Lambda transformations. The team wants to combine these into a single automated workflow: when new raw data arrives in S3, run data preparation in Step Functions, then trigger the SageMaker Pipeline for training.
+
+      What is the MOST operationally efficient integration approach?
+    options:
+      - id: A
+        text: Configure EventBridge to trigger Step Functions when new data arrives. Add a Step Functions task at the end of the data preparation workflow that calls SageMaker Pipelines StartPipelineExecution API using the SageMaker service integration.
+      - id: B
+        text: Rewrite the entire Glue/Athena/Lambda data preparation workflow as SageMaker Processing jobs so everything runs in a single SageMaker Pipeline.
+      - id: C
+        text: Use Step Functions for the entire workflow by replacing SageMaker Pipelines with Step Functions tasks that call SageMaker training/processing APIs directly.
+      - id: D
+        text: Configure EventBridge to trigger both Step Functions and SageMaker Pipelines simultaneously. Use S3 event notifications to coordinate when data preparation is complete.
+    correctAnswer: A
+    explanation: |
+      Option A provides the optimal integration leveraging each service's strengths:
+
+      Step Functions excels at orchestrating multi-service workflows (Glue, Athena, Lambda) with advanced error handling, retries, and branching. SageMaker Pipelines excels at ML workflows (processing, training, evaluation, registration) with lineage tracking and model registry integration. Combining them leverages both strengths.
+
+      The workflow: EventBridge S3 event rule triggers Step Functions execution. Step Functions orchestrates Glue ETL job (schema transformations, cleansing), Athena query (aggregations, feature engineering), Lambda functions (custom business logic). After data preparation succeeds, Step Functions includes a task with service integration "arn:aws:states:::sagemaker:createPipelineExecution.sync" that starts SageMaker Pipeline execution and optionally waits for completion. This creates an end-to-end automated workflow with a single trigger point.
+
+      Benefits: each tool used for its purpose, existing workflows preserved (no rewrites), centralized monitoring (Step Functions shows entire workflow status), lineage tracking maintained (SageMaker Pipeline tracks training provenance).
+
+      Option B forces inappropriate tool choices. Glue ETL jobs are optimized for large-scale data transformations with Apache Spark. Rewriting as SageMaker Processing jobs requires recreating Glue's capabilities, losing built-in features like the Glue Data Catalog, partition management, and job bookmarks. This increases development effort and operational complexity.
+
+      Option C loses SageMaker Pipelines benefits (lineage tracking, model registry integration, DAG visualization, step caching). Step Functions isn't purpose-built for ML workflows and doesn't provide ML-specific features. This is a step backward in MLOps maturity.
+
+      Option D creates race conditions and coordination complexity. Parallel execution means the SageMaker Pipeline might start before data preparation completes, causing failures. S3 event notifications for coordination requires custom logic to track state, essentially reimplementing workflow orchestration poorly.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/workflows.html
+    services:
+      - AWS Step Functions
+      - Amazon SageMaker Pipelines
+      - Amazon EventBridge
+      - AWS Glue
+    concepts:
+      - Workflow orchestration
+      - Service integration
+      - Multi-service workflows
+      - Event-driven architecture
+
+  - id: cicd-011
+    type: multi
+    correctCount: 3
+    text: |
+      An MLOps engineer is designing a governance framework for a company with 20 data science teams. The framework must ensure: all models use approved Docker base images, training jobs are tagged with cost center for chargeback, hyperparameter ranges are constrained to prevent expensive experiments, and all teams follow consistent project structures.
+
+      Which THREE actions enforce these governance requirements? (Select THREE)
+    options:
+      - id: A
+        text: Create custom SageMaker Project templates with pre-configured pipeline definitions that use approved base images, include cost center tagging in resource definitions, and implement hyperparameter validation in the pipeline code.
+      - id: B
+        text: Use Service Control Policies (SCPs) in AWS Organizations to deny SageMaker training job creation if the request doesn't include required tags.
+      - id: C
+        text: Publish approved Docker base images to a private Amazon ECR repository and configure IAM policies that only allow SageMaker execution roles to pull images from that repository.
+      - id: D
+        text: Implement AWS Config rules that detect non-compliant SageMaker training jobs and automatically terminate them using Lambda-based remediation.
+      - id: E
+        text: Use AWS CloudFormation StackSets to deploy identical SageMaker Studio domains across all teams with pre-configured project templates and lifecycle configurations.
+      - id: F
+        text: Require all training code to be stored in a central CodeCommit repository with branch protection rules and mandatory code reviews before execution.
+    correctAnswer: [A, B, C]
+    explanation: |
+      Options A, B, and C together create a comprehensive preventive governance framework:
+
+      Option A: Custom Project templates are the cornerstone of SageMaker governance. Templates encode organizational standards as reusable infrastructure. The template's CloudFormation defines: ECR image URIs pointing to approved base images (teams can't easily change these without modifying infrastructure code), resource tagging with cost center parameters (enforced at infrastructure level), pipeline definitions with hyperparameter validation logic (ParameterString with AllowedValues constraints or Lambda validation steps).
+
+      When teams create projects from templates, they inherit all these controls. Template-based governance scales better than documentation or training because the right thing is automated and the wrong thing is difficult.
+
+      Option B: SCPs provide organization-wide guardrails that cannot be circumvented. An SCP denying sagemaker:CreateTrainingJob unless aws:RequestTag contains required keys (cost-center, team, project) enforces tagging at the API level. Even account administrators cannot bypass SCPs, making this the strongest enforcement mechanism for critical requirements.
+
+      Option C: Private ECR repository with access control prevents teams from using unapproved images. Only images pushed by the platform team to the approved repository can be pulled by SageMaker execution roles. IAM policies on execution roles deny ecr:GetAuthorizationToken and ecr:BatchGetImage for external repositories or Docker Hub. This enforces image standards (security patches, approved libraries, compliance tools) at the infrastructure level.
+
+      Option D is detective/reactive rather than preventive. Terminating non-compliant jobs after they start wastes compute resources and disrupts data scientists. Preventive controls (SCPs, IAM policies, templates) are superior because they prevent non-compliance from occurring.
+
+      Option E could help standardize environments but doesn't directly enforce the stated requirements (approved images, tagging, hyperparameter constraints). StackSets help with infrastructure deployment consistency but aren't the enforcement mechanism.
+
+      Option F creates operational burden without addressing the stated requirements. Central repositories with mandatory reviews slow experimentation velocity. Data scientists should be able to iterate quickly on code while governance enforces infrastructure and resource constraints.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/build-custom-sagemaker-project-templates-best-practices/
+    services:
+      - Amazon SageMaker Projects
+      - AWS Organizations
+      - Amazon ECR
+      - AWS IAM
+    concepts:
+      - Governance frameworks
+      - Custom templates
+      - Service Control Policies
+      - Image approval
+
+  - id: cicd-012
+    type: single
+    text: |
+      A company has production models deployed in multiple AWS regions (us-east-1, eu-west-1, ap-southeast-1) to serve global customers with low latency. Models are trained centrally in us-east-1 and registered in Model Registry. When a model is approved, it should be automatically deployed to endpoints in all three regions.
+
+      What is the MOST scalable approach for multi-region deployment?
+    options:
+      - id: A
+        text: Create EventBridge rules in us-east-1 that trigger when model status changes to Approved. The rule invokes a Lambda function that copies model artifacts to S3 buckets in each region, then starts CodePipeline executions in each region to deploy the model.
+      - id: B
+        text: Use AWS Systems Manager Parameter Store to store the approved model version. Schedule Lambda functions in each region to poll Parameter Store hourly and deploy new versions when detected.
+      - id: C
+        text: Create separate Model Registry instances in each region. Train models in us-east-1, then manually copy model artifacts and register in each region's Model Registry before deploying.
+      - id: D
+        text: Use AWS Global Accelerator to route traffic to a single endpoint in us-east-1, eliminating the need for multi-region deployments.
+    correctAnswer: A
+    explanation: |
+      Option A implements an event-driven, automated multi-region deployment pattern:
+
+      EventBridge in us-east-1 monitors Model Registry for "SageMaker Model Package State Change" events where ModelApprovalStatus changes to "Approved". Lambda function triggered by this event: retrieves model artifacts from S3 in us-east-1, copies artifacts to regional S3 buckets in eu-west-1 and ap-southeast-1 using S3 cross-region replication or boto3 copy operations, invokes StartPipelineExecution API in each target region's CodePipeline (or uses EventBridge cross-region event bus), and logs deployment status.
+
+      Each region's CodePipeline then deploys the model using region-local infrastructure (endpoints, endpoint configs). This approach provides: automation (no manual steps after approval), consistency (same model version deployed everywhere), auditability (CloudTrail logs all deployment steps), and scalability (adding regions requires adding CodePipeline stacks and updating Lambda function region list).
+
+      Option B uses inefficient polling (hourly delays, wasted Lambda invocations) instead of event-driven architecture. Deployments lag approval by up to an hour, and Parameter Store doesn't provide the same richness as Model Registry for tracking model metadata.
+
+      Option C is entirely manual ("manually copy model artifacts") and doesn't scale. Deploying to 3 regions requires 3 manual copy/register operations. Adding more regions increases operational burden linearly. This approach is error-prone (forgetting a region, version mismatches) and slow.
+
+      Option D misunderstands the requirement. Multi-region deployment is for latency (serve customers from nearby regions) and availability (survive regional failures). Global Accelerator improves routing to endpoints but doesn't reduce latency for requests traveling to us-east-1 from Singapore (still crosses the Pacific). For ML inference where latency matters, regional endpoints are necessary.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html
+    services:
+      - Amazon EventBridge
+      - AWS Lambda
+      - Amazon S3
+      - AWS CodePipeline
+      - Amazon SageMaker Model Registry
+    concepts:
+      - Multi-region deployment
+      - Event-driven architecture
+      - Artifact replication
+      - Global model distribution
+
+  - id: cicd-013
+    type: single
+    text: |
+      A compliance team requires that all deployed ML models can be reproduced exactly from source. This includes the ability to identify the exact training code version, training data version, and hyperparameters used for any model in production. The solution must support audits going back 5 years.
+
+      Which approach provides the MOST complete model reproducibility and lineage tracking?
+    options:
+      - id: A
+        text: Use SageMaker Pipelines with source code stored in CodeCommit. Configure the pipeline to tag model artifacts in S3 with Git commit SHA, data version, and hyperparameters. Enable S3 versioning and lifecycle policies to retain artifacts for 5 years.
+      - id: B
+        text: Use SageMaker Model Registry to register all models, associating training job ARN with each model version. Enable SageMaker Lineage Tracking to automatically capture relationships between datasets, training jobs, models, and endpoints. Store training code in Git with commit SHAs recorded in model metadata. Configure S3 and CloudTrail log retention for 5 years.
+      - id: C
+        text: Create a DynamoDB table that records training job configurations. After each training job, write a record with timestamp, S3 data paths, hyperparameters, and resulting model location. Enable DynamoDB point-in-time recovery for 5 years.
+      - id: D
+        text: Use AWS CloudFormation to define all training infrastructure including training job parameters. Store CloudFormation templates in Git with tags for each deployment. Enable CloudTrail logging with 5-year retention.
+    correctAnswer: B
+    explanation: |
+      Option B leverages SageMaker's purpose-built lineage capabilities for complete reproducibility:
+
+      SageMaker Lineage Tracking automatically creates a directed acyclic graph (DAG) of relationships: S3 dataset URIs → Processing Job (feature engineering) → Training Job (with hyperparameters, code, instance type) → Model Artifacts → Model Registry Version → Endpoint. This graph is queryable via API to answer "What data trained this model?" and "Where is this dataset used?"
+
+      Model Registry stores immutable model versions with metadata including training job ARN, approval status, and custom properties (Git commit SHA, data version). The training job ARN links to full job details (code location, hyperparameters, instance configuration, VPC settings) stored indefinitely by SageMaker.
+
+      Git commit SHAs in model metadata enable retrieving exact training code from repository history. Combined with S3 versioning (retains exact training data files) and CloudTrail logs (who deployed, when, what changed), this provides end-to-end reproducibility: retrieve model from registry → find training job ARN → get hyperparameters and Git SHA → checkout code from Git → retrieve data from S3 versioned bucket → re-run training job.
+
+      This satisfies audit requirements: 5+ year retention (SageMaker metadata retained indefinitely, S3/CloudTrail configured for 5 years), immutability (lineage graph and model registry are append-only), completeness (captures all inputs to model creation), and automation (lineage captured automatically, not manually recorded).
+
+      Option A captures some metadata (tags on S3 objects) but doesn't provide the queryable lineage graph or integration with Model Registry for approval workflows. S3 tags alone don't capture the full relationship graph (which endpoints use which models, which jobs created which artifacts).
+
+      Option C reinvents lineage tracking poorly. DynamoDB requires manual record creation (prone to errors/omissions), doesn't capture the full relationship graph (endpoints, preprocessing jobs), and requires custom code to query and reconstruct lineage.
+
+      Option D focuses on infrastructure reproducibility, not model reproducibility. CloudFormation templates describe training job parameters, but don't capture which training jobs actually ran, what data they used, or the lineage from data to deployed model.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/lineage-tracking.html
+    services:
+      - Amazon SageMaker Lineage Tracking
+      - Amazon SageMaker Model Registry
+      - AWS CodeCommit
+      - Amazon S3
+      - AWS CloudTrail
+    concepts:
+      - Model reproducibility
+      - Lineage tracking
+      - Audit compliance
+      - Metadata management
+
+  - id: cicd-014
+    type: multi
+    correctCount: 2
+    text: |
+      A company wants to implement A/B testing for a recommendation model. The current production model (Version 1) serves 100% of traffic. A new model (Version 2) has shown 15% improvement in offline evaluation. The team wants to validate the improvement with real traffic by serving Version 2 to 20% of users, monitoring business metrics for 7 days, then fully rolling out if metrics are favorable.
+
+      Which TWO steps are required to implement this A/B test? (Select TWO)
+    options:
+      - id: A
+        text: >
+          Create a new endpoint configuration with two production variants:
+          variant A with Version 1 model at 80% initial weight, and variant B
+          with Version 2 model at 20% initial weight. Update the production
+          endpoint to use this configuration.
+      - id: B
+        text: Deploy Version 2 to a separate endpoint. Modify the application code to randomly route 20% of requests to the new endpoint and 80% to the current endpoint. Track which users received which model for metric calculation.
+      - id: C
+        text: Configure SageMaker Data Capture on the endpoint to record inputs and outputs from both variants, enabling analysis of model predictions and calculation of variant-specific business metrics.
+      - id: D
+        text: Create a CloudWatch Logs Insights query that filters requests by variant name from endpoint invocation logs, aggregating metrics separately for each variant.
+      - id: E
+        text: Use AWS Lambda@Edge with CloudFront to route requests based on user cookies, ensuring each user consistently sees the same model variant throughout the test period.
+    correctAnswer: [A, C]
+    explanation: |
+      Options A and C together enable production A/B testing:
+
+      Option A: SageMaker endpoint production variants enable A/B testing without application code changes. Create EndpointConfig with ProductionVariants array containing two variants: {ModelName: "version-1", VariantName: "variant-a", InitialInstanceCount: 2, InstanceType: "ml.m5.xlarge", InitialVariantWeight: 0.8} and {ModelName: "version-2", VariantName: "variant-b", InitialInstanceCount: 1, InstanceType: "ml.m5.xlarge", InitialVariantWeight: 0.2}.
+
+      When the endpoint receives requests, SageMaker automatically routes 80% to variant-a and 20% to variant-b based on weights. The InvokeEndpoint response includes the TargetVariant field indicating which variant served the request. After 7 days, if metrics favor variant-b, update InitialVariantWeight to {variant-a: 0, variant-b: 1.0} to fully roll out Version 2.
+
+      Option C: Data Capture is essential for A/B analysis. Configuration: {EnableCapture: true, CaptureOptions: [InputAndOutput], DestinationS3Uri: "s3://bucket/data-capture/"}. SageMaker writes JSONL files to S3 containing request inputs, model outputs, timestamp, and variant name. Analysts query this data with Athena to calculate variant-specific metrics (click-through rate, conversion rate, revenue per user). Without Data Capture, the team would need custom logging in application code.
+
+      Option B reinvents SageMaker's built-in capability and requires application code changes. Deploying separate endpoints and modifying routing logic increases operational complexity (managing two endpoints, implementing load balancing) and creates opportunities for bugs (routing logic errors, state synchronization).
+
+      Option D is unnecessary if Data Capture (Option C) is enabled. Data Capture provides structured data in S3 for analysis. CloudWatch Logs Insights would require parsing unstructured log messages, which is more complex than querying structured S3 data with Athena.
+
+      Option E is overengineered for this use case. SageMaker production variants already provide request routing. Lambda@Edge adds latency and cost. If sticky sessions (same user sees same variant) are required, implement variant selection in application code based on user ID hash, not Lambda@Edge.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html
+    services:
+      - Amazon SageMaker Endpoints
+      - Amazon SageMaker Data Capture
+    concepts:
+      - A/B testing
+      - Production variants
+      - Traffic splitting
+      - Data capture
+      - Business metrics
+
+  - id: cicd-015
+    type: single
+    text: |
+      An MLOps team manages SageMaker Pipelines using infrastructure-as-code. They define pipelines in Python SDK code stored in Git. When pipeline definitions change, they want automated validation that the pipeline is syntactically correct and all referenced resources (S3 buckets, IAM roles, ECR images) exist before deploying to production.
+
+      What is the MOST effective validation approach?
+    options:
+      - id: A
+        text: In the CodeBuild build phase, execute the Python pipeline definition script to generate the pipeline JSON definition. Use aws sagemaker describe-pipeline to check if a pipeline with that name already exists. If it exists, use update-pipeline; otherwise use create-pipeline. SageMaker will validate the definition when creating/updating.
+      - id: B
+        text: Create a development SageMaker Pipeline instance. In the CodeBuild build phase, use update-pipeline to deploy the new definition to the development pipeline and immediately start an execution with skip-model-training=true to validate the pipeline runs without errors.
+      - id: C
+        text: Write unit tests using pytest that import the pipeline definition code, generate the JSON, and validate the structure against a JSON schema. In the build phase, run pytest to validate syntax. Use AWS CloudFormation drift detection to verify referenced resources exist.
+      - id: D
+        text: In the CodeBuild build phase, execute the pipeline definition script to generate the JSON. Validate JSON syntax with a parser. Query AWS APIs to verify referenced resources exist (boto3 describe-bucket for S3, get-role for IAM, describe-images for ECR). Only proceed to deployment if all validations pass.
+    correctAnswer: D
+    explanation: |
+      Option D provides comprehensive pre-deployment validation:
+
+      The build phase validation workflow:
+      1. Execute pipeline definition Python script (imports SageMaker SDK, defines steps, calls Pipeline(...).definition())
+      2. Catch Python exceptions (syntax errors, undefined variables, import errors)
+      3. Parse generated JSON to validate structure (valid JSON, required fields present)
+      4. Extract resource references from JSON (S3 URIs, IAM role ARNs, ECR image URIs)
+      5. Validate each resource exists and is accessible:
+         - S3 buckets: boto3 s3.head_bucket(Bucket=bucket_name)
+         - IAM roles: boto3 iam.get_role(RoleName=role_name)
+         - ECR images: boto3 ecr.describe_images(repositoryName=repo, imageIds=[...])
+      6. Validate execution role has permissions to access resources
+      7. Only if all checks pass, proceed to deploy pipeline to production
+
+      This prevents deployment of broken pipelines. Without validation, pipeline update succeeds but execution fails at runtime when it can't access missing S3 buckets or ECR images. Runtime failures waste compute and delay data scientists. Pre-deployment validation provides fast feedback in the build phase.
+
+      Option A relies on SageMaker's validation, which checks JSON structure but doesn't validate that referenced resources exist. Pipeline update will succeed even if the S3 bucket doesn't exist - the failure only occurs when the pipeline executes. This delays error detection.
+
+      Option B validates the pipeline works but is expensive and slow. Running a full pipeline execution (even with skip-model-training) takes minutes and consumes compute resources. This makes the build phase slow, delaying deployments. It also requires maintaining a separate development pipeline instance. Pre-deployment resource validation (Option D) achieves similar validation in seconds with API calls.
+
+      Option C validates JSON schema but doesn't verify referenced resources exist. CloudFormation drift detection doesn't apply here - pipelines aren't CloudFormation resources, they're SageMaker API resources. Unit tests catch code-level errors but miss infrastructure errors (deleted S3 bucket, rotated ECR image).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/build-and-manage-pipeline.html
+    services:
+      - Amazon SageMaker Pipelines
+      - AWS CodeBuild
+      - AWS Lambda
+    concepts:
+      - Pipeline validation
+      - Pre-deployment checks
+      - Infrastructure validation
+      - CI best practices
+
+  - id: cicd-016
+    type: single
+    text: |
+      A financial services company requires that when models are rejected during approval review, the rejection must include a documented reason, and the model must not be eligible for resubmission until code or data changes have been made. The system should prevent reviewers from approving previously rejected model versions.
+
+      How should this governance workflow be implemented?
+    options:
+      - id: A
+        text: When a model is rejected, update the Model Registry approval status to "Rejected" with a rejection reason in the custom metadata field. Configure EventBridge to trigger a Lambda function that adds the model version to a DynamoDB "rejected versions" table. Modify the approval workflow Lambda to check this table and prevent status changes from Rejected to Approved.
+      - id: B
+        text: Use SageMaker Model Cards to document rejection reasons. When a model is rejected, create a Model Card with the rejection details. Configure IAM policies to prevent anyone from changing a model's approval status from Rejected to Approved.
+      - id: C
+        text: Store rejection reasons in CloudWatch Logs. Configure AWS Config rules to detect when a model's approval status changes from Rejected to Approved and automatically revert the change.
+      - id: D
+        text: When rejecting a model, delete it from Model Registry entirely and require data scientists to register a new version after making changes.
+    correctAnswer: A
+    explanation: |
+      Option A implements proper governance with auditability and enforcement:
+
+      Model Registry supports approval status values including "Rejected". The custom metadata (ModelApprovalStatus, RejectionReason) captures why the model failed review (poor accuracy, data quality issues, business impact concerns). This metadata is immutable once set, creating an audit trail.
+
+      EventBridge monitors for state changes to "Rejected" and triggers Lambda. Lambda writes record to DynamoDB: {ModelPackageGroupName, ModelPackageVersion, RejectionReason, RejectedBy, RejectedAt, Status: "Rejected"}. This creates a durable, queryable record of all rejections.
+
+      The approval workflow (human reviewer clicks approve link → API Gateway → Lambda) includes logic that queries DynamoDB for the model version. If the version exists with Status="Rejected" AND no code/data changes have occurred (validate by checking Git commit SHA or data version in current metadata vs. rejected metadata), the Lambda returns HTTP 403 with message "Model version was previously rejected. Register new version after making changes."
+
+      This prevents approval of rejected models while allowing new training runs with updated code/data to create new versions that can be reviewed independently.
+
+      Option B uses Model Cards incorrectly. Model Cards are for documentation and transparency (model purpose, training data, fairness metrics), not workflow enforcement. IAM policies can't distinguish between "initial Rejected status" and "someone trying to reapprove a previously rejected model" - they would block all approvals.
+
+      Option C is detective rather than preventive. AWS Config detects the inappropriate status change after it happens, then reverts it. This creates a window where the model appears approved and might trigger deployments. Preventive controls (Option A) are superior.
+
+      Option D is destructive and prevents audit trails. Deleting rejected models removes the historical record of what was tried and why it failed. Teams can't learn from past rejections or track improvement over time. Model versions should be retained indefinitely for compliance and lineage.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-approve.html
+    services:
+      - Amazon SageMaker Model Registry
+      - Amazon EventBridge
+      - AWS Lambda
+      - Amazon DynamoDB
+    concepts:
+      - Model governance
+      - Rejection workflows
+      - Audit trails
+      - Approval enforcement
+
+  - id: cicd-017
+    type: multi
+    correctCount: 3
+    text: |
+      A company operates in a regulated industry requiring that all ML deployments undergo change management approval. The change management system is a third-party ticketing tool with a REST API. When a model is approved in SageMaker Model Registry, a change ticket must be automatically created. Deployment to production can only proceed after the change ticket is approved in the external system.
+
+      Which THREE components are required for this integration? (Select THREE)
+    options:
+      - id: A
+        text: EventBridge rule that triggers when a model's approval status changes to "Approved" in Model Registry, invoking a Lambda function that creates a change ticket in the external system via its REST API.
+      - id: B
+        text: CodePipeline approval stage configured with an SNS notification action that sends change details to the ticketing system and waits for approval callback.
+      - id: C
+        text: API Gateway endpoint that receives webhook callbacks from the external ticketing system when change tickets are approved. The endpoint invokes a Lambda function that retrieves the approved change ticket details and triggers CodePipeline execution for deployment.
+      - id: D
+        text: AWS Systems Manager OpsCenter to mirror all change tickets from the external system for reporting purposes.
+      - id: E
+        text: Lambda function that polls the ticketing system API every 5 minutes to check for approved change tickets and triggers deployments when approvals are found.
+      - id: F
+        text: Secrets Manager secret containing API credentials for the external ticketing system, accessed by Lambda functions that integrate with the system.
+    correctAnswer: [A, C, F]
+    explanation: |
+      Options A, C, and F create a complete event-driven integration:
+
+      Option A: EventBridge rule monitors for "SageMaker Model Package State Change" events where ModelApprovalStatus="Approved". Lambda function is triggered, retrieves model metadata (version, metrics, training details) from Model Registry, constructs change ticket payload, authenticates to external system using credentials from Secrets Manager, POSTs ticket to REST API, stores correlation data (ticket ID ↔ model ARN) in DynamoDB for later callback handling.
+
+      Option C: External ticketing system sends webhook when tickets are approved. API Gateway provides HTTP endpoint for webhooks with authentication (API key or IAM auth). Lambda function handles webhook: validates signature/authentication, retrieves ticket details from payload, queries DynamoDB for corresponding model ARN using ticket ID, starts CodePipeline execution with model ARN as parameter. CodePipeline then deploys the approved model.
+
+      Option F: External system API requires authentication (API key, OAuth token). Storing credentials in Secrets Manager provides: secure storage (encrypted with KMS), automatic rotation capabilities, audit logging (CloudTrail logs secret access), centralized management. Lambda functions retrieve credentials with boto3 get_secret_value() when integrating with the ticketing system.
+
+      Together, these create the workflow: Model Approved → EventBridge → Lambda → Create Ticket → (external review) → Ticket Approved → Webhook → API Gateway → Lambda → Trigger CodePipeline → Deploy.
+
+      Option B misunderstands CodePipeline approval actions. CodePipeline approval actions support SNS notifications and manual approvals in the AWS console or CLI, but they don't support webhook callbacks from external systems. The approval action would block indefinitely waiting for approval through AWS mechanisms.
+
+      Option D adds unnecessary complexity. OpsCenter is for operational issue management, not change ticket mirroring. It doesn't contribute to the integration workflow and creates data synchronization challenges.
+
+      Option E uses inefficient polling instead of event-driven webhooks. Polling adds latency (average 2.5 minute delay), wastes Lambda invocations (most polls find no new approvals), and doesn't scale well (100 models/day means 28,800 Lambda invocations for 5-minute polling vs. 100 webhook deliveries).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automating-sagemaker-with-eventbridge.html
+    services:
+      - Amazon EventBridge
+      - AWS Lambda
+      - Amazon API Gateway
+      - AWS Secrets Manager
+      - AWS CodePipeline
+    concepts:
+      - Third-party integration
+      - Webhook callbacks
+      - Event-driven architecture
+      - External approval systems

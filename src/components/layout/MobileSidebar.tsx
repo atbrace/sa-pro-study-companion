@@ -39,7 +39,7 @@ export function MobileSidebar({ onNavigate, sidebarHierarchy, examId }: MobileSi
       icon: ClipboardCheck,
     },
     {
-      href: '/experiments',
+      href: `/${examId}/labs`,
       label: 'Labs',
       icon: FlaskConical,
     },

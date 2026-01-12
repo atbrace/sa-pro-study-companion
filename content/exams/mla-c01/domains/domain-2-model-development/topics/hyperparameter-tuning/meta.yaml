@@ -1,0 +1,46 @@
+id: hyperparameter-tuning
+name: Hyperparameter Tuning Strategies
+shortName: Hyperparameter Tuning
+examTask: task-2-2
+description: Master Amazon SageMaker's automated hyperparameter optimization techniques including Bayesian optimization, random search, grid search, and Hyperband. Learn to configure tuning jobs, define parameter ranges, implement early stopping, use warm start capabilities, and optimize model performance efficiently.
+estimatedStudyTime: 75
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Automatic Model Tuning
+  - Amazon SageMaker Training Jobs
+  - Amazon CloudWatch
+
+keyConcepts:
+  - Bayesian optimization
+  - Random search strategy
+  - Grid search strategy
+  - Hyperband algorithm
+  - Early stopping
+  - Warm start tuning jobs
+  - Transfer learning tuning
+  - Hyperparameter ranges (continuous, integer, categorical)
+  - Scaling types (linear, logarithmic, reverse logarithmic)
+  - Objective metrics (maximize vs minimize)
+  - Tuning job completion criteria
+  - Convergence detection
+  - Resource limits
+  - Parallel training jobs
+  - Multi-fidelity optimization
+
+awsDocLinks:
+  - title: Automatic Model Tuning with SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning.html
+    type: doc
+  - title: Hyperparameter Tuning Strategies
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    type: doc
+  - title: Best Practices for Hyperparameter Tuning
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-considerations.html
+    type: doc
+  - title: Early Stopping in Tuning Jobs
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-early-stopping.html
+    type: doc
+  - title: Warm Start Hyperparameter Tuning Jobs
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    type: doc

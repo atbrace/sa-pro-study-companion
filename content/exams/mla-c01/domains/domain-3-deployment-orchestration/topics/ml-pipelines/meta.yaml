@@ -1,0 +1,45 @@
+id: ml-pipelines
+name: ML Pipeline Orchestration
+shortName: ML Pipelines
+examTask: task-3-3
+description: Set up CI/CD pipelines for ML workflows using SageMaker Pipelines, Step Functions, and orchestration tools to automate model training, testing, and deployment.
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Pipelines
+  - AWS Step Functions
+  - AWS CodePipeline
+  - Amazon EventBridge
+  - SageMaker Model Registry
+  - AWS CodeBuild
+  - AWS CodeCommit
+
+keyConcepts:
+  - Pipeline orchestration and DAG construction
+  - CI/CD workflow automation for ML
+  - Step types and dependencies
+  - Conditional execution and model approval
+  - Event-driven pipeline triggers
+  - Step caching and optimization
+  - Local mode testing and debugging
+  - Model registry integration
+  - Cross-account deployment patterns
+  - Parallel execution strategies
+
+awsDocLinks:
+  - title: Amazon SageMaker Pipelines Documentation
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html
+    type: doc
+  - title: Create and Manage SageMaker Jobs with Step Functions
+    url: https://docs.aws.amazon.com/step-functions/latest/dg/connect-sagemaker.html
+    type: doc
+  - title: Schedule Pipeline Runs with EventBridge
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/pipeline-eventbridge.html
+    type: doc
+  - title: SageMaker Projects MLOps Templates
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-templates.html
+    type: doc
+  - title: Building ML Workflows with SageMaker Pipelines (Blog)
+    url: https://aws.amazon.com/blogs/machine-learning/building-automating-managing-and-scaling-ml-workflows-using-amazon-sagemaker-pipelines/
+    type: blog

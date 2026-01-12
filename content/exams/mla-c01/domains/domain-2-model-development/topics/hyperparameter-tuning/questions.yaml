@@ -1,0 +1,1154 @@
+questions:
+  - id: hpt-001
+    type: single
+    text: |
+      A machine learning team is tuning hyperparameters for a deep neural network that trains for 50 epochs, with each training job taking approximately 45 minutes. They have access to 30 GPU instances and need to complete tuning within 48 hours. The network publishes validation accuracy after each epoch.
+
+      Which hyperparameter tuning strategy will minimize total tuning time while finding high-quality hyperparameter configurations?
+    options:
+      - id: A
+        text: Use Bayesian optimization with MaxParallelTrainingJobs set to 30 to leverage all available GPU instances simultaneously.
+      - id: B
+        text: Use Random Search with MaxParallelTrainingJobs set to 30 to explore the hyperparameter space with maximum parallelization.
+      - id: C
+        text: Use Hyperband strategy with MaxParallelTrainingJobs set to 25 to dynamically allocate resources based on intermediate validation metrics.
+      - id: D
+        text: Use Grid Search with categorical approximations of continuous parameters to ensure exhaustive coverage of the search space.
+    correctAnswer: C
+    explanation: |
+      Hyperband is the optimal choice for this scenario because:
+
+      1. **Multi-epoch training with intermediate metrics**: The network publishes validation accuracy after each epoch, which Hyperband uses to make early stopping decisions and resource allocation
+      2. **Dynamic resource allocation**: Hyperband reallocates epochs from poor performers to promising configurations, maximizing efficiency
+      3. **High parallelism support**: Unlike Bayesian optimization, Hyperband scales well with many parallel jobs (25-30)
+      4. **Time efficiency**: Hyperband can provide up to 3x faster tuning than random search or Bayesian optimization by stopping unpromising configurations early
+
+      Why other options are incorrect:
+      - Option A: Bayesian optimization cannot effectively utilize 30 parallel jobs due to its sequential learning nature (typically effective with 2-10 parallel jobs)
+      - Option B: Random search doesn't leverage intermediate per-epoch metrics and wastes resources on poor configurations that complete all 50 epochs
+      - Option D: Grid search only works with categorical parameters and doesn't leverage intermediate metrics or early stopping
+
+      Hyperband's bracket-based approach evaluates many configurations with few epochs, then invests more epochs only in the best performers, making it ideal for iterative algorithms with intermediate metrics and high parallelism requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Hyperband algorithm
+      - Multi-fidelity optimization
+      - Parallel training jobs
+      - Intermediate metrics
+
+  - id: hpt-002
+    type: single
+    text: |
+      A data scientist is configuring hyperparameter ranges for an XGBoost model. The learning rate (eta) needs to be tuned across values from 0.0001 to 1.0. When using Linear scaling type, 90% of the training jobs test values between 0.1 and 1.0, leaving only 10% of jobs to explore the critical range of 0.0001 to 0.1.
+
+      How should the data scientist configure the learning rate hyperparameter range to evenly explore all orders of magnitude?
+    options:
+      - id: A
+        text: Change the ScalingType to "Logarithmic" for the learning rate continuous parameter range.
+      - id: B
+        text: Convert the learning rate to a categorical parameter with values [0.0001, 0.001, 0.01, 0.1, 1.0].
+      - id: C
+        text: Split the range into two separate tuning jobs - one for [0.0001, 0.1] and another for [0.1, 1.0].
+      - id: D
+        text: Use ReverseLogarithmic scaling type to sample more densely at smaller learning rate values.
+    correctAnswer: A
+    explanation: |
+      Logarithmic scaling is the correct solution because:
+
+      1. **Order of magnitude distribution**: Logarithmic scaling distributes samples evenly across orders of magnitude: [0.0001-0.001], [0.001-0.01], [0.01-0.1], [0.1-1.0] each receive approximately equal sampling density
+      2. **Appropriate for wide ranges**: When ranges span multiple orders of magnitude (4 in this case: 10^-4 to 10^0), logarithmic scaling prevents bias toward larger values
+      3. **Common pattern**: Learning rates typically require logarithmic scaling because model behavior changes dramatically across orders of magnitude
+      4. **All values > 0**: Logarithmic scaling works for this range since all values are greater than 0
+
+      Why other options are incorrect:
+      - Option B: Converting to categorical reduces exploration to only 5 discrete values, missing potentially optimal values between them (e.g., 0.005, 0.03)
+      - Option C: Splitting into two tuning jobs is inefficient, requiring manual intervention, and doesn't address the fundamental scaling problem
+      - Option D: ReverseLogarithmic only works for ranges where 0 ≤ x < 1.0 and would fail for this range that extends to 1.0. It's also designed for parameters sensitive near 1.0, not near 0
+
+      Logarithmic scaling ensures proportional exploration: the same number of trials test values between 0.0001-0.001 as test values between 0.1-1.0, which is essential for hyperparameters that behave logarithmically.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-define-ranges.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Scaling types
+      - Logarithmic scaling
+      - Hyperparameter ranges
+      - Continuous parameters
+
+  - id: hpt-003
+    type: multi
+    correctCount: 2
+    text: |
+      A machine learning engineer completed a hyperparameter tuning job with 150 training jobs last month using October data. November data has now arrived with a similar distribution but 20% more samples. The engineer wants to retune the model efficiently by leveraging the previous tuning job's knowledge.
+
+      Which TWO actions should the engineer take to create an effective warm start tuning job?
+    options:
+      - id: A
+        text: Configure WarmStartType as "TRANSFER_LEARNING" since the training dataset has changed.
+      - id: B
+        text: Configure WarmStartType as "IDENTICAL_DATA_AND_ALGORITHM" to maximize knowledge transfer from the parent job.
+      - id: C
+        text: Specify the October tuning job in the ParentHyperParameterTuningJobs list in the warm start configuration.
+      - id: D
+        text: Modify the hyperparameter ranges to focus on the top-performing region identified in the October tuning job.
+      - id: E
+        text: Change the objective metric to ensure the warm start job uses different performance criteria than the parent job.
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      The correct actions are A and C:
+
+      **Option A - TRANSFER_LEARNING type**: This is required because the training dataset has changed (October → November data). TRANSFER_LEARNING allows changes to:
+      - Training data (new November dataset)
+      - Dataset size (20% more samples)
+      - Algorithm version (if needed)
+      - Hyperparameter ranges
+
+      While the data distribution is similar, any dataset change requires TRANSFER_LEARNING rather than IDENTICAL_DATA_AND_ALGORITHM.
+
+      **Option C - Specify parent job**: The ParentHyperParameterTuningJobs list must include the October tuning job to leverage its results. Without this, the new job starts from scratch. SageMaker supports up to 5 parent jobs.
+
+      Why other options are incorrect:
+      - Option B: IDENTICAL_DATA_AND_ALGORITHM requires using the exact same training dataset and algorithm version. Since the dataset changed (November vs October), this type cannot be used
+      - Option D: While focusing on top-performing regions is a valid strategy, it's not required for warm start and might cause the tuning to miss improved optima on the new dataset. Warm start already leverages previous knowledge without manual range narrowing
+      - Option E: Changing the objective metric is not allowed in warm start tuning. The objective metric must remain the same across parent and child jobs (this is a hard constraint in SageMaker)
+
+      Warm start with TRANSFER_LEARNING is ideal for recurring model retraining scenarios with updated data, allowing the new tuning job to start from previously discovered good hyperparameter regions while adapting to dataset changes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Warm start tuning
+      - Transfer learning type
+      - Parent tuning jobs
+      - Dataset changes
+
+  - id: hpt-004
+    type: single
+    text: |
+      A hyperparameter tuning job is configured with early stopping enabled (TrainingJobEarlyStoppingType set to "Auto"). Training jobs last approximately 90 seconds each and train for 20 epochs. After running 50 training jobs, the team notices that no jobs have been stopped early, despite varying performance across jobs.
+
+      What is the MOST likely reason early stopping is not terminating any training jobs?
+    options:
+      - id: A
+        text: The objective metric is not being emitted to CloudWatch Logs in a format SageMaker can parse.
+      - id: B
+        text: Training jobs are too short (90 seconds) for early stopping to provide meaningful benefits due to infrastructure overhead.
+      - id: C
+        text: Early stopping only works with Hyperband strategy, and this job is using Bayesian optimization.
+      - id: D
+        text: The MaxNumberOfTrainingJobs is set too low for early stopping to establish a reliable baseline median.
+    correctAnswer: B
+    explanation: |
+      Training jobs that are too short (90 seconds) prevent early stopping from being effective because:
+
+      1. **Infrastructure overhead dominates**: Starting and stopping training instances, downloading data, and initializing environments takes 30-60 seconds. For a 90-second job, overhead represents 33-66% of total time
+      2. **Insufficient time savings**: Stopping a job after 1-2 epochs (vs 20 total) saves minimal compute time when overhead is factored in
+      3. **Statistical reliability**: With very short jobs, the per-epoch metric evaluation happens too quickly to establish reliable running averages for median comparison
+      4. **AWS guidance**: AWS documentation states early stopping benefits become noticeable when training jobs last longer than 4 minutes (240 seconds). Jobs under 2 minutes see minimal benefit
+
+      Why other options are incorrect:
+      - Option A: If metrics weren't being emitted, the tuning job would fail entirely or show errors, not simply refrain from early stopping. The jobs are completing successfully
+      - Option C: Early stopping works with Bayesian optimization, Random Search, and Grid Search strategies. It only should NOT be used with Hyperband (which has its own early stopping mechanism). This limitation doesn't prevent early stopping from working with other strategies
+      - Option D: 50 training jobs is sufficient for early stopping to establish baselines. The algorithm compares each job to the median of running averages from previous jobs at the same epoch, which is statistically viable with 50 jobs
+
+      To benefit from early stopping, increase training job duration by using larger datasets, more epochs, larger models, or smaller instance types that extend training time beyond 4-5 minutes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-early-stopping.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Early stopping
+      - Training job duration
+      - Infrastructure overhead
+
+  - id: hpt-005
+    type: single
+    text: |
+      A tuning job must meet the following requirements:
+      - Stop when validation F1 score reaches 0.88 or higher
+      - Complete within 12 hours maximum
+      - Stop if 40 consecutive training jobs fail to improve beyond the current best F1 score
+      - Use a maximum of 200 training jobs
+
+      How should the completion criteria be configured to satisfy all requirements?
+    options:
+      - id: A
+        text: |
+          Set TargetObjectiveMetricValue to 0.88, MaxRuntimeInSeconds to 43200, and MaxNumberOfTrainingJobs to 200 in ResourceLimits.
+      - id: B
+        text: |
+          Set TargetObjectiveMetricValue to 0.88, MaxRuntimeInSeconds to 43200, MaxNumberOfTrainingJobsNotImproving to 40, and MaxNumberOfTrainingJobs to 200.
+      - id: C
+        text: |
+          Set CompleteOnConvergence to "Enabled" with TargetObjectiveMetricValue to 0.88 and MaxRuntimeInSeconds to 43200.
+      - id: D
+        text: |
+          Set MaxNumberOfTrainingJobsNotImproving to 40, MaxRuntimeInSeconds to 43200, and rely on CompleteOnConvergence for the F1 score target.
+    correctAnswer: B
+    explanation: |
+      Option B correctly configures all four requirements by setting:
+
+      1. **TargetObjectiveMetricValue: 0.88** (TuningJobCompletionCriteria) - Stops when any job reaches F1 ≥ 0.88
+      2. **MaxRuntimeInSeconds: 43200** (ResourceLimits) - 12 hours × 3600 seconds = 43,200 seconds maximum duration
+      3. **MaxNumberOfTrainingJobsNotImproving: 40** (BestObjectiveNotImproving in TuningJobCompletionCriteria) - Stops after 40 consecutive jobs don't exceed current best F1 score
+      4. **MaxNumberOfTrainingJobs: 200** (ResourceLimits) - Maximum 200 total training jobs
+
+      SageMaker stops the tuning job when ANY criterion is met (OR logic), ensuring all requirements are satisfied.
+
+      Why other options are incorrect:
+      - Option A: Missing MaxNumberOfTrainingJobsNotImproving configuration, so the "40 consecutive non-improving jobs" requirement is not enforced
+      - Option C: CompleteOnConvergence uses SageMaker's automatic convergence detection (≤1% improvement), which is different from the specific requirement of "40 consecutive jobs not improving." Also missing the MaxNumberOfTrainingJobsNotImproving setting
+      - Option D: Missing TargetObjectiveMetricValue configuration. CompleteOnConvergence detects when improvements are ≤1%, but this doesn't guarantee stopping at F1 = 0.88 specifically. The target requirement would not be enforced
+
+      The correct configuration combines multiple completion criteria types:
+      - TuningJobCompletionCriteria: TargetObjectiveMetricValue and BestObjectiveNotImproving
+      - ResourceLimits: MaxRuntimeInSeconds and MaxNumberOfTrainingJobs
+
+      This multi-criteria approach provides comprehensive control over when tuning stops based on performance thresholds, stagnation detection, time limits, and compute budgets.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-progress.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Completion criteria
+      - Target objective metric
+      - Resource limits
+      - BestObjectiveNotImproving
+
+  - id: hpt-006
+    type: single
+    text: |
+      A team is tuning hyperparameters for an image classification model with the following configuration:
+      - Hyperparameter ranges: learning_rate (continuous, 0.0001 to 0.1), batch_size (integer, 16 to 128), optimizer (categorical: adam, sgd, rmsprop), dropout_rate (continuous, 0.0 to 0.8)
+      - Available resources: 5 GPU instances
+      - Training job duration: 25 minutes per job
+      - Total time available: 48 hours
+
+      Which tuning strategy provides the best balance of exploration quality and completion within time constraints?
+    options:
+      - id: A
+        text: Random Search with MaxParallelTrainingJobs set to 5 and MaxNumberOfTrainingJobs set to 576 (48 hours of 5-parallel 25-minute jobs).
+      - id: B
+        text: Bayesian optimization with MaxParallelTrainingJobs set to 3 to allow learning from previous results while maintaining reasonable parallelism.
+      - id: C
+        text: Grid Search with learning_rate and dropout_rate converted to categorical parameters with 5 values each.
+      - id: D
+        text: Hyperband strategy with MaxParallelTrainingJobs set to 5 to leverage early stopping across multiple resource levels.
+    correctAnswer: B
+    explanation: |
+      Bayesian optimization with moderate parallelism (3 jobs) is optimal for this scenario because:
+
+      1. **Mixed parameter types**: Bayesian optimization handles continuous (learning_rate, dropout_rate) and integer (batch_size) parameters effectively, while Grid Search only works with categorical parameters
+      2. **Expensive training jobs**: At 25 minutes per job, each training run is costly. Bayesian optimization maximizes information gained from each job by learning from all previous results
+      3. **Moderate time constraints**: 48 hours allows for sequential learning. With 3 parallel jobs, approximately 345 jobs can complete (48hrs × 60min / 25min × 3 parallel), sufficient for Bayesian optimization to converge
+      4. **Exploration-exploitation balance**: Bayesian optimization intelligently balances exploring new regions with exploiting known good configurations, more efficient than random sampling
+      5. **Parallelism tuning**: 3 parallel jobs allows Bayesian optimization to use recent results for next selections while maintaining good throughput (higher parallelism diminishes Bayesian benefits)
+
+      Why other options are incorrect:
+      - Option A: Random Search wastes the learning opportunity from expensive 25-minute jobs. With no sequential learning, it may repeatedly test poor regions. While 576 jobs provide coverage, the lack of intelligent selection reduces efficiency
+      - Option C: Grid Search requires converting continuous parameters to categorical, which reduces search space granularity. With learning_rate (5 values) × batch_size (must categorize 16-128) × optimizer (3 values) × dropout_rate (5 values), the grid becomes either too coarse or too large. Grid Search also can't benefit from early results
+      - Option D: Hyperband requires algorithms that emit intermediate metrics (e.g., per-epoch validation accuracy) and typically benefits from iterative training. Image classification jobs at 25 minutes might be one-shot training runs without intermediate checkpoints, making Hyperband's resource allocation ineffective. The question doesn't indicate intermediate metrics availability
+
+      Bayesian optimization's intelligent search is particularly valuable when training jobs are expensive in time or compute, as it minimizes wasteful exploration while systematically improving the model.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Bayesian optimization
+      - Strategy selection
+      - Parallel training jobs
+      - Exploration vs exploitation
+
+  - id: hpt-007
+    type: single
+    text: |
+      An ML engineer is defining hyperparameter ranges for a regression model. The dropout_rate hyperparameter has a valid range of [0.0, 0.99] and the model is highly sensitive to small changes when dropout approaches 1.0. For example, changing from 0.95 to 0.98 significantly impacts model performance.
+
+      Which scaling type should be applied to the dropout_rate continuous parameter range?
+    options:
+      - id: A
+        text: Linear scaling to evenly distribute samples across the full [0.0, 0.99] range.
+      - id: B
+        text: Logarithmic scaling to focus more samples on smaller dropout values.
+      - id: C
+        text: ReverseLogarithmic scaling to sample more densely near 1.0 where the model is sensitive.
+      - id: D
+        text: Auto scaling to let SageMaker automatically determine the optimal distribution.
+    correctAnswer: C
+    explanation: |
+      ReverseLogarithmic scaling is correct because:
+
+      1. **Sensitivity near upper bound**: The model is highly sensitive to small changes when dropout approaches 1.0 (e.g., 0.95 to 0.98), requiring dense sampling in that region
+      2. **Range requirements**: ReverseLogarithmic scaling works for continuous ranges where 0 ≤ x < 1.0, which matches the [0.0, 0.99] range
+      3. **Sampling distribution**: ReverseLogarithmic concentrates more samples near 1.0, providing finer granularity where it matters most (0.9-0.99) while still exploring lower values
+      4. **Designed for this pattern**: ReverseLogarithmic is specifically intended for parameters where small changes near the maximum value have large effects
+
+      Why other options are incorrect:
+      - Option A: Linear scaling samples uniformly, providing equal density across [0.0, 0.99]. This wastes samples in the less-sensitive [0.0, 0.8] range and provides insufficient granularity in the critical [0.9, 0.99] range where model behavior changes dramatically
+      - Option B: Logarithmic scaling samples more densely at smaller values (near 0), which is the opposite of what's needed. It would test many values between 0.0-0.1 but few between 0.9-0.99, missing the sensitive region entirely
+      - Option D: While Auto scaling might work, it's not guaranteed to detect the sensitivity pattern near 1.0. Explicitly choosing ReverseLogarithmic based on domain knowledge ensures proper sampling density where needed
+
+      Example distribution comparison for 10 samples:
+      - Linear: 0.0, 0.11, 0.22, 0.33, 0.44, 0.55, 0.66, 0.77, 0.88, 0.99 (only 2 samples above 0.8)
+      - ReverseLogarithmic: 0.0, 0.37, 0.63, 0.78, 0.86, 0.91, 0.94, 0.96, 0.975, 0.99 (6 samples above 0.8)
+
+      ReverseLogarithmic provides the dense sampling in [0.9, 0.99] needed to capture small but significant performance changes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-define-ranges.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Scaling types
+      - ReverseLogarithmic scaling
+      - Continuous parameters
+      - Hyperparameter ranges
+
+  - id: hpt-008
+    type: multi
+    correctCount: 3
+    text: |
+      A machine learning team has completed three separate hyperparameter tuning jobs over the past six months:
+      - Job A: Tuned on January data with 100 training jobs (Completed)
+      - Job B: Tuned on March data with 150 training jobs (Completed) using Job A as parent (warm start)
+      - Job C: Tuned on May data with 200 training jobs (Stopped due to budget constraints)
+
+      The team wants to create a new warm start tuning job for July data. Which THREE statements are correct about configuring this warm start job?
+    options:
+      - id: A
+        text: The team can specify Jobs A, B, and C in the ParentHyperParameterTuningJobs list since all three have completed or reached terminal state.
+      - id: B
+        text: If Job C is specified as a parent, Job C's parent jobs (including Job B and Job A) are automatically inherited.
+      - id: C
+        text: The total number of training jobs across all parent jobs (A, B, C) plus the new warm start job cannot exceed 500.
+      - id: D
+        text: If Job B used objective metric "validation:rmse" with Minimize, the new warm start job must use the same objective metric and direction.
+      - id: E
+        text: The new warm start job can convert up to 10 hyperparameters between static and tunable or change static hyperparameter values.
+    correctAnswer:
+      - A
+      - D
+      - E
+    explanation: |
+      The correct statements are A, D, and E:
+
+      **Statement A - CORRECT**: Jobs in terminal states (Completed, Stopped, or Failed) can serve as parents. Job A and Job B are Completed, and Job C is Stopped, so all three qualify. SageMaker allows up to 5 parent jobs per warm start tuning job, and the team has only 3 candidates.
+
+      **Statement D - CORRECT**: The objective metric name and type (Maximize/Minimize) must remain identical across parent and warm start jobs. This is a hard constraint in SageMaker warm start configuration. If parents used "validation:rmse" with Minimize, the new job must use "validation:rmse" with Minimize - no changes allowed.
+
+      **Statement E - CORRECT**: SageMaker limits combined hyperparameter changes to 10 maximum, including:
+      - Converting tunable hyperparameters to static
+      - Converting static hyperparameters to tunable
+      - Changing static hyperparameter values
+
+      Total changes = (tunable→static conversions) + (static→tunable conversions) + (static value changes) ≤ 10
+
+      Why other statements are incorrect:
+
+      **Statement B - INCORRECT**: Warm start is non-recursive - parent lineage is NOT inherited. If Job C used Job B as parent, and the new job uses Job C as parent, the new job only knows about Job C. It does NOT automatically inherit Job B or Job A. To leverage all three jobs, explicitly list Jobs A, B, and C in the ParentHyperParameterTuningJobs array.
+
+      **Statement C - INCORRECT**: The 500-job limit applies to training jobs within a SINGLE tuning job, not across parent jobs plus the new job. Each parent job's training jobs (100 + 150 + 200 = 450) don't count against the new warm start job's limit. The new job can have up to 500 training jobs of its own, regardless of parent job counts.
+
+      Additional warm start restrictions to remember:
+      - Maximum 5 parent jobs
+      - Total static + tunable hyperparameters must remain constant
+      - Hyperparameter types (continuous/integer/categorical) cannot change
+      - All parent jobs must be created after October 1, 2018
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Warm start tuning
+      - Parent job requirements
+      - Warm start restrictions
+      - Hyperparameter conversion limits
+
+  - id: hpt-009
+    type: single
+    text: |
+      A hyperparameter tuning job uses distributed training with 4 instances per training job (ml.p3.8xlarge). The training script on each instance emits the objective metric "validation:accuracy" to CloudWatch Logs after training completes. Instance 0 reports 0.87, Instance 1 reports 0.88, Instance 2 reports 0.86, and Instance 3 reports 0.89.
+
+      Which validation accuracy value does SageMaker hyperparameter tuning use to evaluate this training job?
+    options:
+      - id: A
+        text: The average of all four instance metrics (0.875).
+      - id: B
+        text: The metric from Instance 0, designated as the master instance.
+      - id: C
+        text: The maximum value across all instances (0.89).
+      - id: D
+        text: The metric from the last running job across all instances.
+    correctAnswer: D
+    explanation: |
+      SageMaker hyperparameter tuning uses the metric from the last running job across all instances when multiple instances emit the same metric. This behavior is documented in the distributed training considerations for automatic model tuning.
+
+      **Why this matters:**
+
+      1. **Ambiguity handling**: When each instance emits its own objective metric, SageMaker needs a deterministic rule to select one value for evaluation
+      2. **Last-running instance**: The metric from whichever instance finishes last is used. This could be any of the 4 instances depending on execution timing
+      3. **Non-deterministic selection**: Without coordination, this can lead to inconsistent tuning results if instance completion order varies between runs
+      4. **Best practice**: Training scripts should ensure only one instance (typically the master/instance 0) emits the objective metric, or aggregate metrics before emission
+
+      Why other options are incorrect:
+
+      - Option A: SageMaker does not automatically average metrics across instances. Averaging must be implemented explicitly in the training script before emitting the metric
+      - Option B: Instance 0 is conventionally treated as the master, but SageMaker doesn't automatically prefer it for metric selection in distributed training. The last-running instance is used regardless of instance ID
+      - Option C: SageMaker does not automatically select the maximum (or minimum) across instances. This would require custom implementation in the training script
+
+      **Recommended approach:**
+
+      Design training scripts to emit the objective metric only from Instance 0 (master instance):
+
+      ```python
+      import os
+
+      if int(os.environ.get('SM_CURRENT_HOST', '0')) == 0:
+          print(f'validation:accuracy={final_accuracy}')
+      ```
+
+      Or aggregate metrics across instances and emit once:
+
+      ```python
+      # Use distributed communication to gather metrics
+      all_accuracies = gather_from_all_instances(local_accuracy)
+      if is_master_instance:
+          avg_accuracy = np.mean(all_accuracies)
+          print(f'validation:accuracy={avg_accuracy}')
+      ```
+
+      This ensures deterministic, meaningful objective metric values for hyperparameter tuning evaluation.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-considerations.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Distributed training
+      - Objective metrics
+      - Multi-instance training
+
+  - id: hpt-010
+    type: single
+    text: |
+      A tuning job is configured with the following settings:
+      - Strategy: Bayesian
+      - MaxParallelTrainingJobs: 8
+      - MaxNumberOfTrainingJobs: 100
+      - Random seed: 42
+
+      The tuning job is run three times with identical configuration. Which outcome is expected regarding reproducibility?
+    options:
+      - id: A
+        text: All three tuning jobs will produce exactly identical hyperparameter configurations and training job sequences with 100% reproducibility.
+      - id: B
+        text: The tuning jobs will show improved reproducibility compared to no random seed, but may not be 100% identical due to Bayesian optimization's stochastic nature.
+      - id: C
+        text: Random seeds only affect Random Search and Hyperband strategies; Bayesian optimization ignores the random seed parameter.
+      - id: D
+        text: The first 20 training jobs will be identical across runs, but subsequent jobs will diverge due to Bayesian learning dynamics.
+    correctAnswer: B
+    explanation: |
+      Bayesian optimization with random seeds provides improved but not perfect reproducibility because:
+
+      1. **Partial stochasticity**: Bayesian optimization involves probabilistic components (Gaussian Process modeling, acquisition function optimization) that have inherent randomness
+      2. **Random seed effect**: Specifying a random seed improves consistency by controlling some random elements (initial sampling, tie-breaking, exploration randomness)
+      3. **Not 100% deterministic**: Unlike Random Search and Hyperband which can achieve 100% reproducibility with the same seed, Bayesian optimization's complex probabilistic machinery prevents perfect reproducibility
+      4. **Sequential dependencies**: Small numerical differences in early jobs can compound through the sequential learning process, causing divergence in later job selections
+
+      Why other options are incorrect:
+
+      - Option A: This describes Random Search or Hyperband behavior with random seeds, which can achieve 100% reproducibility. Bayesian optimization cannot achieve this level of determinism even with seeds
+      - Option C: Random seeds DO affect Bayesian optimization by controlling random components of the algorithm. The effect is just less complete than with simpler strategies. All tuning strategies respect the random seed parameter
+      - Option D: There's no specific threshold (like 20 jobs) where reproducibility breaks down. The stochastic elements affect all job selections throughout the tuning process, though early jobs may show more similarity than later jobs due to exploration focus
+
+      **Reproducibility by strategy** (with identical random seeds):
+
+      - **Random Search**: Up to 100% reproducibility - hyperparameter selections are purely random, fully controlled by seed
+      - **Hyperband**: Up to 100% reproducibility - resource allocation and stopping decisions are deterministic given the same seed
+      - **Bayesian Optimization**: Improved reproducibility (typically 60-90% similarity) - probabilistic models introduce controlled randomness that seeds partially control
+      - **Grid Search**: 100% reproducibility - completely deterministic, no randomness involved (seed ignored)
+
+      **Best practices for reproducibility:**
+
+      1. Always specify an integer random seed for consistency
+      2. Document and version hyperparameter tuning configurations
+      3. For critical production models requiring exact reproducibility, prefer Random Search or Grid Search over Bayesian optimization
+      4. Use warm start tuning to build on previous results rather than re-running from scratch
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-considerations.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Reproducibility
+      - Random seeds
+      - Bayesian optimization
+      - Stochastic processes
+
+  - id: hpt-011
+    type: single
+    text: |
+      A team wants to minimize tuning costs while ensuring good model performance. Training jobs cost $2.40 per hour per instance. They plan to run a tuning job with the following estimates:
+      - Training job duration: 30 minutes average
+      - Number of training jobs: 120
+      - Instance type: ml.p3.2xlarge (single instance per job)
+
+      Which approach provides the greatest cost reduction without significantly compromising model quality?
+    options:
+      - id: A
+        text: Enable early stopping with TrainingJobEarlyStoppingType set to "Auto" to terminate underperforming jobs.
+      - id: B
+        text: Enable Managed Spot Training with EnableManagedSpotTraining set to True.
+      - id: C
+        text: Reduce MaxNumberOfTrainingJobs to 60 and use Bayesian optimization instead of Random Search.
+      - id: D
+        text: Use smaller instance types (ml.p3.xlarge) to reduce hourly costs.
+    correctAnswer: B
+    explanation: |
+      Managed Spot Training (Option B) provides the greatest cost reduction because:
+
+      1. **Up to 90% savings**: Spot instances typically cost 50-90% less than On-Demand instances for the same instance type
+      2. **Automatic handling**: SageMaker automatically handles Spot interruptions with checkpointing and resume capabilities
+      3. **No quality compromise**: Using Spot instances doesn't change the training algorithm, hyperparameters, or data - only the infrastructure cost
+      4. **Suitable for tuning**: Hyperparameter tuning jobs are ideal for Spot instances because individual training job interruptions don't significantly impact overall tuning progress (other jobs continue)
+
+      **Cost calculation example:**
+      - Baseline: 120 jobs × 0.5 hours × $2.40/hour = $144
+      - With Spot (70% savings): 120 jobs × 0.5 hours × $0.72/hour = $43.20
+      - **Savings: $100.80 (70%)**
+
+      Why other options are less effective:
+
+      - Option A (Early Stopping): Provides some savings by stopping poor jobs early. However, with 30-minute jobs, early stopping benefits are moderate (not as effective as with 4+ hour jobs). Estimated savings: 10-30% depending on how many jobs are stopped and when. Still significantly less than Spot's 50-90% savings
+
+      - Option C (Fewer jobs, Bayesian): Reducing jobs from 120 to 60 cuts costs by 50%, BUT it also significantly reduces search coverage. Bayesian optimization is more sample-efficient than Random Search, but halving the job count likely compromises model quality discovery. This violates the "without significantly compromising quality" requirement
+
+      - Option D (Smaller instances): ml.p3.xlarge has 1 GPU vs ml.p3.2xlarge's 1 GPU (both have 1 GPU, but 2xlarge has more CPU/memory). If the model fits on xlarge, this might provide 30-40% cost savings, but training might take longer, partially offsetting savings. More critically, if the model or batch size requires 2xlarge resources, this option isn't viable
+
+      **Combining strategies for maximum savings:**
+
+      Best practice: Enable BOTH Managed Spot Training (B) AND Early Stopping (A):
+      - Spot provides 50-90% base savings
+      - Early stopping further reduces compute time by 10-30%
+      - Combined savings can reach 60-93%
+
+      However, when choosing a SINGLE approach, Managed Spot Training delivers the largest individual impact with zero quality compromise.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+      - Amazon SageMaker Managed Spot Training
+    concepts:
+      - Cost optimization
+      - Managed Spot Training
+      - Early stopping
+      - Training costs
+
+  - id: hpt-012
+    type: single
+    text: |
+      A hyperparameter tuning job with the following configuration has been running for 6 hours:
+      - MaxNumberOfTrainingJobs: 200
+      - MaxParallelTrainingJobs: 10
+      - TuningJobCompletionCriteria.ConvergenceDetected.CompleteOnConvergence: Enabled
+
+      The DescribeHyperParameterTuningJob API shows:
+      - TrainingJobStatusCounters.Completed: 87
+      - BestTrainingJob.FinalHyperParameterTuningJobObjectiveMetric.Value: 0.9234
+      - TuningJobStatus: Completed
+      - TuningJobCompletionDetails.ConvergenceDetectedTime: 2024-11-15T14:23:00Z
+
+      Why did the tuning job stop before reaching 200 training jobs?
+    options:
+      - id: A
+        text: The best training job achieved the maximum possible objective metric value (0.9234) and further tuning would not improve results.
+      - id: B
+        text: Convergence was detected - the algorithm determined that additional training jobs are unlikely to improve beyond 1% of the current best metric (0.9234).
+      - id: C
+        text: All 10 parallel training jobs failed simultaneously due to resource constraints, causing automatic job termination.
+      - id: D
+        text: The tuning job reached the maximum runtime limit before completing all 200 training jobs.
+    correctAnswer: B
+    explanation: |
+      Convergence detection (Option B) caused the early stop because:
+
+      1. **ConvergenceDetectedTime present**: The API response includes `ConvergenceDetectedTime: 2024-11-15T14:23:00Z`, indicating that SageMaker's convergence detection algorithm determined the search had converged
+      2. **CompleteOnConvergence enabled**: The configuration explicitly enabled `CompleteOnConvergence: Enabled`, instructing SageMaker to stop when convergence is detected
+      3. **Convergence definition**: SageMaker defines convergence as a state where additional training jobs are unlikely to return more than 1% improvement over the current best objective metric (0.9234 in this case)
+      4. **Stopped at 87/200 jobs**: The job completed only 87 of 200 planned training jobs, stopped early due to convergence rather than reaching the MaxNumberOfTrainingJobs limit
+
+      **How convergence detection works:**
+
+      SageMaker's proprietary convergence detection algorithm analyzes:
+      - Distribution of recent objective metric values
+      - Improvement trends over the last N training jobs
+      - Statistical likelihood of future improvements
+      - Hyperparameter space exploration coverage
+
+      When the algorithm determines that the probability of finding configurations more than 1% better than the current best is very low, it marks the job as converged.
+
+      Why other options are incorrect:
+
+      - Option A: 0.9234 is not necessarily the "maximum possible" value - metrics can approach 1.0 for accuracy-like objectives. The job stopped due to convergence detection (unlikely to improve >1%), not because the maximum was reached. Also, the TuningJobCompletionDetails specifically shows ConvergenceDetectedTime, not a max-value indicator
+
+      - Option C: If multiple parallel jobs failed simultaneously, TrainingJobStatusCounters would show failed jobs. The API response shows 87 Completed jobs with no mention of failures. Also, the TuningJobStatus is "Completed" (success), not "Failed" or "Stopped" (which would indicate abnormal termination)
+
+      - Option D: The configuration doesn't specify MaxRuntimeInSeconds, so there's no explicit runtime limit. Additionally, the TuningJobCompletionDetails specifically shows ConvergenceDetectedTime, which is only populated when convergence triggers the stop - not when runtime limits are reached (which would populate a different field)
+
+      **Value of convergence detection:**
+
+      Convergence detection saved 113 unnecessary training jobs (200 - 87 = 113), reducing:
+      - Compute costs by ~56% (113/200)
+      - Tuning time by ~56%
+      - Carbon footprint from unused compute
+
+      While still achieving near-optimal results (further jobs unlikely to improve >1%).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-progress.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Convergence detection
+      - Completion criteria
+      - CompleteOnConvergence
+      - TuningJobCompletionDetails
+
+  - id: hpt-013
+    type: multi
+    correctCount: 2
+    text: |
+      A company runs monthly hyperparameter tuning jobs for their recommendation model. Each month's tuning job costs $800 in compute and takes 18 hours. The ML team wants to reduce both cost and time while maintaining model quality.
+
+      Which TWO strategies would provide the most significant combined reduction in cost and time?
+    options:
+      - id: A
+        text: Use warm start tuning with each month's job using the previous month as a parent to leverage historical hyperparameter knowledge.
+      - id: B
+        text: Switch from Bayesian optimization to Random Search to maximize parallel job execution and reduce overall duration.
+      - id: C
+        text: Enable Managed Spot Training to reduce instance costs by 50-90% with automatic interruption handling.
+      - id: D
+        text: Enable CompleteOnConvergence to automatically stop tuning when improvements drop below 1% likelihood.
+      - id: E
+        text: Reduce MaxNumberOfTrainingJobs by 50% to cut costs in half.
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Options A and C provide the best combined cost and time reduction while maintaining quality:
+
+      **Option A - Warm Start Tuning:**
+
+      **Time reduction: 30-50%**
+      - Leverages previous month's results to focus search on promising regions
+      - Reduces exploration needed to find good configurations
+      - Each month builds on the previous month's knowledge
+
+      **Quality maintenance:**
+      - Doesn't reduce search coverage, just makes it more efficient
+      - Uses TRANSFER_LEARNING type since data changes monthly
+      - Can adapt to dataset drift while retaining hyperparameter insights
+
+      **Cost reduction: 30-50%** (indirectly via time reduction)
+      - Fewer total training jobs needed to reach convergence
+      - Can reduce MaxNumberOfTrainingJobs without compromising results
+
+      **Option C - Managed Spot Training:**
+
+      **Cost reduction: 50-90%**
+      - Spot instances cost 50-90% less than On-Demand for same instance types
+      - SageMaker handles interruptions automatically with checkpointing
+      - No code changes needed, just configuration flag
+
+      **Time impact: Minimal (0-15% increase)**
+      - Spot interruptions may occasionally extend individual jobs
+      - Overall tuning time largely unaffected due to parallel job execution
+      - Interruptions rarely impact critical path in tuning workflows
+
+      **Quality maintenance:**
+      - Identical training algorithms, data, and hyperparameters
+      - Only infrastructure changes (Spot vs On-Demand)
+
+      **Combined impact of A + C:**
+      - Time reduction: 30-50% (from warm start)
+      - Cost reduction: 65-95% (30-50% from warm start time savings + 50-90% from Spot on remaining compute)
+      - Quality: Maintained or improved (warm start can find better configurations faster)
+
+      Why other options are less effective:
+
+      - Option B (Random Search): Switching strategies might increase parallelism but doesn't fundamentally reduce work needed. Bayesian optimization's intelligent search often finds good solutions with fewer total jobs than Random Search. This swap might INCREASE costs due to more jobs needed, while only marginally reducing time
+
+      - Option D (CompleteOnConvergence): Provides moderate time/cost savings (10-30%) by stopping when improvement plateaus. However, this is less impactful than warm start + Spot. Also, Option D alone doesn't guarantee quality maintenance - it might stop before reaching quality targets
+
+      - Option E (Reduce MaxNumberOfTrainingJobs by 50%): Cuts costs by ~50% but significantly risks quality compromise. Halving search coverage likely misses optimal configurations, violating the "maintaining quality" requirement. This is a cost-quality tradeoff, not a pure efficiency gain
+
+      **Implementation approach:**
+
+      Month 1 (January):
+      - Run initial tuning job with Managed Spot Training enabled
+      - MaxNumberOfTrainingJobs: 150, Spot savings: ~70%
+      - Cost: $800 × 0.30 = $240 (vs $800 baseline)
+
+      Month 2 (February):
+      - Warm start using January job as parent
+      - Managed Spot Training enabled
+      - MaxNumberOfTrainingJobs: 100 (warm start reduces jobs needed)
+      - Time: ~12 hours (vs 18 baseline)
+      - Cost: $800 × 0.30 × (100/150) = $160 (vs $800 baseline)
+
+      Ongoing monthly savings: ~$640/month = $7,680/year
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+      - Amazon SageMaker Managed Spot Training
+    concepts:
+      - Warm start tuning
+      - Managed Spot Training
+      - Cost optimization
+      - Time optimization
+
+  - id: hpt-014
+    type: single
+    text: |
+      An ML engineer is configuring a hyperparameter tuning job with these hyperparameters:
+      - learning_rate: Continuous [0.0001, 0.1], ScalingType: Logarithmic
+      - num_layers: Integer [2, 20], ScalingType: Linear
+      - activation: Categorical [relu, tanh, sigmoid, elu]
+      - batch_size: Integer [16, 256], ScalingType: Auto
+      - optimizer: Categorical [adam, sgd]
+      - dropout_rate: Continuous [0.0, 0.5], ScalingType: Linear
+
+      How many tunable hyperparameters does this configuration have, and can it be used with all tuning strategies?
+    options:
+      - id: A
+        text: 6 tunable hyperparameters; Grid Search cannot be used because it only supports categorical parameters.
+      - id: B
+        text: 4 tunable hyperparameters; the categorical parameters (activation, optimizer) must be excluded when using Bayesian optimization.
+      - id: C
+        text: 6 tunable hyperparameters; all strategies (Grid, Random, Bayesian, Hyperband) can be used.
+      - id: D
+        text: 5 tunable hyperparameters; Hyperband cannot be used because the configuration lacks intermediate metric requirements.
+    correctAnswer: A
+    explanation: |
+      Option A is correct:
+
+      **6 tunable hyperparameters:** All six specified parameters (learning_rate, num_layers, activation, batch_size, optimizer, dropout_rate) are tunable, totaling 6. This is well within SageMaker's limit of 30 tunable hyperparameters.
+
+      **Grid Search restriction:** Grid Search can ONLY be used with categorical parameters. This configuration includes continuous (learning_rate, dropout_rate) and integer (num_layers, batch_size) parameters, which Grid Search cannot handle.
+
+      **Grid Search behavior:**
+      - Tests all possible combinations of categorical values
+      - learning_rate (continuous) - Cannot enumerate all real values between 0.0001 and 0.1
+      - num_layers (integer) - Cannot enumerate (would require 19 values: 2,3,4,...,20)
+      - activation (categorical) - Can enumerate: 4 values
+      - batch_size (integer) - Cannot enumerate (would require many values: 16,17,18,...,256)
+      - optimizer (categorical) - Can enumerate: 2 values
+      - dropout_rate (continuous) - Cannot enumerate
+
+      If this configuration is used with Grid Search, SageMaker will return an error because Grid Search requires ALL parameters to be categorical.
+
+      **Other strategies compatibility:**
+      - **Random Search**: Works with continuous, integer, AND categorical ✓
+      - **Bayesian Optimization**: Works with continuous, integer, AND categorical ✓
+      - **Hyperband**: Works with continuous, integer, AND categorical (given algorithm emits intermediate metrics) ✓
+
+      Why other options are incorrect:
+
+      - Option B: Incorrect count (says 4, should be 6) and wrong restriction. Bayesian optimization DOES support categorical parameters alongside continuous and integer parameters. The restriction is only for Grid Search
+
+      - Option C: Wrong about Grid Search compatibility. Grid Search cannot handle the continuous (learning_rate, dropout_rate) and integer (num_layers, batch_size) parameters in this configuration
+
+      - Option D: Wrong count (says 5, should be 6) and incorrect about Hyperband. Hyperband can be used with this hyperparameter configuration. The Hyperband restriction is about the ALGORITHM (must emit intermediate metrics like per-epoch accuracy), not the hyperparameter types. The hyperparameter configuration itself is compatible with Hyperband
+
+      **Converting to Grid Search (if needed):**
+
+      To use Grid Search, convert all parameters to categorical:
+
+      ```json
+      {
+        "CategoricalParameterRanges": [
+          {"Name": "learning_rate", "Values": ["0.0001", "0.001", "0.01", "0.1"]},
+          {"Name": "num_layers", "Values": ["2", "5", "10", "15", "20"]},
+          {"Name": "activation", "Values": ["relu", "tanh", "sigmoid", "elu"]},
+          {"Name": "batch_size", "Values": ["16", "32", "64", "128", "256"]},
+          {"Name": "optimizer", "Values": ["adam", "sgd"]},
+          {"Name": "dropout_rate", "Values": ["0.0", "0.1", "0.2", "0.3", "0.5"]}
+        ]
+      }
+      ```
+
+      Total combinations: 4 × 5 × 4 × 5 × 2 × 5 = 4,000 training jobs
+
+      However, this discretization loses granularity and becomes expensive. For this configuration, Bayesian optimization or Random Search is more appropriate.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-define-ranges.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Hyperparameter types
+      - Grid Search limitations
+      - Tunable hyperparameters
+      - Strategy compatibility
+
+  - id: hpt-015
+    type: single
+    text: |
+      A tuning job was configured with MaxNumberOfTrainingJobs set to 250 and BestObjectiveNotImproving.MaxNumberOfTrainingJobsNotImproving set to 30. After running for several hours, the job completed with only 142 training jobs executed.
+
+      Reviewing the DescribeHyperParameterTuningJob response shows:
+      - BestTrainingJob objective metric: 0.8821
+      - TuningJobStatus: Completed
+      - ObjectiveStatusCounters.Succeeded: 142
+
+      Training jobs 113-142 all had objective metrics between 0.8650 and 0.8805 (none exceeded 0.8821).
+
+      What caused the tuning job to stop before reaching 250 training jobs?
+    options:
+      - id: A
+        text: Early stopping terminated 108 training jobs (250 - 142 = 108) due to poor performance compared to the median baseline.
+      - id: B
+        text: The BestObjectiveNotImproving completion criterion was met after 30 consecutive jobs (jobs 113-142) failed to improve beyond 0.8821.
+      - id: C
+        text: The tuning job reached convergence because the objective metric values (0.8650-0.8805) were within 1% of the best value (0.8821).
+      - id: D
+        text: All remaining hyperparameter combinations were exhausted, leaving no new configurations to test.
+    correctAnswer: B
+    explanation: |
+      Option B correctly identifies the stopping reason:
+
+      **BestObjectiveNotImproving criterion triggered:**
+
+      1. **Configuration**: `MaxNumberOfTrainingJobsNotImproving: 30` was set in the completion criteria
+      2. **Best metric**: Job achieved 0.8821 as the best objective metric (presumably maximizing accuracy or similar)
+      3. **Consecutive non-improving jobs**: Jobs 113-142 (30 consecutive jobs) all produced metrics below 0.8821, ranging from 0.8650-0.8805
+      4. **Stopping condition**: After 30 consecutive jobs without improvement beyond 0.8821, SageMaker stopped the tuning job per the configured completion criterion
+
+      **Why this criterion exists:**
+
+      BestObjectiveNotImproving detects when the search has plateaued - continuing to explore the hyperparameter space is unlikely to find significantly better configurations. This saves compute costs and time when further exploration shows diminishing returns.
+
+      **Job count analysis:**
+      - Jobs 1-112: Exploration phase, best metric (0.8821) was found during this period
+      - Jobs 113-142: 30 consecutive jobs that didn't exceed 0.8821
+      - Jobs 143-250: Never executed because stopping criterion was met at job 142
+
+      Why other options are incorrect:
+
+      - Option A: Early stopping (`TrainingJobEarlyStoppingType='Auto'`) stops individual training jobs mid-execution (e.g., after a few epochs) if they're underperforming. It does NOT stop the overall tuning job or prevent jobs from being launched. The fact that 142 jobs "Succeeded" (per ObjectiveStatusCounters) indicates they completed normally, not stopped early. Additionally, early stopping is a within-job mechanism, while this is a between-jobs tuning job completion criterion
+
+      - Option C: While the metric range (0.8650-0.8805) is within ~2% of 0.8821, this describes convergence detection (`CompleteOnConvergence`), which wasn't mentioned in the configuration. BestObjectiveNotImproving (which WAS configured) uses a count-based threshold (30 consecutive jobs), not a percentage-improvement threshold. The question explicitly states this criterion was set to 30
+
+      - Option D: The tuning job used Bayesian optimization, Random Search, or Hyperband (not Grid Search, as the question doesn't specify Grid Search). These strategies have infinite or extremely large search spaces for continuous/integer parameters - they never "exhaust" combinations. Even if discrete, 250 jobs is far too few to exhaust meaningful hyperparameter combinations across typical search spaces. The stop was due to the configured completion criterion, not search space exhaustion
+
+      **Best practices for BestObjectiveNotImproving:**
+
+      - Set to 10-30 for small tuning jobs (<100 total jobs)
+      - Set to 30-50 for medium tuning jobs (100-300 total jobs)
+      - Set to 50-100 for large tuning jobs (300+ total jobs)
+
+      Higher values reduce the risk of stopping prematurely due to local plateaus in the search, while lower values save costs when genuine convergence occurs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-progress.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - BestObjectiveNotImproving
+      - Completion criteria
+      - Consecutive non-improving jobs
+      - Tuning job stopping
+
+  - id: hpt-016
+    type: single
+    text: |
+      A machine learning team needs to tune hyperparameters for a custom TensorFlow neural network that trains for 100 epochs and publishes validation accuracy after each epoch using tf.keras.callbacks.ProgbarLogger. Training takes approximately 40 minutes per job. They want to use Hyperband strategy for efficient resource allocation.
+
+      How should early stopping be configured for this Hyperband tuning job?
+    options:
+      - id: A
+        text: Set TrainingJobEarlyStoppingType to "Auto" to enable SageMaker early stopping alongside Hyperband's resource allocation.
+      - id: B
+        text: Set TrainingJobEarlyStoppingType to "Off" because Hyperband has its own built-in early stopping mechanism.
+      - id: C
+        text: Set TrainingJobEarlyStoppingType to "Auto" only if MaxParallelTrainingJobs is greater than 10 to avoid conflicts.
+      - id: D
+        text: Configure a custom early stopping callback in the TensorFlow training script since SageMaker early stopping doesn't work with Hyperband.
+    correctAnswer: B
+    explanation: |
+      Option B is correct - set `TrainingJobEarlyStoppingType` to "Off" when using Hyperband because:
+
+      1. **Hyperband's built-in early stopping**: Hyperband has its own sophisticated early stopping and resource allocation mechanism that:
+         - Evaluates configurations at multiple resource levels (epochs)
+         - Dynamically reallocates epochs from poor performers to promising configurations
+         - Uses successive halving to progressively eliminate underperformers
+         - Makes stopping decisions based on intermediate metrics at each bracket level
+
+      2. **Conflict avoidance**: Enabling both SageMaker early stopping (Auto) and Hyperband's early stopping creates conflicts:
+         - Two different algorithms making independent stopping decisions
+         - SageMaker early stopping uses median comparison across all jobs
+         - Hyperband uses bracket-based resource allocation and successive halving
+         - Conflicting decisions can lead to premature termination of potentially promising configurations
+
+      3. **AWS recommendation**: AWS documentation explicitly recommends setting `TrainingJobEarlyStoppingType='Off'` (the default) when using Hyperband strategy to avoid interference with Hyperband's resource allocation logic
+
+      4. **Hyperband is sufficient**: Hyperband's early stopping is more sophisticated than SageMaker's standard early stopping for iterative algorithms:
+         - Considers both intermediate and final results
+         - Allocates resources dynamically rather than simple binary stop/continue
+         - Optimized for multi-epoch training scenarios (exactly this use case)
+
+      **Configuration example:**
+
+      ```python
+      tuner = HyperparameterTuner(
+          estimator=tensorflow_estimator,
+          objective_metric_name='validation:accuracy',
+          hyperparameter_ranges=hyperparameter_ranges,
+          objective_type='Maximize',
+          max_jobs=100,
+          max_parallel_jobs=10,
+          strategy='Hyperband',
+          early_stopping_type='Off'  # Critical for Hyperband
+      )
+      ```
+
+      Why other options are incorrect:
+
+      - Option A: Setting TrainingJobEarlyStoppingType to "Auto" with Hyperband creates conflicting early stopping mechanisms. While it won't cause a hard error, it can lead to suboptimal resource allocation as SageMaker's median-based early stopping interferes with Hyperband's bracket-based successive halving
+
+      - Option C: There's no MaxParallelTrainingJobs threshold that makes combining SageMaker early stopping and Hyperband appropriate. Regardless of parallelism level, Hyperband's built-in early stopping should be used exclusively. This option invents a non-existent constraint
+
+      - Option D: Custom early stopping callbacks in TensorFlow (like EarlyStopping) control within-job stopping (e.g., stop at epoch 30 if validation accuracy plateaus). This is separate from hyperparameter tuning's between-job early stopping. Hyperband operates at the tuning job level, not within individual training jobs. Custom callbacks don't replace or supplement Hyperband's mechanism. Furthermore, Hyperband DOES work with SageMaker - it's a fully supported strategy
+
+      **How Hyperband's early stopping works:**
+
+      Hyperband uses successive halving across brackets:
+      - **Bracket 1**: Trains many configurations with few epochs (e.g., 64 configs × 10 epochs)
+      - **Halving**: Keeps top 50% based on intermediate metrics, discards rest
+      - **Bracket 2**: Trains survivors with more epochs (e.g., 32 configs × 20 epochs)
+      - **Repeat**: Continue halving and increasing epochs until few configurations receive full 100 epochs
+
+      This adaptive resource allocation is far more efficient than binary early stopping for iterative algorithms with intermediate metrics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-how-it-works.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+      - Amazon SageMaker Training Jobs
+    concepts:
+      - Hyperband strategy
+      - Early stopping
+      - Multi-fidelity optimization
+      - Resource allocation
+
+  - id: hpt-017
+    type: multi
+    correctCount: 3
+    text: |
+      An ML engineer is reviewing a completed hyperparameter tuning job using the DescribeHyperParameterTuningJob API. The response includes:
+
+      BestTrainingJob:
+        TrainingJobName: "tuning-job-042"
+        FinalHyperParameterTuningJobObjectiveMetric:
+          MetricName: "validation:accuracy"
+          Value: 0.9145
+
+      OverallBestTrainingJob:
+        TrainingJobName: "parent-job-087"
+        FinalHyperParameterTuningJobObjectiveMetric:
+          MetricName: "validation:accuracy"
+          Value: 0.9287
+
+      Which THREE statements are correct interpretations of this response?
+    options:
+      - id: A
+        text: The tuning job was configured as a warm start job using one or more parent tuning jobs.
+      - id: B
+        text: The warm start type was IDENTICAL_DATA_AND_ALGORITHM because OverallBestTrainingJob is only returned for this warm start type.
+      - id: C
+        text: The current tuning job's best result (0.9145) is worse than the overall best result (0.9287) from a parent job.
+      - id: D
+        text: The engineer should use the hyperparameters from "tuning-job-042" for production deployment since it represents the current job's best model.
+      - id: E
+        text: The engineer should use the hyperparameters from "parent-job-087" for production deployment since it represents the best model across all tuning efforts.
+    correctAnswer:
+      - A
+      - B
+      - E
+    explanation: |
+      The correct statements are A, B, and E:
+
+      **Statement A - CORRECT**: The presence of `OverallBestTrainingJob` in the API response definitively indicates this was a warm start tuning job. This field is ONLY returned for warm start jobs and shows the best training job across the current job and all parent jobs.
+
+      **Statement B - CORRECT**: `OverallBestTrainingJob` is specifically returned only for warm start jobs with type `IDENTICAL_DATA_AND_ALGORITHM`. This warm start type is used when:
+      - Same training data as parent jobs
+      - Same algorithm version as parent jobs
+      - Only hyperparameter ranges, job counts, or tunable/static conversions changed
+
+      For `TRANSFER_LEARNING` warm start jobs (different data or algorithm), `OverallBestTrainingJob` is NOT returned because cross-dataset comparisons aren't meaningful - the objective metric values aren't directly comparable when data distributions differ.
+
+      **Statement E - CORRECT**: For production deployment, use the hyperparameters from "parent-job-087" (0.9287 accuracy) because:
+      - It has the highest validation accuracy across all tuning efforts (current + parents)
+      - IDENTICAL_DATA_AND_ALGORITHM guarantees this model was trained on the same data and algorithm as the current job
+      - The objective metric (validation:accuracy) is directly comparable across all jobs
+      - Goal is to deploy the best-performing model, regardless of which tuning job found it
+
+      **AWS documentation explicitly states:** "For warm start tuning jobs of type IDENTICAL_DATA_AND_ALGORITHM, OverallBestTrainingJob returns the training job with the best objective metric value of all training jobs launched by this tuning job and all parent jobs."
+
+      Why other statements are incorrect:
+
+      **Statement C - PARTIALLY TRUE but MISLEADING**: While factually accurate (0.9145 < 0.9287), this statement implies a negative outcome. However, this is actually expected and acceptable behavior in warm start tuning:
+      - Not every tuning job must surpass parents
+      - Warm start explores new regions while building on parent knowledge
+      - The parent job already found an excellent configuration (0.9287)
+      - Current job refined the search and confirmed no significantly better configurations exist
+      - The overall effort still succeeded because the best model (parent) is identified
+
+      **Statement D - INCORRECT**: Using "tuning-job-042" would deploy a suboptimal model (0.9145 vs 0.9287 accuracy). The purpose of OverallBestTrainingJob is to identify the globally best model across all related tuning jobs. Ignoring this information and deploying only the current job's best would result in worse production performance (1.4% lower accuracy in this case).
+
+      **Proper workflow:**
+
+      1. Review DescribeHyperParameterTuningJob response
+      2. Check for OverallBestTrainingJob field (indicates warm start with IDENTICAL_DATA_AND_ALGORITHM)
+      3. If present, use OverallBestTrainingJob for production (highest metric across all efforts)
+      4. If absent, use BestTrainingJob (current job's best)
+      5. Retrieve hyperparameters via DescribeTrainingJob API using the selected job name
+      6. Deploy model from the selected training job to production
+
+      **Production deployment code:**
+
+      ```python
+      response = sm_client.describe_hyper_parameter_tuning_job(
+          HyperParameterTuningJobName='current-tuning-job'
+      )
+
+      # Use OverallBestTrainingJob if available (warm start IDENTICAL_DATA_AND_ALGORITHM)
+      if 'OverallBestTrainingJob' in response:
+          best_job_name = response['OverallBestTrainingJob']['TrainingJobName']
+          best_metric = response['OverallBestTrainingJob']['FinalHyperParameterTuningJobObjectiveMetric']['Value']
+      else:
+          best_job_name = response['BestTrainingJob']['TrainingJobName']
+          best_metric = response['BestTrainingJob']['FinalHyperParameterTuningJobObjectiveMetric']['Value']
+
+      # Deploy the best model
+      predictor = estimator.deploy(
+          initial_instance_count=1,
+          instance_type='ml.m5.xlarge',
+          model_uri=f's3://bucket/path/{best_job_name}/model.tar.gz'
+      )
+      ```
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Warm start tuning
+      - OverallBestTrainingJob
+      - IDENTICAL_DATA_AND_ALGORITHM
+      - Model selection
+
+  - id: hpt-018
+    type: single
+    text: |
+      A data scientist wants to implement Autotune for a hyperparameter tuning job to automatically optimize configuration without manual specification. The algorithm being tuned is XGBoost for a regression task with objective metric "validation:rmse" (minimize).
+
+      Which fields can Autotune automatically configure when Mode is set to "Enabled"?
+    options:
+      - id: A
+        text: Only ParameterRanges - Autotune converts AutoParameters with ValueHints into optimized IntegerParameterRanges or ContinuousParameterRanges.
+      - id: B
+        text: ParameterRanges, ResourceLimits (MaxNumberOfTrainingJobs, MaxParallelTrainingJobs), and Strategy (Bayesian, Random, Hyperband).
+      - id: C
+        text: ParameterRanges, ResourceLimits, TrainingJobEarlyStoppingType, RetryStrategy, Strategy, and ConvergenceDetected completion criteria.
+      - id: D
+        text: Only Strategy and ResourceLimits - ParameterRanges must always be specified manually for algorithm-specific hyperparameters.
+    correctAnswer: C
+    explanation: |
+      Option C is correct - Autotune can automatically configure:
+
+      1. **ParameterRanges**: Converts AutoParameters (with optional ValueHints) into optimized IntegerParameterRanges, ContinuousParameterRanges, or CategoricalParameterRanges based on algorithm characteristics and hints
+
+      2. **ResourceLimits**: Optimizes MaxNumberOfTrainingJobs and MaxParallelTrainingJobs based on the algorithm, dataset size, and time constraints
+
+      3. **TrainingJobEarlyStoppingType**: Determines whether to enable early stopping (Auto) or disable it (Off) based on expected training job characteristics
+
+      4. **RetryStrategy**: Configures automatic retry policies for training jobs that fail due to transient errors
+
+      5. **Strategy**: Selects the optimal tuning strategy (Bayesian, Random, Hyperband, Grid) based on hyperparameter types, expected training duration, and parallelism needs
+
+      6. **ConvergenceDetected**: Configures CompleteOnConvergence completion criteria to automatically stop when convergence is detected
+
+      **How Autotune works:**
+
+      The data scientist provides high-level hints:
+
+      ```python
+      config = {
+          'Autotune': {'Mode': 'Enabled'},
+          'HyperParameterTuningJobConfig': {
+              'HyperParameterTuningJobObjective': {
+                  'Type': 'Minimize',
+                  'MetricName': 'validation:rmse'
+              },
+              'ResourceLimits': {
+                  'MaxNumberOfTrainingJobs': 100,
+                  'MaxParallelTrainingJobs': 5
+              },
+              'ParameterRanges': {
+                  'AutoParameters': [
+                      {'Name': 'eta', 'ValueHint': '0.1'},
+                      {'Name': 'max_depth', 'ValueHint': '6'},
+                      {'Name': 'subsample', 'ValueHint': '0.8'}
+                  ]
+              }
+          }
+      }
+      ```
+
+      Autotune converts this to optimized configuration:
+
+      ```python
+      {
+          'Strategy': 'Bayesian',  # Autotune selected
+          'TrainingJobEarlyStoppingType': 'Off',  # XGBoost benefits less from early stopping
+          'TuningJobCompletionCriteria': {
+              'ConvergenceDetected': {'CompleteOnConvergence': 'Enabled'}
+          },
+          'ParameterRanges': {
+              'ContinuousParameterRanges': [
+                  {'Name': 'eta', 'MinValue': '0.01', 'MaxValue': '0.3', 'ScalingType': 'Logarithmic'}
+              ],
+              'IntegerParameterRanges': [
+                  {'Name': 'max_depth', 'MinValue': '3', 'MaxValue': '10', 'ScalingType': 'Linear'}
+              ],
+              'ContinuousParameterRanges': [
+                  {'Name': 'subsample', 'MinValue': '0.5', 'MaxValue': '1.0', 'ScalingType': 'Linear'}
+              ]
+          }
+      }
+      ```
+
+      **Benefits:**
+
+      - Reduces ML engineering effort - no need to research optimal ranges and strategies
+      - Leverages AWS's knowledge of algorithm characteristics
+      - Automatically applies best practices for scaling types
+      - Adapts configuration based on ValueHints and algorithm type
+
+      Why other options are incorrect:
+
+      - Option A: Autotune does far more than just ParameterRanges. It optimizes the full tuning configuration including strategy, resource limits, early stopping, retry policies, and convergence detection
+
+      - Option B: Missing several key fields that Autotune configures: TrainingJobEarlyStoppingType, RetryStrategy, and ConvergenceDetected. Option B lists only a subset of Autotune's capabilities
+
+      - Option D: Backwards logic. Autotune's PRIMARY value is automatically determining ParameterRanges from AutoParameters with ValueHints. Strategy and ResourceLimits optimization is secondary. Without ParameterRanges automation, Autotune would lose much of its value proposition
+
+      **When to use Autotune:**
+
+      - Prototyping new models without hyperparameter tuning expertise
+      - Using SageMaker built-in algorithms where AWS has deep knowledge
+      - Time-constrained projects where manual configuration research isn't feasible
+      - Teams new to hyperparameter optimization
+
+      **When to manually configure:**
+
+      - Domain expertise suggests specific ranges (e.g., known good learning rates for your data)
+      - Custom algorithms where Autotune lacks algorithm-specific knowledge
+      - Production workloads requiring reproducible, version-controlled configurations
+      - Advanced users who want fine-grained control over tuning behavior
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-define-ranges.html
+    services:
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Autotune
+      - AutoParameters
+      - ValueHint
+      - Automatic configuration

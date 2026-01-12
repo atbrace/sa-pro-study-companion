@@ -1,0 +1,526 @@
+questions:
+  - id: sec-001
+    type: single
+    text: >
+      A healthcare organization is training machine learning models on patient data using SageMaker. Compliance requires
+      that all storage volumes and model artifacts are encrypted with customer-managed KMS keys, and training containers
+      must not have internet access. Which configuration satisfies these requirements?
+    options:
+      - id: A
+        text: Create training jobs with VolumeKmsKeyId and OutputDataConfig.KmsKeyId specified, deploy in VPC with NAT gateway
+      - id: B
+        text: Create training jobs with VolumeKmsKeyId and OutputDataConfig.KmsKeyId specified, enable EnableNetworkIsolation=True
+      - id: C
+        text: Use AWS-managed encryption keys and configure security groups to block internet traffic
+      - id: D
+        text: Enable default EBS encryption and configure VPC endpoints for S3 and SageMaker API
+    correctAnswer: B
+    explanation: >
+      Option B correctly addresses both requirements. Specifying VolumeKmsKeyId encrypts the ML storage volumes, and
+      OutputDataConfig.KmsKeyId encrypts model artifacts, both using customer-managed KMS keys. EnableNetworkIsolation=True
+      prevents containers from making any network calls except peer communication in distributed training. Option A allows
+      internet access through NAT gateway. Option C uses AWS-managed keys, not customer-managed. Option D doesn't prevent
+      internet access and doesn't use customer-managed keys for volumes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/mkt-algo-model-internet-free.html
+    services: [Amazon SageMaker, AWS KMS]
+    concepts: [network-isolation, customer-managed-keys, encryption-at-rest]
+
+  - id: sec-002
+    type: single
+    text: >
+      A company needs to prevent any SageMaker training jobs from being created without encryption enabled for storage
+      volumes. The security team wants this enforced across all AWS accounts in the organization. What is the MOST
+      effective solution?
+    options:
+      - id: A
+        text: Create an IAM policy denying sagemaker:CreateTrainingJob without VolumeKmsKeyId and attach to all users
+      - id: B
+        text: Use AWS Config rules to detect non-compliant training jobs and terminate them automatically
+      - id: C
+        text: Create an IAM policy with a Deny effect when sagemaker:VolumeKmsKey condition is Null and attach to all execution roles
+      - id: D
+        text: Create an SCP with a Deny statement when sagemaker:VolumeKmsKey condition is Null and attach to the organization root
+    correctAnswer: D
+    explanation: >
+      Option D is the most effective preventive control. An SCP attached to the organization root applies to all member
+      accounts and prevents CreateTrainingJob API calls unless VolumeKmsKeyId is specified. The condition checks if the
+      sagemaker:VolumeKmsKey condition key is Null (not provided). Option A requires attaching policies to every user,
+      which is not scalable. Option B is detective, not preventive. Option C only applies to execution roles, not the
+      users creating jobs.
+    awsDocLink: https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html
+    services: [AWS Organizations, Amazon SageMaker, IAM]
+    concepts: [service-control-policies, condition-keys, preventive-controls]
+
+  - id: sec-003
+    type: multi
+    correctCount: 3
+    text: >
+      A financial services company is deploying SageMaker Studio in a VPC-only configuration to meet regulatory
+      requirements. The Studio environment must access S3 for data, ECR for container images, and SageMaker API for
+      job management, but cannot have internet access. Which THREE actions are required? (Select THREE)
+    options:
+      - id: A
+        text: Create interface VPC endpoints for SageMaker API and SageMaker Runtime
+      - id: B
+        text: Create a gateway VPC endpoint for Amazon S3
+      - id: C
+        text: Create interface VPC endpoints for Amazon ECR API and ECR Docker
+      - id: D
+        text: Configure a NAT gateway in public subnets for outbound internet access
+      - id: E
+        text: Set AppNetworkAccessType to 'PublicInternetOnly' when creating the domain
+      - id: F
+        text: Enable AWS PrivateLink for CloudWatch Logs with interface VPC endpoint
+    correctAnswer: [A, B, C]
+    explanation: >
+      For VPC-only Studio without internet access, you need VPC endpoints for all AWS services. Option A creates interface
+      endpoints for SageMaker API and Runtime (required for Studio and endpoint invocations). Option B creates a gateway
+      endpoint for S3 (required for data access). Option C creates interface endpoints for ECR (required for pulling
+      container images). Option D provides internet access, which violates requirements. Option E sets public internet mode,
+      which is incorrect. Option F is not required (though recommended for logging).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/studio-interface-endpoint.html
+    services: [Amazon SageMaker, Amazon VPC, AWS PrivateLink]
+    concepts: [vpc-endpoints, vpc-only-mode, privatelink]
+
+  - id: sec-004
+    type: single
+    text: >
+      A data science team needs to connect to an RDS PostgreSQL database from SageMaker training jobs to fetch feature
+      data. The database credentials must be rotated every 30 days and should never appear in CloudWatch Logs. What is
+      the MOST secure approach?
+    options:
+      - id: A
+        text: Store credentials in AWS Secrets Manager with rotation enabled, pass secret ARN as environment variable, retrieve credentials in training script using boto3
+      - id: B
+        text: Store credentials in AWS Systems Manager Parameter Store as SecureString, retrieve in training script using boto3
+      - id: C
+        text: Store credentials in S3 bucket with encryption, download credentials file at training job start
+      - id: D
+        text: Store credentials in AWS Secrets Manager, pass secret name as environment variable, retrieve credentials in training script using boto3
+    correctAnswer: D
+    explanation: >
+      Option D is the most secure approach. Storing credentials in Secrets Manager with automatic rotation meets the
+      30-day requirement. Passing only the secret name (not ARN or actual credentials) as an environment variable prevents
+      credential exposure in logs. Retrieving credentials at runtime using boto3 ensures they're only accessed when needed.
+      Option A passes the secret ARN which is fine, but the secret name is more concise and equally secure. Option B doesn't
+      support automatic rotation. Option C exposes credentials in S3 access logs and is complex.
+    awsDocLink: https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating-sagemaker.html
+    services: [AWS Secrets Manager, Amazon SageMaker, Amazon RDS]
+    concepts: [secrets-management, credential-rotation, runtime-retrieval]
+
+  - id: sec-005
+    type: single
+    text: >
+      A company runs distributed deep learning training jobs across 16 GPU instances using SageMaker. The training data
+      contains trade secrets that must not be exposed outside the training cluster. Which feature should be enabled to
+      encrypt communications between training instances?
+    options:
+      - id: A
+        text: Enable VPC mode with security groups allowing only HTTPS traffic
+      - id: B
+        text: Enable EnableInterContainerTrafficEncryption when creating the training job
+      - id: C
+        text: Enable network isolation mode to prevent any network communication
+      - id: D
+        text: Configure VPC endpoints with AWS PrivateLink for encrypted communication
+    correctAnswer: B
+    explanation: >
+      Option B is correct. EnableInterContainerTrafficEncryption uses TLS to encrypt communications between ML compute
+      instances during distributed training. This protects gradients, weights, and other model data transmitted between
+      nodes. Option A only encrypts HTTPS API calls, not inter-instance ML communications. Option C prevents all network
+      communication except peer communication, but doesn't encrypt it by default. Option D provides encrypted access to AWS
+      services, not inter-instance encryption.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/train-encrypt.html
+    services: [Amazon SageMaker]
+    concepts: [inter-container-encryption, distributed-training, tls-encryption]
+
+  - id: sec-006
+    type: multi
+    correctCount: 2
+    text: >
+      A SageMaker execution role needs permissions to access training data in an S3 bucket encrypted with a KMS customer-managed
+      key. The training job will also encrypt output model artifacts with the same KMS key. Which TWO permissions must the
+      execution role have? (Select TWO)
+    options:
+      - id: A
+        text: kms:Decrypt permission on the KMS key
+      - id: B
+        text: kms:CreateGrant permission on the KMS key
+      - id: C
+        text: kms:Encrypt permission on the KMS key
+      - id: D
+        text: kms:GenerateDataKey permission on the KMS key
+      - id: E
+        text: kms:ScheduleKeyDeletion permission on the KMS key
+      - id: F
+        text: kms:PutKeyPolicy permission on the KMS key
+    correctAnswer: [A, D]
+    explanation: >
+      Options A and D are required. kms:Decrypt is needed to decrypt the training data from S3. kms:GenerateDataKey is
+      needed to generate data keys for encrypting the output model artifacts. SageMaker uses envelope encryption, which
+      requires generating data keys. Option B (CreateGrant) is not typically required for execution roles. Option C (Encrypt)
+      is not used in envelope encryption. Options E and F are administrative permissions that should not be granted to
+      execution roles.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/encryption-at-rest.html
+    services: [AWS KMS, Amazon SageMaker, Amazon S3]
+    concepts: [kms-permissions, envelope-encryption, execution-roles]
+
+  - id: sec-007
+    type: single
+    text: >
+      A machine learning platform team in Account A maintains a central model registry. Application teams in Accounts B, C,
+      and D need to deploy approved models to production endpoints, but should not be able to register or approve models.
+      What is the MOST secure way to implement this?
+    options:
+      - id: A
+        text: Share the S3 bucket containing model artifacts using S3 bucket policies allowing cross-account access
+      - id: B
+        text: Use AWS Resource Access Manager to share the model package group with Accounts B, C, D, and configure a resource policy allowing only DescribeModelPackage and ListModelPackages for approved models
+      - id: C
+        text: Create IAM roles in Accounts B, C, D with cross-account access to Account A's SageMaker resources
+      - id: D
+        text: Copy approved model artifacts to S3 buckets in Accounts B, C, D after approval
+    correctAnswer: B
+    explanation: >
+      Option B is the most secure approach. AWS RAM enables centralized model governance by sharing model package groups
+      across accounts. The resource policy can restrict consumer accounts to only read operations (DescribeModelPackage,
+      ListModelPackages) and only for models with ModelApprovalStatus='Approved'. This prevents unauthorized registration
+      or approval while enabling deployment. Option A doesn't provide model metadata or approval workflow. Option C grants
+      overly broad access. Option D creates synchronization complexity and loses centralized governance.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/centralize-model-governance-with-sagemaker-model-registry-resource-access-manager-sharing/
+    services: [Amazon SageMaker, AWS Resource Access Manager, IAM]
+    concepts: [model-registry, cross-account-sharing, separation-of-duties]
+
+  - id: sec-008
+    type: single
+    text: >
+      A security team needs to audit all API calls made to SageMaker endpoints for inference requests. By default, these
+      invocations are not logged. How can the security team enable logging for endpoint invocations?
+    options:
+      - id: A
+        text: Enable VPC Flow Logs for the VPC where endpoints are deployed
+      - id: B
+        text: Enable CloudTrail data events for AWS::SageMaker::Endpoint resource type
+      - id: C
+        text: Enable SageMaker Model Monitor with data capture configuration
+      - id: D
+        text: Enable CloudWatch Logs for the endpoint configuration
+    correctAnswer: B
+    explanation: >
+      Option B is correct. CloudTrail data events must be explicitly enabled for SageMaker endpoints to log InvokeEndpoint
+      API calls. Management events (CreateEndpoint, UpdateEndpoint) are logged by default, but data events (InvokeEndpoint)
+      require explicit configuration. Option A logs network traffic, not API calls. Option C captures inference input/output
+      for monitoring, not API audit logs. Option D doesn't capture API calls, only application logs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/logging-using-cloudtrail.html
+    services: [AWS CloudTrail, Amazon SageMaker]
+    concepts: [data-events, audit-logging, endpoint-invocations]
+
+  - id: sec-009
+    type: single
+    text: >
+      A company must ensure that SageMaker notebook instances cannot be accessed directly from the internet and that all
+      traffic to AWS services goes through the VPC. Which TWO settings should be configured when creating the notebook instance?
+    options:
+      - id: A
+        text: Set DirectInternetAccess to 'Disabled' and specify VpcConfig with subnets and security groups
+      - id: B
+        text: Set DirectInternetAccess to 'Enabled' and specify VpcConfig with VPC endpoints
+      - id: C
+        text: Set NetworkIsolation to 'True' and enable VPC mode
+      - id: D
+        text: Set RootAccess to 'Disabled' and configure VPC peering
+    correctAnswer: A
+    explanation: >
+      Option A is correct. Setting DirectInternetAccess to 'Disabled' prevents the notebook instance from accessing the
+      internet and blocks direct internet access to the notebook. Specifying VpcConfig deploys the notebook in your VPC,
+      allowing access to AWS services through VPC endpoints. Option B enables internet access, which violates requirements.
+      Option C's NetworkIsolation applies to training jobs, not notebook instances. Option D's RootAccess controls shell
+      access, not network access.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/appendix-notebook-and-internet-access.html
+    services: [Amazon SageMaker, Amazon VPC]
+    concepts: [direct-internet-access, vpc-configuration, notebook-security]
+
+  - id: sec-010
+    type: single
+    text: >
+      A data scientist accidentally granted public read access to an S3 bucket containing training datasets with PII.
+      What AWS service can automatically detect this misconfiguration and alert the security team?
+    options:
+      - id: A
+        text: AWS Config with managed rule s3-bucket-public-read-prohibited
+      - id: B
+        text: Amazon Macie with sensitive data discovery job
+      - id: C
+        text: Amazon GuardDuty with S3 protection enabled
+      - id: D
+        text: AWS Security Hub with CIS AWS Foundations Benchmark
+    correctAnswer: C
+    explanation: >
+      Option C is correct. Amazon GuardDuty with S3 protection enabled continuously monitors S3 bucket policies and ACLs
+      for public exposure. It generates findings like "Policy:S3/BucketPublicAccessGranted" and "Policy:S3/BucketAnonymousAccessGranted"
+      when buckets are made public. Option A detects public buckets but requires explicit rule configuration and periodic
+      evaluation. Option B detects sensitive data content but not public access configuration. Option D aggregates security
+      findings but doesn't directly detect S3 public access in real-time.
+    awsDocLink: https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-s3.html
+    services: [Amazon GuardDuty, Amazon S3]
+    concepts: [threat-detection, s3-protection, public-access-detection]
+
+  - id: sec-011
+    type: multi
+    correctCount: 2
+    text: >
+      An organization requires that all SageMaker training jobs run in network-isolated mode with no internet access, and
+      security groups must only allow traffic within the VPC. Which TWO IAM condition keys can enforce these requirements
+      in a preventive control policy? (Select TWO)
+    options:
+      - id: A
+        text: sagemaker:NetworkIsolation with condition StringEquals 'true'
+      - id: B
+        text: sagemaker:VpcSecurityGroupIds with condition ForAllValues:StringLike 'sg-*'
+      - id: C
+        text: sagemaker:DirectInternetAccess with condition StringEquals 'Disabled'
+      - id: D
+        text: sagemaker:InterContainerTrafficEncryption with condition StringEquals 'true'
+      - id: E
+        text: sagemaker:VpcSubnets with condition ForAllValues:StringLike 'subnet-*'
+    correctAnswer: [A, B]
+    explanation: >
+      Options A and B are correct. sagemaker:NetworkIsolation condition key enforces that EnableNetworkIsolation=True is
+      set for training jobs. sagemaker:VpcSecurityGroupIds can enforce that specific security groups are used (though the
+      condition shown only validates format, not specific groups). Option C (DirectInternetAccess) applies to notebook
+      instances, not training jobs. Option D (InterContainerTrafficEncryption) controls encryption, not network access.
+      Option E validates subnets but doesn't enforce network isolation.
+    awsDocLink: https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsagemaker.html
+    services: [Amazon SageMaker, IAM]
+    concepts: [condition-keys, network-isolation, preventive-controls]
+
+  - id: sec-012
+    type: single
+    text: >
+      A company needs to meet HIPAA compliance requirements for training ML models on protected health information (PHI).
+      Which combination of SageMaker security features is required?
+    options:
+      - id: A
+        text: Enable encryption at rest with AWS-managed keys, deploy in VPC, enable CloudTrail logging
+      - id: B
+        text: Enable encryption at rest with customer-managed KMS keys, enable network isolation, enable inter-container encryption, deploy in VPC, enable CloudTrail logging
+      - id: C
+        text: Enable encryption at rest with customer-managed KMS keys, deploy in VPC with VPC endpoints, enable CloudWatch Logs
+      - id: D
+        text: Enable default encryption, use IAM permission boundaries, enable GuardDuty monitoring
+    correctAnswer: B
+    explanation: >
+      Option B provides the comprehensive security controls required for HIPAA compliance. Customer-managed KMS keys enable
+      audit trails and key rotation. Network isolation prevents data exfiltration. Inter-container encryption protects PHI
+      during distributed training. VPC deployment provides network-level isolation. CloudTrail logging enables audit compliance.
+      Option A uses AWS-managed keys which lack sufficient audit capability. Options C and D omit critical controls like
+      network isolation and inter-container encryption. Note that you must also sign a Business Associate Agreement (BAA)
+      with AWS.
+    awsDocLink: https://aws.amazon.com/compliance/hipaa-compliance/
+    services: [Amazon SageMaker, AWS KMS, Amazon VPC, AWS CloudTrail]
+    concepts: [hipaa-compliance, defense-in-depth, phi-protection]
+
+  - id: sec-013
+    type: single
+    text: >
+      A security audit revealed that SageMaker execution roles have permissions to create IAM roles, potentially allowing
+      privilege escalation. What IAM feature can prevent execution roles from creating roles with more permissions than they have?
+    options:
+      - id: A
+        text: Service Control Policies (SCPs) denying iam:CreateRole action
+      - id: B
+        text: IAM permission boundaries attached to execution roles
+      - id: C
+        text: IAM policy conditions requiring MFA for iam:CreateRole
+      - id: D
+        text: Resource-based policies on IAM preventing role creation
+    correctAnswer: B
+    explanation: >
+      Option B is correct. IAM permission boundaries define the maximum permissions an entity can have. When a permission
+      boundary is attached to an execution role, that role cannot create other roles with permissions outside the boundary,
+      preventing privilege escalation. Even if the role has iam:CreateRole permission, the created role's permissions are
+      limited by the boundary. Option A prevents all role creation, which may be too restrictive. Option C requires MFA,
+      which execution roles can't provide. Option D is not a standard IAM feature for this use case.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
+    services: [IAM, Amazon SageMaker]
+    concepts: [permission-boundaries, privilege-escalation-prevention, execution-roles]
+
+  - id: sec-014
+    type: single
+    text: >
+      A machine learning team needs to ensure that training datasets stored in S3 do not contain any personally identifiable
+      information (PII) before starting training jobs. What AWS service can automatically detect and classify PII in S3 buckets?
+    options:
+      - id: A
+        text: Amazon Comprehend with DetectPiiEntities API
+      - id: B
+        text: Amazon Macie with sensitive data discovery job
+      - id: C
+        text: AWS Glue DataBrew with PII redaction recipes
+      - id: D
+        text: Amazon Textract with document analysis
+    correctAnswer: B
+    explanation: >
+      Option B is correct. Amazon Macie uses machine learning and pattern matching to automatically discover, classify,
+      and protect sensitive data including PII in S3 buckets. It can scan entire buckets and generate findings for detected
+      PII (names, addresses, credit cards, SSNs, etc.). Option A (Comprehend) requires explicit API calls per document, not
+      automatic bucket scanning. Option C (DataBrew) is for data transformation, not detection. Option D (Textract) extracts
+      text from documents but doesn't classify PII.
+    awsDocLink: https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html
+    services: [Amazon Macie, Amazon S3]
+    concepts: [pii-detection, sensitive-data-discovery, data-protection]
+
+  - id: sec-015
+    type: single
+    text: >
+      A company has deployed SageMaker endpoints in a VPC with security groups allowing only traffic from specific application
+      subnets. A new requirement mandates that all endpoint invocations must be logged with the source IP address. How can
+      this be implemented?
+    options:
+      - id: A
+        text: Enable VPC Flow Logs for the VPC and filter for traffic to endpoint ENIs
+      - id: B
+        text: Enable CloudTrail data events for SageMaker endpoints
+      - id: C
+        text: Enable CloudWatch Logs for the endpoint configuration
+      - id: D
+        text: Enable SageMaker Model Monitor data capture
+    correctAnswer: B
+    explanation: >
+      Option B is correct. CloudTrail data events for SageMaker endpoints log all InvokeEndpoint API calls, including the
+      source IP address in the userIdentity and requestParameters fields. This provides complete audit trails for inference
+      requests. Option A logs network flows but not API-level details like request parameters. Option C captures application
+      logs but not source IP for each invocation. Option D captures inference input/output for monitoring, not API audit logs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/logging-using-cloudtrail.html
+    services: [AWS CloudTrail, Amazon SageMaker]
+    concepts: [data-events, audit-logging, source-ip-tracking]
+
+  - id: sec-016
+    type: multi
+    correctCount: 3
+    text: >
+      A company must implement defense-in-depth security for a production ML inference endpoint serving a fraud detection
+      model. Which THREE security controls should be implemented? (Select THREE)
+    options:
+      - id: A
+        text: Deploy the endpoint in a VPC with security groups restricting access to application subnets only
+      - id: B
+        text: Enable data capture with KMS encryption for Model Monitor
+      - id: C
+        text: Configure an IAM resource policy on the endpoint allowing only authorized IAM roles to invoke it
+      - id: D
+        text: Enable CloudTrail data events to log all InvokeEndpoint calls
+      - id: E
+        text: Enable inter-container traffic encryption for the endpoint
+      - id: F
+        text: Set EnableNetworkIsolation=True for the model
+    correctAnswer: [A, C, D]
+    explanation: >
+      Options A, C, and D implement defense-in-depth. Option A provides network-level isolation using VPC and security groups.
+      Option C provides identity-based access control using IAM resource policies. Option D enables audit logging for
+      compliance and security monitoring. Together, these create multiple layers of security. Option B is for monitoring,
+      not security. Option E applies to training, not inference. Option F (network isolation) is for training jobs, not endpoints.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/security-best-practices.html
+    services: [Amazon SageMaker, Amazon VPC, IAM, AWS CloudTrail]
+    concepts: [defense-in-depth, vpc-isolation, resource-policies, audit-logging]
+
+  - id: sec-017
+    type: single
+    text: >
+      A data science team uses SageMaker Studio notebooks to experiment with models. The security team wants to prevent
+      data scientists from disabling encryption for notebook storage volumes. What is the MOST effective control?
+    options:
+      - id: A
+        text: Create an IAM policy attached to data scientist roles denying sagemaker:CreateNotebookInstance without KmsKeyId
+      - id: B
+        text: Use AWS Config rule to detect notebook instances without encryption and notify the security team
+      - id: C
+        text: Create an SCP denying sagemaker:CreateNotebookInstance when sagemaker:VolumeKmsKey is Null
+      - id: D
+        text: Configure SageMaker Studio domain settings to enforce encryption by default
+    correctAnswer: C
+    explanation: >
+      Option C is the most effective preventive control. An SCP with a Deny statement when sagemaker:VolumeKmsKey condition
+      is Null prevents creation of notebook instances without specifying a KMS key. This applies organization-wide and cannot
+      be overridden by individual users. Option A requires attaching to every data scientist role. Option B is detective,
+      not preventive. Option D sets defaults but doesn't prevent users from overriding them.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/security-best-practices.html
+    services: [Amazon SageMaker, AWS Organizations, IAM]
+    concepts: [service-control-policies, encryption-enforcement, preventive-controls]
+
+  - id: sec-018
+    type: single
+    text: >
+      A machine learning application needs to retrieve database credentials from Secrets Manager during SageMaker training
+      jobs. The credentials are rotated every 30 days. What is the correct approach to grant the necessary permissions?
+    options:
+      - id: A
+        text: Add secretsmanager:GetSecretValue and secretsmanager:DescribeSecret permissions to the SageMaker execution role
+      - id: B
+        text: Add secretsmanager:* permissions to the SageMaker execution role
+      - id: C
+        text: Create a VPC endpoint for Secrets Manager and configure security groups
+      - id: D
+        text: Add secretsmanager:GetSecretValue and secretsmanager:PutSecretValue permissions to the execution role
+    correctAnswer: A
+    explanation: >
+      Option A follows the principle of least privilege. The execution role only needs GetSecretValue to retrieve the secret
+      value and DescribeSecret to get metadata. These are the minimum permissions required for reading secrets. Option B
+      grants overly broad permissions including secret creation and deletion. Option C provides network access but doesn't
+      grant IAM permissions. Option D includes PutSecretValue, which is not needed for reading secrets.
+    awsDocLink: https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access.html
+    services: [AWS Secrets Manager, Amazon SageMaker, IAM]
+    concepts: [least-privilege, execution-roles, secrets-access]
+
+  - id: sec-019
+    type: single
+    text: >
+      A company operates in the EU and must ensure that all ML training data and model artifacts remain within EU regions
+      to comply with GDPR data residency requirements. What is the MOST effective way to enforce this across all AWS accounts
+      in the organization?
+    options:
+      - id: A
+        text: Create IAM policies for all users denying sagemaker:CreateTrainingJob outside eu-west-1 and eu-central-1
+      - id: B
+        text: Configure AWS Config rules to detect resources in non-EU regions and delete them
+      - id: C
+        text: Create an SCP denying sagemaker:* actions when aws:RequestedRegion is not eu-west-1 or eu-central-1
+      - id: D
+        text: Use S3 bucket policies to prevent data transfer outside EU regions
+    correctAnswer: C
+    explanation: >
+      Option C is the most effective preventive control. An SCP with a Deny statement for sagemaker:* actions outside approved
+      EU regions applies to all accounts in the organization and prevents any SageMaker operations in non-compliant regions.
+      The aws:RequestedRegion condition key enforces geographic restrictions. Option A requires attaching to all users, which
+      is not scalable. Option B is detective, not preventive. Option D only controls S3, not SageMaker operations.
+    awsDocLink: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples.html
+    services: [AWS Organizations, Amazon SageMaker, IAM]
+    concepts: [data-residency, regional-restrictions, gdpr-compliance]
+
+  - id: sec-020
+    type: multi
+    correctCount: 2
+    text: >
+      A security team needs to implement tag-based access control for SageMaker resources, allowing data scientists to only
+      create and access resources tagged with their project name. Which TWO policy components are required? (Select TWO)
+    options:
+      - id: A
+        text: IAM policy with condition aws:RequestTag/Project matching aws:PrincipalTag/Project for CreateTrainingJob
+      - id: B
+        text: IAM policy with condition aws:ResourceTag/Project matching aws:PrincipalTag/Project for DescribeTrainingJob
+      - id: C
+        text: SCP requiring all SageMaker resources to have a Project tag
+      - id: D
+        text: Resource-based policy on SageMaker endpoints with Principal conditions
+      - id: E
+        text: VPC endpoint policy restricting access based on resource tags
+    correctAnswer: [A, B]
+    explanation: >
+      Options A and B implement complete tag-based access control (ABAC). Option A enforces that when creating resources,
+      the aws:RequestTag/Project must match the user's aws:PrincipalTag/Project. Option B enforces that when accessing
+      existing resources, the aws:ResourceTag/Project must match the user's principal tag. Together, these ensure users can
+      only create and access resources for their assigned project. Option C enforces tag existence but not value matching.
+      Options D and E are not standard tag-based access control patterns for SageMaker.
+    awsDocLink: https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html
+    services: [IAM, Amazon SageMaker]
+    concepts: [attribute-based-access-control, tag-policies, principal-tags]

@@ -1,0 +1,809 @@
+questions:
+  - id: mm-001
+    type: single
+    text: |
+      A machine learning engineer has deployed a fraud detection model to a SageMaker real-time endpoint.
+      The model receives 50,000 prediction requests per hour. The engineer needs to monitor for data drift
+      but wants to minimize storage costs while maintaining sufficient statistical power for monitoring.
+
+      Which data capture configuration provides the BEST balance between cost and monitoring effectiveness?
+    options:
+      - id: A
+        text: Enable data capture with sampling_percentage=100 and capture both inputs and outputs for all requests
+      - id: B
+        text: Enable data capture with sampling_percentage=20 and capture only inputs for cost reduction
+      - id: C
+        text: Enable data capture with sampling_percentage=5 and capture both inputs and outputs
+      - id: D
+        text: Disable data capture and manually log every 100th request to CloudWatch Logs
+    correctAnswer: B
+    explanation: |
+      For high-traffic endpoints (50,000 requests/hour), a sampling percentage of 20% provides approximately
+      10,000 captured requests per hour, which is statistically sufficient for detecting data drift. This
+      balances cost with monitoring effectiveness. For data quality monitoring (drift detection), only inputs
+      need to be captured since we're analyzing feature distributions, not prediction accuracy.
+
+      Option A captures 100% of traffic, which is unnecessarily expensive and provides minimal additional
+      statistical benefit over 20% sampling for drift detection. Option C captures only 2,500 requests/hour,
+      which may be marginal for some monitoring windows. Option D defeats the purpose of automated monitoring
+      and CloudWatch Logs is not the appropriate destination for Model Monitor data capture.
+
+      The key insight is that statistical monitoring remains effective with 10-20% sampling for high-volume
+      endpoints, and data quality monitoring only requires input capture, not outputs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon S3
+    concepts:
+      - Data capture configuration
+      - Sampling strategies
+      - Cost optimization
+
+  - id: mm-002
+    type: single
+    text: |
+      A data scientist created a baseline for model quality monitoring using a training dataset with
+      predictions and ground truth labels. The monitoring schedule has been running for 2 weeks, but
+      the monitoring jobs consistently show "Insufficient data" errors in CloudWatch Logs.
+
+      What is the MOST likely cause of this issue?
+    options:
+      - id: A
+        text: The baseline constraint thresholds are too strict and need to be relaxed
+      - id: B
+        text: The monitoring schedule is not configured with ground truth input location and offset parameters
+      - id: C
+        text: The endpoint is not generating enough prediction traffic for meaningful analysis
+      - id: D
+        text: The instance type for the monitoring job is too small to process the captured data
+    correctAnswer: B
+    explanation: |
+      Model quality monitoring requires periodic upload of ground truth labels to S3, and the monitoring
+      schedule must be configured with the ground_truth_input parameter specifying where to find these
+      labels. Without this configuration, the monitoring job cannot find ground truth data to compare
+      against predictions, resulting in "Insufficient data" errors.
+
+      Option A (strict thresholds) would cause constraint violations, not "Insufficient data" errors.
+      Option C might cause issues, but the error message specifically indicates missing data, not low
+      traffic. Option D would cause timeout or memory errors, not data availability errors.
+
+      The key distinction is that model quality monitoring (unlike data quality monitoring) requires
+      ground truth labels to be ingested and merged with predictions. The monitoring schedule must
+      include ground_truth_input and potentially offset parameters to align delayed ground truth with
+      corresponding predictions.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-merge.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon S3
+    concepts:
+      - Model quality monitoring
+      - Ground truth ingestion
+      - Monitoring configuration
+
+  - id: mm-003
+    type: multi
+    correctCount: 2
+    text: |
+      An ML engineer needs to monitor a credit risk model for both prediction accuracy and fairness.
+      Ground truth labels (actual default outcomes) arrive 60 days after predictions are made. The
+      compliance team requires monitoring bias across age groups (under 50 vs 50 and over).
+
+      Which monitoring configurations should be implemented? (Select TWO)
+    options:
+      - id: A
+        text: Create a model quality monitoring schedule with ground_truth_input configured and start_time_offset set to "-P60D"
+      - id: B
+        text: Create a bias drift monitoring schedule using SageMaker Clarify with facet_name='age_group' and facet_values_or_threshold=[50]
+      - id: C
+        text: Configure data quality monitoring with custom constraints for age feature distribution
+      - id: D
+        text: Enable real-time model explainability on the endpoint to track feature importance continuously
+      - id: E
+        text: Set up model quality monitoring without offset parameters since ground truth will eventually be available
+    correctAnswer: [A, B]
+    explanation: |
+      This scenario requires both model quality monitoring (for accuracy) and bias drift monitoring
+      (for fairness). Option A correctly configures model quality monitoring with the ground truth
+      location and a 60-day offset (-P60D in ISO 8601 duration format) to account for the delay
+      between predictions and ground truth availability.
+
+      Option B correctly sets up bias drift monitoring using SageMaker Clarify with the age_group
+      facet configuration. The facet_values_or_threshold=[50] parameter defines the threshold that
+      separates the two groups for bias metric calculation.
+
+      Option C (data quality monitoring) detects input drift but doesn't measure bias across groups.
+      Option D (real-time explainability) is not the same as drift monitoring and would add significant
+      latency. Option E incorrectly omits the offset parameter, which would cause misalignment between
+      predictions and their corresponding ground truth labels.
+
+      The key insight is understanding that different monitoring types serve different purposes: model
+      quality for accuracy measurement, bias drift for fairness tracking, and both require proper
+      configuration of time offsets and sensitive attributes.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Clarify
+    concepts:
+      - Model quality monitoring
+      - Bias drift monitoring
+      - Ground truth offset configuration
+      - Fairness metrics
+
+  - id: mm-004
+    type: single
+    text: |
+      A monitoring schedule created with DefaultModelMonitor shows multiple constraint violations
+      for the 'purchase_amount' feature. The violations indicate that the standard deviation has
+      increased from 150 (baseline) to 280 (current). The data science team determines this is due
+      to a new premium product line launched last month and is expected behavior.
+
+      What is the BEST approach to handle this situation?
+    options:
+      - id: A
+        text: Delete the monitoring schedule and recreate it after the new product line stabilizes
+      - id: B
+        text: Download the constraints.json file, modify the standard deviation threshold for purchase_amount, and upload the updated constraints to S3
+      - id: C
+        text: Increase the sampling percentage in data capture to gather more data points
+      - id: D
+        text: Create a new baseline using recent data that includes the new product line
+    correctAnswer: D
+    explanation: |
+      When business conditions change legitimately (such as launching a new product line that
+      fundamentally alters the distribution of a feature), the best approach is to create a new
+      baseline that reflects the current expected data distribution. This ensures monitoring detects
+      future drift from the new normal, not from outdated historical patterns.
+
+      Option B (modifying constraints manually) is a temporary workaround but doesn't update the
+      underlying statistics.json file and may lead to inconsistencies. Option A (deleting the schedule)
+      eliminates monitoring entirely during a critical period. Option C (increasing sampling) doesn't
+      address the fundamental issue that the baseline no longer represents expected behavior.
+
+      The key principle is that baselines should reflect current expected behavior. When business
+      conditions change materially, rebaselineing ensures monitoring remains effective at detecting
+      unexpected drift rather than expected evolution. After creating the new baseline, update the
+      monitoring schedule to reference the new statistics.json and constraints.json files.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-create-baseline.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Baseline creation
+      - Constraint violations
+      - Baseline updates
+
+  - id: mm-005
+    type: single
+    text: |
+      A company monitors a recommendation model that generates predictions for 1 million users daily
+      via batch transform jobs. The ML team needs to monitor data quality for these batch predictions.
+
+      Which monitoring configuration is MOST appropriate?
+    options:
+      - id: A
+        text: Create a monitoring schedule with endpoint_input pointing to a real-time endpoint
+      - id: B
+        text: Create a monitoring schedule with BatchTransformInput specifying the transform job output location
+      - id: C
+        text: Enable data capture on a real-time endpoint and route batch predictions through it
+      - id: D
+        text: Manually download batch transform results and run DefaultModelMonitor.suggest_baseline() daily
+    correctAnswer: B
+    explanation: |
+      For batch transform jobs, Model Monitor supports BatchTransformInput as the data source for
+      monitoring schedules. This configuration points to the S3 location where batch transform
+      results are stored and specifies time offsets to define which batch job outputs to analyze.
+
+      Option A is incorrect because endpoint_input is for real-time endpoints, not batch jobs.
+      Option C is architecturally inefficient and defeats the purpose of batch inference. Option D
+      requires manual intervention and suggest_baseline() creates baselines, not monitoring schedules.
+
+      The correct implementation uses BatchTransformInput with parameters like
+      data_captured_destination_s3_uri (where batch results are stored), start_time_offset
+      (how far back to look), and end_time_offset (how recent to include). This enables automated
+      monitoring of batch inference workloads just like real-time endpoints.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Batch Transform
+    concepts:
+      - Batch transform monitoring
+      - Monitoring schedules
+      - BatchTransformInput configuration
+
+  - id: mm-006
+    type: multi
+    correctCount: 3
+    text: |
+      An ML engineer needs to implement comprehensive monitoring for a production classification model.
+      The model predicts customer churn and the business requires visibility into data drift, model
+      accuracy, and potential bias across customer segments.
+
+      Which monitoring components should be implemented? (Select THREE)
+    options:
+      - id: A
+        text: Data quality monitoring with hourly schedule using DefaultModelMonitor
+      - id: B
+        text: Model quality monitoring with daily schedule requiring ground truth labels
+      - id: C
+        text: Bias drift monitoring with weekly schedule using SageMaker Clarify
+      - id: D
+        text: Real-time A/B testing with multiple model variants
+      - id: E
+        text: Custom preprocessing scripts to transform JSON inputs to CSV format
+    correctAnswer: [A, B, C]
+    explanation: |
+      Comprehensive monitoring requires all four monitoring types where applicable. For this scenario:
+
+      Option A (data quality monitoring) detects input drift on an hourly basis, providing rapid
+      detection of data quality issues. This runs frequently since it doesn't require ground truth.
+
+      Option B (model quality monitoring) measures prediction accuracy against actual churn outcomes,
+      running daily or weekly as ground truth becomes available. This requires periodic upload of
+      actual customer churn labels.
+
+      Option C (bias drift monitoring) tracks fairness metrics across customer segments using Clarify,
+      typically running weekly since bias patterns change more slowly than data quality issues.
+
+      Option D (A/B testing) is a deployment strategy, not a monitoring type. Option E (preprocessing)
+      may be needed for format transformation but is not a monitoring component itself - it's a
+      supporting utility.
+
+      The key insight is that production monitoring strategies typically implement multiple monitoring
+      types in a layered approach: frequent data quality checks, periodic model quality assessment,
+      and less frequent bias/explainability monitoring.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Clarify
+    concepts:
+      - Data quality monitoring
+      - Model quality monitoring
+      - Bias drift monitoring
+      - Monitoring strategy
+
+  - id: mm-007
+    type: single
+    text: |
+      A Model Monitor schedule has been running successfully for 3 months. The data science team
+      wants to receive immediate notifications when more than 5 constraint violations occur in a
+      single monitoring execution.
+
+      What is the MOST efficient way to implement this alerting?
+    options:
+      - id: A
+        text: Create a postprocessing script that counts violations and publishes to an SNS topic
+      - id: B
+        text: Query the S3 violation reports every hour using a Lambda function and send alerts via SNS
+      - id: C
+        text: Enable enable_cloudwatch_metrics=True and create a CloudWatch alarm on the constraint_violation_count metric
+      - id: D
+        text: Configure SageMaker to email violation reports directly using endpoint notifications
+    correctAnswer: C
+    explanation: |
+      When enable_cloudwatch_metrics=True is configured on a monitoring schedule, Model Monitor
+      automatically publishes aggregate metrics including constraint_violation_count to CloudWatch.
+      You can then create CloudWatch alarms with thresholds, evaluation periods, and alarm actions
+      (such as SNS notifications) using standard CloudWatch capabilities.
+
+      Option A (postprocessing script) works but requires writing and maintaining custom code when
+      CloudWatch metrics provide this functionality out-of-the-box. Option B (Lambda polling S3) is
+      inefficient and introduces unnecessary latency compared to native CloudWatch metrics. Option D
+      is not a real SageMaker feature.
+
+      The CloudWatch integration provides the most maintainable, scalable, and efficient alerting
+      solution. CloudWatch alarms support sophisticated logic including evaluation periods (alert
+      after N consecutive violations), comparison operators, and multiple notification targets.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-interpreting-cloudwatch.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+      - Amazon SNS
+    concepts:
+      - CloudWatch integration
+      - Alerting
+      - CloudWatch alarms
+
+  - id: mm-008
+    type: single
+    text: |
+      A monitoring execution consistently fails with "InsufficientData" errors in CloudWatch Logs.
+      The endpoint receives approximately 50 requests per hour, data capture is enabled at 100%
+      sampling, and the monitoring schedule runs hourly. The baseline was created successfully.
+
+      What is the MOST likely cause of this issue?
+    options:
+      - id: A
+        text: The endpoint traffic is too low and Model Monitor requires a minimum of 100 captured requests per monitoring window
+      - id: B
+        text: The data capture sampling percentage needs to be increased above 100%
+      - id: C
+        text: The baseline statistics.json file was corrupted during creation
+      - id: D
+        text: The monitoring schedule's instance type is too small to process the data
+    correctAnswer: A
+    explanation: |
+      Model Monitor requires a minimum number of captured data points per monitoring window to perform
+      meaningful statistical analysis. While the exact minimum varies, generally at least 100-200
+      records are needed. With only 50 requests/hour and 100% capture, the monitoring job doesn't
+      have sufficient data for robust statistics.
+
+      Option B is nonsensical - sampling percentage has a maximum of 100%. Option C would cause
+      different errors related to file parsing, not insufficient data. Option D would cause resource
+      exhaustion errors, not data availability issues.
+
+      Solutions include: reducing monitoring frequency (e.g., run every 4 hours to accumulate 200
+      captures), implementing buffering to accumulate multiple hours of data before analysis, or
+      accepting that low-traffic endpoints may not have sufficient volume for hourly monitoring.
+
+      This highlights the importance of matching monitoring configuration to traffic patterns -
+      high-frequency monitoring only makes sense for high-traffic endpoints.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-faqs.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Monitoring requirements
+      - Data volume
+      - Troubleshooting
+
+  - id: mm-009
+    type: single
+    text: |
+      A Model Monitor schedule uses a custom preprocessing script to transform nested JSON input
+      from the endpoint into a flattened tabular format that Model Monitor can analyze. The preprocessing
+      script has been working correctly, but after a model update that changed the input schema,
+      monitoring jobs are failing with parsing errors.
+
+      What should be done to restore monitoring functionality?
+    options:
+      - id: A
+        text: Recreate the baseline using data with the new schema, update the preprocessing script to handle the new structure, and update the monitoring schedule to reference the new script and baseline
+      - id: B
+        text: Increase the max_runtime_in_seconds parameter in the monitoring schedule to allow more time for preprocessing
+      - id: C
+        text: Switch from DefaultModelMonitor to a custom container that can handle arbitrary JSON schemas
+      - id: D
+        text: Disable preprocessing and configure the endpoint to return tabular data instead of JSON
+    correctAnswer: A
+    explanation: |
+      When the input schema changes, both the preprocessing script (which transforms the data) and
+      the baseline (which defines expected feature statistics) must be updated to reflect the new
+      structure. The preprocessing script needs modification to correctly parse the new JSON format
+      and extract features. The baseline must be recreated using sample data in the new format so
+      that feature names, types, and statistics match what monitoring will see.
+
+      Option B addresses a timeout issue, not a schema change. Option C is overengineering - custom
+      containers are only needed for fundamentally different monitoring logic, not schema changes.
+      Option D forces architectural changes to work around a monitoring limitation rather than fixing
+      the monitoring configuration.
+
+      The process is: (1) Update preprocessing.py to handle new schema, (2) Create new baseline with
+      sample data in new format, (3) Update monitoring schedule with update_monitoring_schedule() to
+      reference new preprocessing script and baseline files. This ensures end-to-end consistency.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-pre-and-post-processing.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Custom preprocessing
+      - Schema changes
+      - Baseline updates
+
+  - id: mm-010
+    type: multi
+    correctCount: 2
+    text: |
+      A financial services company needs to monitor a loan approval model for bias across protected
+      attributes. Compliance requires tracking both Disparate Impact (DI) and Difference in Conditional
+      Acceptance (DCA) metrics for gender and age groups, with alerts when metrics fall outside
+      acceptable ranges.
+
+      Which configurations are required to meet these requirements? (Select TWO)
+    options:
+      - id: A
+        text: Create ModelBiasMonitor with BiasConfig specifying facet_name and group_name for each protected attribute
+      - id: B
+        text: Configure DataQualityMonitor with custom constraints for demographic feature distributions
+      - id: C
+        text: Enable enable_cloudwatch_metrics=True on bias monitoring schedules and create CloudWatch alarms for DI and DCA metrics
+      - id: D
+        text: Use ModelQualityMonitor with ground truth labels and problem_type='BinaryClassification'
+      - id: E
+        text: Implement preprocessing scripts to filter out protected attributes before monitoring
+    correctAnswer: [A, C]
+    explanation: |
+      Bias monitoring requires SageMaker Clarify's ModelBiasMonitor with BiasConfig that defines
+      sensitive attributes (facet_name like 'gender' or 'age_group') and protected groups. Clarify
+      calculates bias metrics including Disparate Impact and Difference in Conditional Acceptance
+      based on these configurations.
+
+      Option C enables CloudWatch metric publishing for bias monitoring results. Clarify publishes
+      per-metric measurements to CloudWatch, enabling alarm creation when specific bias metrics
+      (like DI or DCA) exceed configured thresholds. CloudWatch alarms can trigger SNS notifications
+      for compliance team alerting.
+
+      Option B (DataQualityMonitor) detects distribution drift but doesn't calculate bias metrics.
+      Option D (ModelQualityMonitor) measures accuracy, not fairness. Option E (filtering protected
+      attributes) defeats the purpose of bias monitoring.
+
+      The key distinction is that bias monitoring requires specialized Clarify capabilities
+      (ModelBiasMonitor) rather than general Model Monitor, and CloudWatch integration enables
+      automated alerting on fairness metrics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    services:
+      - Amazon SageMaker Clarify
+      - Amazon CloudWatch
+    concepts:
+      - Bias drift monitoring
+      - Fairness metrics
+      - CloudWatch alarms
+      - Compliance monitoring
+
+  - id: mm-011
+    type: single
+    text: |
+      A Model Monitor baseline job completed successfully and generated statistics.json and
+      constraints.json files. During the first monitoring execution, violations are flagged for
+      the 'customer_age' feature indicating the mean has shifted from 42.5 (baseline) to 38.2 (current).
+
+      What information should the engineer review to determine if this is a legitimate issue?
+    options:
+      - id: A
+        text: Check the constraints.json threshold for mean deviation on customer_age to see if 38.2 falls outside acceptable bounds
+      - id: B
+        text: Examine the statistics.json file to verify the baseline mean calculation was correct
+      - id: C
+        text: Review CloudWatch metrics to determine if endpoint latency increased during this period
+      - id: D
+        text: Inspect the data capture S3 bucket to verify sampling percentage configuration
+    correctAnswer: A
+    explanation: |
+      Constraint violations occur when monitored statistics exceed thresholds defined in constraints.json.
+      To determine if the mean shift from 42.5 to 38.2 constitutes a legitimate violation, review the
+      constraints.json file to see what acceptable range was defined for the customer_age mean.
+      Constraints typically specify allowable deviation as a percentage or absolute difference.
+
+      For example, if constraints allow mean to vary by ±15%, then 38.2 falls within acceptable range
+      (42.5 * 0.85 = 36.125 to 42.5 * 1.15 = 48.875). If constraints only allow ±5%, then 38.2 is
+      outside bounds (42.5 * 0.95 = 40.375 to 48.875) and legitimately violates constraints.
+
+      Option B (statistics.json) contains baseline measurements but not violation thresholds. Option C
+      (endpoint latency) is unrelated to data drift. Option D (sampling configuration) doesn't affect
+      whether a violation is legitimate, only detection sensitivity.
+
+      Understanding the distinction between statistics.json (measurements) and constraints.json
+      (thresholds) is critical for interpreting monitoring results.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-create-baseline.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Baseline constraints
+      - Violation interpretation
+      - Constraint thresholds
+
+  - id: mm-012
+    type: single
+    text: |
+      An ML team monitors a real-time recommendation endpoint that receives 100,000 requests per hour.
+      The endpoint serves recommendations for 20 different product categories. The team wants to
+      monitor data quality but is concerned about CloudWatch costs from per-feature metrics.
+
+      Which approach provides effective monitoring while minimizing CloudWatch costs?
+    options:
+      - id: A
+        text: Set enable_cloudwatch_metrics=False and implement a postprocessing script that publishes only aggregate violation counts to CloudWatch
+      - id: B
+        text: Enable CloudWatch metrics but reduce data capture sampling to 1% to decrease overall monitoring costs
+      - id: C
+        text: Create separate monitoring schedules for each product category with CloudWatch disabled
+      - id: D
+        text: Use DataQualityMonitor with default settings since CloudWatch costs are negligible for Model Monitor
+    correctAnswer: A
+    explanation: |
+      When enable_cloudwatch_metrics=True, Model Monitor publishes metrics for every monitored feature,
+      which can become expensive for models with many features (20 product categories likely means
+      50-100+ features). Setting enable_cloudwatch_metrics=False disables automatic metric publishing,
+      and implementing a postprocessing script allows selective publishing of only essential metrics.
+
+      A typical postprocessing script might publish only: total violation count, critical feature
+      violations, and monitoring execution success. This reduces CloudWatch metric costs by 90%+
+      while maintaining essential alerting capabilities.
+
+      Option B (reducing sampling to 1%) saves data capture storage costs but may compromise
+      monitoring statistical power - it doesn't address CloudWatch metric costs. Option C (separate
+      schedules) actually increases costs by running multiple monitoring jobs. Option D incorrectly
+      assumes CloudWatch costs are negligible - per-feature metrics for high-cardinality models can
+      be substantial.
+
+      The key optimization is recognizing that most monitoring use cases don't require per-feature
+      CloudWatch metrics and can achieve effective alerting with selective metric publishing via
+      postprocessing.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-pre-and-post-processing.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+    concepts:
+      - Cost optimization
+      - Custom postprocessing
+      - CloudWatch metrics
+
+  - id: mm-013
+    type: single
+    text: |
+      A Model Monitor schedule was created with schedule_cron_expression=CronExpressionGenerator.hourly().
+      After 2 weeks of successful executions, monitoring jobs suddenly start timing out. The endpoint
+      traffic pattern has not changed, but the data science team recently added 30 new features to
+      the model input schema.
+
+      What is the MOST appropriate solution?
+    options:
+      - id: A
+        text: Increase max_runtime_in_seconds in the monitoring schedule configuration
+      - id: B
+        text: Upgrade the monitoring job instance_type from ml.m5.large to ml.m5.xlarge or increase instance_count
+      - id: C
+        text: Reduce the monitoring frequency to every 2 hours instead of hourly
+      - id: D
+        text: Recreate the baseline with fewer features by removing the newly added features from analysis
+    correctAnswer: B
+    explanation: |
+      Adding 30 new features significantly increases the computational requirements for monitoring
+      analysis. Model Monitor computes statistics, constraint checks, and comparisons for each feature,
+      so feature count directly impacts processing time and memory requirements. Upgrading the instance
+      type (more CPU/memory) or scaling horizontally (more instances) addresses the root cause.
+
+      Option A (increasing timeout) just delays the inevitable failure if the instance genuinely lacks
+      resources. Option C (reducing frequency) works around the problem but doesn't fix it - you lose
+      monitoring granularity unnecessarily. Option D (removing features) defeats the purpose of adding
+      them to the model.
+
+      The correct approach is right-sizing compute resources to match workload. Start with ml.m5.xlarge
+      (double the capacity) or set instance_count=2. Monitor the processing job metrics to verify the
+      new configuration completes successfully within timeout bounds.
+
+      This illustrates the principle that monitoring resources should scale with model complexity
+      (feature count, traffic volume, processing requirements).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-scheduling.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Resource sizing
+      - Monitoring schedules
+      - Troubleshooting
+
+  - id: mm-014
+    type: multi
+    correctCount: 3
+    text: |
+      A company deploys models that receive predictions in real-time but ground truth labels only
+      become available 30 days later. The ML team needs to implement monitoring that tracks both
+      immediate input quality and delayed model accuracy.
+
+      Which monitoring components should be configured? (Select THREE)
+    options:
+      - id: A
+        text: Data quality monitoring schedule with hourly execution to detect input drift immediately
+      - id: B
+        text: Model quality monitoring schedule with ground truth offset of 30 days configured via start_time_offset parameter
+      - id: C
+        text: A process to periodically upload ground truth labels to S3 with eventId or inference_id for prediction matching
+      - id: D
+        text: Feature attribution monitoring to track feature importance without ground truth requirements
+      - id: E
+        text: Bias drift monitoring that runs in real-time as predictions are made
+    correctAnswer: [A, B, C]
+    explanation: |
+      This scenario requires layered monitoring with different timing requirements:
+
+      Option A (data quality monitoring) runs frequently without requiring ground truth, providing
+      immediate visibility into input data distribution changes that might signal future accuracy issues.
+
+      Option B (model quality monitoring with offset) configures the monitoring schedule to look back
+      30 days when comparing predictions to ground truth. The start_time_offset parameter (set to
+      "-P30D" in ISO 8601 format) ensures predictions are matched with their corresponding ground
+      truth that arrived with delay.
+
+      Option C enables the matching process by ensuring ground truth uploads include identifiers
+      (eventId or inference_id) that link labels to specific predictions. Without these identifiers,
+      Model Monitor cannot merge predictions with ground truth.
+
+      Option D (feature attribution) is useful but not required for this scenario's goals. Option E
+      is incorrect - bias drift monitoring also requires ground truth labels for post-training bias
+      metrics and cannot run in real-time before ground truth arrives.
+
+      The key insight is understanding the distinction between monitoring types that work immediately
+      (data quality) versus those requiring ground truth (model quality, bias metrics).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-merge.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon S3
+    concepts:
+      - Data quality monitoring
+      - Model quality monitoring
+      - Ground truth offset
+      - Monitoring strategy
+
+  - id: mm-015
+    type: single
+    text: |
+      A Model Monitor baseline was created 6 months ago for a fraud detection model. Over time,
+      the business has introduced new fraud patterns to the training data and retrained the model
+      twice. Current monitoring shows numerous violations, but the fraud team confirms the model is
+      performing well and the violations represent expected evolution of fraud patterns.
+
+      What is the BEST long-term solution?
+    options:
+      - id: A
+        text: Modify the constraints.json file to increase all threshold tolerances by 50%
+      - id: B
+        text: Disable monitoring until fraud patterns stabilize, then recreate baseline
+      - id: C
+        text: Implement a policy to recreate baselines whenever the model is retrained using the updated training data
+      - id: D
+        text: Create custom preprocessing scripts that normalize inputs to match the original baseline distribution
+    correctAnswer: C
+    explanation: |
+      When models are retrained with materially different training data (such as new fraud patterns),
+      the baseline should be updated to reflect current expected behavior. Establishing a policy to
+      recreate baselines during the model retraining workflow ensures monitoring remains synchronized
+      with model evolution.
+
+      This approach means: (1) During model retraining, run suggest_baseline() on the new training
+      or validation dataset, (2) Update monitoring schedules to reference the new baseline files,
+      (3) Archive old baselines with versioning that matches model versions. This keeps monitoring
+      effective at detecting unexpected drift while accommodating intentional model improvements.
+
+      Option A (relaxing all thresholds) is a crude workaround that reduces monitoring sensitivity
+      unnecessarily. Option B (disabling monitoring) eliminates protection during a critical period.
+      Option D (normalization) defeats the purpose of drift detection by hiding legitimate distribution
+      changes.
+
+      The key principle is that baselines are model-version-specific. When the model evolves through
+      retraining, its baseline should evolve too. This is standard MLOps practice for maintaining
+      monitoring effectiveness across model lifecycle.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-create-baseline.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Baseline lifecycle
+      - Model retraining
+      - MLOps best practices
+
+  - id: mm-016
+    type: single
+    text: |
+      An ML engineer needs to monitor a model that accepts images as input. The endpoint receives
+      images as base64-encoded JSON payloads. Model Monitor's built-in analysis only handles tabular
+      and flattened JSON data.
+
+      What is the MOST appropriate approach to enable monitoring for this model?
+    options:
+      - id: A
+        text: Create a preprocessing script that extracts image metadata (dimensions, file size, encoding) into tabular features for Model Monitor to analyze
+      - id: B
+        text: Use Amazon Rekognition to analyze images and feed the Rekognition results to Model Monitor
+      - id: C
+        text: Deploy a custom container with image-specific monitoring logic using the BYO (Bring Your Own) container pattern
+      - id: D
+        text: Model Monitor cannot be used for image inputs; implement custom CloudWatch metrics instead
+    correctAnswer: A
+    explanation: |
+      For image inputs, the most practical approach is preprocessing that extracts analyzable metadata
+      and properties into tabular format. A preprocessing script can decode base64 images and extract
+      features such as: image dimensions, file size, color space, mean pixel intensity, histogram
+      statistics, aspect ratio, and encoding format. These extracted features are tabular and can be
+      monitored for drift using Model Monitor's built-in capabilities.
+
+      For example, sudden changes in average image size might indicate a client application issue,
+      or shifts in color distribution might signal data quality problems. This approach provides
+      meaningful monitoring without requiring complex custom containers.
+
+      Option B (Rekognition) is overengineering and adds cost/latency. Option C (custom container)
+      is more complex than necessary for basic monitoring. Option D incorrectly suggests Model Monitor
+      can't help at all - preprocessing makes it viable.
+
+      The key insight is that preprocessing can transform non-tabular data into tabular features that
+      capture important characteristics of the input, enabling standard Model Monitor analysis. This
+      is simpler and more maintainable than building custom monitoring infrastructure.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-pre-and-post-processing.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Custom preprocessing
+      - Image monitoring
+      - Metadata extraction
+
+  - id: mm-017
+    type: multi
+    correctCount: 2
+    text: |
+      A monitoring schedule publishes metrics to CloudWatch with enable_cloudwatch_metrics=True.
+      The operations team needs to be notified immediately if: (1) any monitoring execution fails,
+      or (2) more than 10 constraint violations are detected in any hourly monitoring window.
+
+      Which CloudWatch alarm configurations should be created? (Select TWO)
+    options:
+      - id: A
+        text: Alarm on monitoring_execution_success metric with threshold < 1 (indicating failure)
+      - id: B
+        text: Alarm on constraint_violation_count metric with threshold > 10 using Sum statistic
+      - id: C
+        text: Alarm on feature_baseline_drift_ metrics aggregated across all features with threshold > 10
+      - id: D
+        text: Alarm on endpoint latency metrics correlated with monitoring execution times
+      - id: E
+        text: Alarm on S3 PutObject events for violation report uploads
+    correctAnswer: [A, B]
+    explanation: |
+      Model Monitor publishes specific CloudWatch metrics that enable precise alerting:
+
+      Option A correctly creates an alarm on monitoring_execution_success, which is a binary metric
+      (1 for success, 0 for failure). An alarm with threshold < 1 triggers when monitoring jobs fail
+      due to errors, timeouts, or resource issues. This ensures operations teams are notified of
+      monitoring infrastructure problems.
+
+      Option B correctly alarms on constraint_violation_count with threshold > 10. This metric
+      represents the total number of constraint violations detected in an execution. Using Sum
+      statistic with a period matching monitoring frequency (e.g., 3600 seconds for hourly) enables
+      per-execution alerting.
+
+      Option C is impractical - feature_baseline_drift_ metrics are per-feature, not aggregate. You'd
+      need separate alarms per feature. Option D (endpoint latency) is unrelated to monitoring alerts.
+      Option E (S3 events) is overly complex when CloudWatch metrics provide direct alerting.
+
+      The key is understanding Model Monitor's CloudWatch metric structure: execution-level aggregate
+      metrics (violation count, execution success) for operational alerts, and per-feature metrics
+      for detailed analysis.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-interpreting-cloudwatch.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+      - Amazon SNS
+    concepts:
+      - CloudWatch alarms
+      - Monitoring execution metrics
+      - Operational alerting
+
+  - id: mm-018
+    type: single
+    text: |
+      A Model Monitor schedule has been running successfully for 8 weeks. The data engineering team
+      implements a new data pipeline that adds proper normalization and outlier handling. After the
+      pipeline upgrade, monitoring detects dozens of violations because feature distributions have
+      become tighter and more consistent than the baseline.
+
+      What should the ML engineer do?
+    options:
+      - id: A
+        text: Revert the data pipeline changes since they are causing monitoring violations
+      - id: B
+        text: Create a new baseline using data from the improved pipeline, verify the new baseline reflects better data quality, then update the monitoring schedule
+      - id: C
+        text: Modify constraints.json to allow wider variance ranges to accommodate both old and new pipelines
+      - id: D
+        text: Disable data quality monitoring and rely only on model quality monitoring to detect issues
+    correctAnswer: B
+    explanation: |
+      When upstream data processing improves (better normalization, outlier handling), violations
+      occur because current data is actually higher quality than the baseline. This is a positive
+      change that should be reflected in an updated baseline. Creating a new baseline with the
+      improved data establishes the new expected standard of quality.
+
+      Before updating production monitoring, validate that the new baseline shows improvements:
+      tighter standard deviations, fewer outliers, more complete data, consistent data types. After
+      validation, update the monitoring schedule with update_monitoring_schedule() to reference the
+      new baseline files.
+
+      Option A (reverting improvements) is counterproductive. Option C (widening thresholds) accepts
+      both good and bad data quality, reducing monitoring effectiveness. Option D (disabling data
+      quality monitoring) removes early warning capabilities that detect issues before they impact
+      model accuracy.
+
+      This scenario demonstrates an important principle: baselines should represent current expected
+      behavior, not historical behavior. When data quality improves through intentional pipeline
+      changes, update baselines to maintain monitoring relevance.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-create-baseline.html
+    services:
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Baseline updates
+      - Data pipeline changes
+      - Data quality improvement

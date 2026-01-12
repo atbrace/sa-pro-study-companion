@@ -1,0 +1,574 @@
+questions:
+  - id: co-001
+    type: single
+    text: >
+      A data science team runs SageMaker training jobs daily for model retraining, consuming approximately
+      150 hours per month on ml.p3.2xlarge instances. The workload is predictable and will continue for at
+      least 2 years. The current monthly cost is $574.50 using on-demand pricing. Which solution provides
+      the MOST cost savings while meeting the workload requirements?
+    options:
+      - id: A
+        text: Purchase a 1-year ML Savings Plan with partial upfront payment for $150/month commitment
+      - id: B
+        text: Purchase a 3-year ML Savings Plan with all upfront payment for $120/month commitment
+      - id: C
+        text: Enable managed spot training with checkpointing and maintain on-demand pricing as backup
+      - id: D
+        text: Migrate workload to smaller ml.p3.xlarge instances and use on-demand pricing
+    correctAnswer: B
+    explanation: >
+      ML Savings Plans provide up to 64% discount for commitment-based pricing. Given the predictable workload
+      (150 hours/month consistently) and long-term commitment (2+ years), a 3-year Savings Plan with all upfront
+      payment maximizes savings. The $120/month commitment covers the predictable usage with maximum discount.
+      Option A provides savings but less than 3-year term. Option C (spot) is suitable for fault-tolerant workloads
+      but doesn't guarantee capacity and requires checkpoint support. Option D reduces compute but doesn't leverage
+      commitment-based discounts. The 3-year all-upfront plan provides the best cost optimization for sustained,
+      predictable ML workloads.
+    awsDocLink: https://aws.amazon.com/savingsplans/ml-pricing/
+    services: [AWS Savings Plans, Amazon SageMaker]
+    concepts: [ml-savings-plans, predictable-workloads, commitment-pricing]
+
+  - id: co-002
+    type: single
+    text: >
+      A company trains a deep learning model that takes 18 hours to complete on an ml.p3.8xlarge instance.
+      The training script saves checkpoints to S3 every 20 minutes. The team wants to minimize training costs
+      and can tolerate occasional interruptions. CloudWatch metrics show GPUUtilization averaging 82% during
+      training. What is the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Enable SageMaker managed spot training with max_run of 72000 seconds and max_wait of 144000 seconds
+      - id: B
+        text: Migrate to ml.p3.16xlarge to reduce training time and use on-demand pricing
+      - id: C
+        text: Use distributed training across 4 ml.p3.2xlarge instances with data parallelism
+      - id: D
+        text: Purchase a 1-year Savings Plan commitment and continue using ml.p3.8xlarge on-demand
+    correctAnswer: A
+    explanation: >
+      Managed spot training can reduce costs by up to 90% compared to on-demand pricing. The scenario indicates
+      the workload is suitable for spot: (1) checkpoints every 20 minutes enable fault tolerance, (2) interruptions
+      are tolerable, (3) long-running job (18 hours) maximizes spot savings. Setting max_run to 72000 seconds
+      (20 hours) and max_wait to 144000 seconds (40 hours) provides sufficient buffer for spot interruptions.
+      Option B increases cost significantly (ml.p3.16xlarge costs 2x more). Option C adds distributed training
+      complexity and may not reduce cost proportionally (communication overhead). Option D provides savings but
+      only up to 64% vs 90% with spot. The high GPU utilization (82%) confirms the instance is appropriately sized.
+      Managed spot training is the most cost-effective option for fault-tolerant training workloads.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    services: [Amazon SageMaker, Amazon S3]
+    concepts: [managed-spot-training, checkpointing, cost-optimization]
+
+  - id: co-003
+    type: multi
+    correctCount: 2
+    text: >
+      A company operates 500 different ML models for personalized recommendations, each serving approximately
+      200 inference requests per day. Currently, each model is deployed on a separate ml.m5.large endpoint,
+      costing $52.56/month per endpoint ($26,280/month total). All models use the same XGBoost container and
+      have similar latency requirements (under 200ms). Which TWO actions will MOST significantly reduce costs?
+      (Select TWO)
+    options:
+      - id: A
+        text: Migrate all models to a multi-model endpoint using 10 ml.m5.xlarge instances with auto-scaling
+      - id: B
+        text: Convert each endpoint to serverless inference with 2048 MB memory configuration
+      - id: C
+        text: Use SageMaker Inference Recommender to identify optimal instance types for each model
+      - id: D
+        text: Implement auto-scaling on each endpoint to scale to zero during low-traffic periods
+      - id: E
+        text: Purchase ML Savings Plans to cover the current endpoint infrastructure costs
+    correctAnswer: [A, B]
+    explanation: >
+      Multi-model endpoints (Option A) enable hosting multiple models on shared infrastructure, achieving 90-95%
+      cost reduction when hosting hundreds of similar models. With 10 ml.m5.xlarge instances (~$1,050/month),
+      savings would be approximately $25,000/month. Serverless inference (Option B) is also ideal for this scenario:
+      200 requests/day per model represents sporadic, low-volume traffic where pay-per-use pricing is most efficient.
+      Serverless would scale to zero during idle periods, drastically reducing costs vs 24/7 provisioned endpoints.
+      Option C (Inference Recommender) helps optimize individual endpoints but doesn't address the fundamental
+      over-provisioning problem. Option D doesn't work because standard real-time endpoints cannot scale to zero
+      (minimum 1 instance). Option E reduces costs by ~64% but doesn't solve the architectural inefficiency of
+      500 separate endpoints. Multi-model endpoints or serverless inference are the correct architectural solutions.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html
+    services: [Amazon SageMaker]
+    concepts: [multi-model-endpoints, serverless-inference, cost-optimization]
+
+  - id: co-004
+    type: single
+    text: >
+      A real-time inference endpoint running on ml.c5.2xlarge serves 50,000 requests per day with traffic
+      concentrated during business hours (9am-5pm weekdays). CloudWatch shows CPUUtilization averaging 15%
+      during business hours and near 0% during nights and weekends. The current cost is $141/month. Which
+      solution provides the BEST cost optimization?
+    options:
+      - id: A
+        text: Enable auto-scaling to scale from 2 instances during business hours to 0 instances during off-hours
+      - id: B
+        text: Migrate to serverless inference with provisioned concurrency enabled during business hours only
+      - id: C
+        text: Downsize to ml.c5.large to better match the low CPU utilization
+      - id: D
+        text: Migrate to serverless inference with on-demand scaling throughout the day
+    correctAnswer: B
+    explanation: >
+      The traffic pattern (business hours only, 9am-5pm weekdays) combined with 50,000 requests/day makes serverless
+      with provisioned concurrency optimal. Provisioned concurrency keeps endpoints warm during business hours to
+      eliminate cold starts (maintaining user experience), while on-demand serverless handles actual requests.
+      During nights and weekends, serverless scales to zero with no cost. This provides the best balance of
+      performance and cost. Option A is incorrect because real-time endpoints cannot scale to zero (minimum 1 instance).
+      Option C reduces cost but still bills 24/7 for underutilized capacity. Option D (pure serverless) would work
+      but cold starts during business hours may impact user experience. Provisioned concurrency only during business
+      hours (~40 hours/week) significantly reduces costs vs 24/7 provisioned endpoints while maintaining low latency.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    services: [Amazon SageMaker, Amazon CloudWatch]
+    concepts: [serverless-inference, provisioned-concurrency, traffic-patterns]
+
+  - id: co-005
+    type: single
+    text: >
+      A computer vision model requires GPU acceleration for inference. The model is currently deployed on
+      ml.g5.xlarge instances ($1,156/month). SageMaker Inference Recommender suggests ml.inf2.xlarge instances
+      could provide equivalent performance at $553/month (52% savings). What consideration is MOST important
+      before migrating to ml.inf2 instances?
+    options:
+      - id: A
+        text: Verify the model and framework are compatible with AWS Neuron SDK for Inferentia acceleration
+      - id: B
+        text: Ensure the ml.inf2.xlarge has sufficient GPU memory for the model artifacts
+      - id: C
+        text: Confirm the model supports multi-model endpoint deployment on Inferentia instances
+      - id: D
+        text: Check that the model can leverage distributed inference across multiple Inferentia chips
+    correctAnswer: A
+    explanation: >
+      AWS Inferentia instances require models to be compiled with AWS Neuron SDK. Not all frameworks and model
+      architectures are compatible with Inferentia acceleration. Before migrating, you must verify: (1) the framework
+      is supported (PyTorch, TensorFlow via Neuron SDK), (2) the model architecture is compatible with Neuron compiler,
+      and (3) the model can be successfully compiled for Inferentia. Option B is incorrect because Inferentia instances
+      don't use GPU memory (they use Inferentia accelerator memory). Option C is misleading; while multi-model endpoints
+      can work on Inferentia, it's not the primary consideration for single model migration. Option D is not required
+      for basic migration. Neuron SDK compatibility is the critical blocker; incompatible models cannot run on
+      Inferentia regardless of cost savings. Always validate framework and model compatibility before committing to
+      purpose-built accelerators.
+    awsDocLink: https://aws.amazon.com/machine-learning/inferentia/
+    services: [Amazon SageMaker, AWS Inferentia]
+    concepts: [inferentia-instances, neuron-sdk, model-compatibility]
+
+  - id: co-006
+    type: single
+    text: >
+      A training dataset consists of 2 TB of data that is actively used for 30 days during model development,
+      then accessed 2-3 times over the next 60 days for validation, and rarely accessed afterward for compliance
+      (retained for 2 years). The data is currently stored in S3 Standard, costing $46/month. How can storage
+      costs be minimized while maintaining access requirements?
+    options:
+      - id: A
+        text: Implement S3 Intelligent-Tiering for all data with archive configuration enabled
+      - id: B
+        text: Create S3 lifecycle policies transitioning data to Standard-IA after 30 days and Glacier after 90 days
+      - id: C
+        text: Move all data to S3 Glacier immediately after initial 30-day development period
+      - id: D
+        text: Use S3 One Zone-IA for all data to reduce costs by 20% vs S3 Standard
+    correctAnswer: B
+    explanation: >
+      S3 lifecycle policies with time-based transitions match the access pattern perfectly. The strategy should be:
+      (1) 0-30 days: S3 Standard ($0.023/GB-month) for frequent access during active development, (2) 30-90 days:
+      S3 Standard-IA ($0.0125/GB-month) for infrequent validation access (2-3 times), (3) 90+ days: S3 Glacier
+      ($0.0036/GB-month) for long-term compliance retention. This reduces costs from $46/month to approximately
+      $10/month over the 2-year retention. Option A (Intelligent-Tiering) works but adds monitoring fees and doesn't
+      optimize as aggressively as explicit lifecycle policies. Option C is too aggressive; Glacier retrieval times
+      (minutes to hours) and costs make 2-3 validation accesses expensive. Option D (One Zone-IA) provides minimal
+      savings and reduces durability. Lifecycle policies with graduated transitions provide optimal cost reduction
+      while maintaining appropriate access characteristics for each phase.
+    awsDocLink: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html
+    services: [Amazon S3]
+    concepts: [s3-lifecycle-policies, storage-classes, cost-optimization]
+
+  - id: co-007
+    type: multi
+    correctCount: 3
+    text: >
+      A company wants to implement comprehensive cost monitoring and governance for their SageMaker workloads
+      across multiple data science teams. They need to track spending by project, prevent budget overruns, and
+      identify optimization opportunities. Which THREE actions should be implemented? (Select THREE)
+    options:
+      - id: A
+        text: Apply cost allocation tags to all SageMaker resources including training jobs, endpoints, and notebooks with Project, Team, and Environment keys
+      - id: B
+        text: Create AWS Budgets for each project with automated actions to stop training jobs when 100% of budget is exceeded
+      - id: C
+        text: Enable AWS Cost Anomaly Detection for SageMaker services with SNS notifications for unusual spending patterns
+      - id: D
+        text: Require all data scientists to submit cost estimates before launching training jobs
+      - id: E
+        text: Use CloudWatch alarms to monitor CPUUtilization and GPUUtilization metrics to identify under-utilized resources
+    correctAnswer: [A, B, C]
+    explanation: >
+      Comprehensive cost governance requires visibility (tagging), control (budgets), and anomaly detection. Option A
+      (cost allocation tags) enables tracking spending by project, team, and environment in Cost Explorer, providing
+      granular visibility for chargeback and analysis. Option B (AWS Budgets with automated actions) provides proactive
+      cost control by setting spending limits and automatically stopping runaway training jobs when budgets are exceeded.
+      Option C (Cost Anomaly Detection) uses ML to identify unusual spending patterns (e.g., accidentally launching
+      expensive instances) and alert teams before costs escalate. Option D (manual cost estimates) adds operational
+      overhead and doesn't provide automated enforcement. Option E (CloudWatch utilization monitoring) helps identify
+      optimization opportunities but isn't a governance mechanism. The combination of tagging (visibility), budgets
+      (control), and anomaly detection (early warning) provides comprehensive cost governance for ML workloads.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html
+    services: [AWS Cost Explorer, AWS Budgets, Amazon CloudWatch]
+    concepts: [cost-allocation-tags, budget-controls, anomaly-detection]
+
+  - id: co-008
+    type: single
+    text: >
+      A training job running on ml.p3.2xlarge shows CloudWatch metrics of GPUUtilization at 22% and CPUUtilization
+      at 78%. The model is a gradient boosted decision tree (XGBoost) for tabular data. Training takes 6 hours and
+      costs $22.95. How should the training be optimized?
+    options:
+      - id: A
+        text: Increase to ml.p3.8xlarge to fully utilize GPU capabilities and reduce training time
+      - id: B
+        text: Migrate to ml.c5.2xlarge CPU instance and enable managed spot training for maximum cost savings
+      - id: C
+        text: Enable mixed precision training to increase GPU utilization and reduce training time
+      - id: D
+        text: Implement distributed training across 2 ml.p3.xlarge instances to improve GPU efficiency
+    correctAnswer: B
+    explanation: >
+      The low GPU utilization (22%) indicates the model doesn't benefit from GPU acceleration. XGBoost and other
+      tree-based algorithms typically perform better on CPU instances with optimized CPU instructions (AVX, SSE).
+      Migrating to ml.c5.2xlarge (compute-optimized CPU instance) would reduce cost from $3.825/hour to $0.38/hour
+      (90% reduction). Additionally, enabling managed spot training can reduce costs by another 70-90%. Combined,
+      this could reduce the $22.95 training cost to approximately $2-3. Option A increases cost by 4x unnecessarily.
+      Option C (mixed precision) is a GPU optimization technique that doesn't address the fundamental problem that
+      XGBoost doesn't benefit from GPUs. Option D adds distributed training complexity without addressing the GPU
+      inefficiency. Always match instance type to workload characteristics: use GPU instances only for deep learning
+      models that benefit from GPU acceleration, not for tree-based or linear models.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks-run-and-manage-choose.html
+    services: [Amazon SageMaker, Amazon CloudWatch]
+    concepts: [instance-right-sizing, gpu-utilization, workload-matching]
+
+  - id: co-009
+    type: single
+    text: >
+      A company performs batch inference on 100,000 images weekly every Monday morning. The inference workload
+      takes 4 hours to complete using ml.g5.2xlarge instances. The rest of the week, no inference is performed.
+      Current monthly cost is approximately $200 for a provisioned real-time endpoint running 24/7. Which solution
+      provides the MOST cost savings?
+    options:
+      - id: A
+        text: Use SageMaker Batch Transform with spot instances, running only on Monday mornings
+      - id: B
+        text: Migrate to serverless inference to automatically scale to zero when not in use
+      - id: C
+        text: Implement auto-scaling to scale endpoints from 5 instances on Monday to 1 instance the rest of the week
+      - id: D
+        text: Use asynchronous inference with auto-scaling to minimum 0 instances
+    correctAnswer: A
+    explanation: >
+      SageMaker Batch Transform is designed for offline batch processing and only runs when jobs are submitted,
+      eliminating idle capacity costs. With spot instances, the cost would be approximately: 4 hours/week × 4 weeks/month
+      × $0.66/hour (spot rate ~70% off on-demand) = ~$11/month vs $200/month for 24/7 real-time endpoint (95% savings).
+      Batch Transform doesn't require endpoint infrastructure, provisioning instances only during job execution.
+      Option B (serverless) could work but has limitations: 60-second timeout per request may not suit complex image
+      inference, and cold start latency is unnecessary overhead for batch workloads. Option C reduces cost but still
+      maintains 24/7 minimum capacity. Option D (asynchronous inference) is closer but still requires endpoint
+      infrastructure and auto-scaling configuration. Batch Transform with spot instances is the most cost-effective
+      solution for periodic, scheduled batch inference workloads with no real-time requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html
+    services: [Amazon SageMaker, Amazon EC2 Spot Instances]
+    concepts: [batch-transform, spot-instances, batch-inference]
+
+  - id: co-010
+    type: single
+    text: >
+      A data science team has 20 notebook instances (ml.t3.medium) running 24/7 for $73/month each ($1,460/month total).
+      CloudWatch logs show that notebooks are actively used only 25% of the time (6 hours per day on average).
+      The team occasionally forgets to stop instances after work. What is the MOST effective cost optimization strategy?
+    options:
+      - id: A
+        text: Migrate all users to SageMaker Studio with lifecycle configurations that auto-stop idle instances after 1 hour
+      - id: B
+        text: Purchase a 1-year ML Savings Plan to cover notebook instance costs at 64% discount
+      - id: C
+        text: Downsize instances to ml.t3.small to reduce hourly costs by 50%
+      - id: D
+        text: Implement EventBridge rules with Lambda to stop all notebooks automatically at 6pm daily
+    correctAnswer: A
+    explanation: >
+      SageMaker Studio provides automatic cost optimization features including lifecycle configurations that auto-stop
+      idle instances, addressing the root cause (forgotten instances running idle). Migrating to Studio enables:
+      (1) automatic shutdown of idle notebooks after configurable periods (e.g., 1 hour), (2) individual app-based
+      lifecycle (each notebook/terminal is separate app that can stop independently), (3) better resource management
+      vs classic notebook instances. This would reduce costs by ~75% if notebooks are active only 25% of the time
+      (~$365/month vs $1,460/month). Option B (Savings Plan) reduces cost but doesn't address utilization inefficiency
+      (still paying for 24/7 × 64% discount = significant waste). Option C reduces hourly cost but notebooks still
+      run 24/7. Option D helps but is too rigid (team members working late would have notebooks stopped mid-work).
+      Studio with lifecycle configurations provides automatic, intelligent idle detection and shutdown, maximizing
+      cost savings while maintaining user experience.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks-run-and-manage-shut-down.html
+    services: [Amazon SageMaker]
+    concepts: [sagemaker-studio, lifecycle-configurations, idle-resource-management]
+
+  - id: co-011
+    type: multi
+    correctCount: 2
+    text: >
+      A company trains a large language model that takes 72 hours on a single ml.p4d.24xlarge instance (8 A100 GPUs)
+      at a cost of $32.77/hour ($2,359 total). The training script supports distributed training and checkpointing.
+      CloudWatch shows GPUUtilization at 88% and GPUMemoryUtilization at 76%. Which TWO approaches could reduce
+      training costs while maintaining or improving training time? (Select TWO)
+    options:
+      - id: A
+        text: Enable managed spot training with checkpointing to S3 every 30 minutes
+      - id: B
+        text: Migrate to 4 ml.trn1.32xlarge instances using SageMaker distributed training with model parallelism
+      - id: C
+        text: Purchase a 3-year ML Savings Plan commitment to cover the ml.p4d.24xlarge instance costs
+      - id: D
+        text: Implement mixed precision training with automatic mixed precision (AMP) to reduce training time
+      - id: E
+        text: Downsize to ml.p3.16xlarge (4 V100 GPUs) to reduce instance costs by 60%
+    correctAnswer: [A, B]
+    explanation: >
+      Managed spot training (Option A) can reduce costs by up to 90% for fault-tolerant workloads. With checkpointing
+      every 30 minutes and a 72-hour training job, interruptions would have minimal impact (resume from last checkpoint).
+      Spot savings could reduce $2,359 to approximately $236-472. AWS Trainium instances (Option B, ml.trn1.32xlarge)
+      offer 30-50% better price-performance than GPU instances for large model training, with excellent distributed
+      training support. Four ml.trn1.32xlarge instances would provide comparable or better training performance at
+      lower total cost. Option C (Savings Plan) provides 64% savings but still costs ~$850 vs spot's ~$236. Option D
+      (mixed precision) helps but provides ~2x speedup (not as significant as spot/Trainium savings). Option E
+      (downsize) would significantly increase training time and may not fit model in memory. Combining spot training
+      with purpose-built accelerators (Trainium) provides maximum cost optimization for large-scale model training.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    services: [Amazon SageMaker, AWS Trainium]
+    concepts: [managed-spot-training, trainium-instances, distributed-training]
+
+  - id: co-012
+    type: single
+    text: >
+      An inference endpoint serves variable traffic ranging from 100 requests/hour during nights to 10,000 requests/hour
+      during peak business hours. The endpoint is currently provisioned with 3 ml.m5.xlarge instances to handle peak
+      load, but CloudWatch shows average CPUUtilization at 35% across 24 hours. How should this be optimized for cost?
+    options:
+      - id: A
+        text: Downsize to 3 ml.m5.large instances to reduce costs by 50% while maintaining capacity
+      - id: B
+        text: Implement target tracking auto-scaling targeting 70% CPUUtilization with min 1, max 5 instances
+      - id: C
+        text: Migrate to asynchronous inference with queue-based processing and auto-scaling to zero
+      - id: D
+        text: Convert to serverless inference to automatically scale with request volume
+    correctAnswer: B
+    explanation: >
+      Target tracking auto-scaling optimizes for variable load by automatically adjusting instance count to maintain
+      target utilization (70% CPU). Configuration: min 1 instance (handles 100 requests/hour nights), max 5 instances
+      (handles 10,000 requests/hour peaks). This reduces costs by ~60% (average 1.5 instances vs 3 provisioned 24/7).
+      Auto-scaling provides: (1) cost optimization during low traffic, (2) automatic scale-up for peaks, (3) consistent
+      performance via target utilization. Option A reduces cost but maintains 24/7 provisioning inefficiency and risks
+      under-capacity during peaks. Option C (asynchronous inference) changes the inference pattern from synchronous
+      to queued, which may not be acceptable for real-time applications. Option D (serverless) has limitations: cold
+      starts during scale-up may impact latency, and 10,000 requests/hour may be more cost-effective with auto-scaled
+      real-time endpoints. Target tracking auto-scaling is ideal for variable load patterns requiring real-time inference.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/endpoint-auto-scaling.html
+    services: [Amazon SageMaker, Amazon CloudWatch]
+    concepts: [auto-scaling, target-tracking, variable-load-optimization]
+
+  - id: co-013
+    type: single
+    text: >
+      A company uses SageMaker Feature Store with both online and offline stores. The online store receives 1 million
+      feature reads per day for real-time inference, while the offline store (S3-based) is queried weekly for training
+      data. Current monthly costs are: online store $1,200, offline store $50. The team wants to reduce costs. What
+      is the MOST effective optimization?
+    options:
+      - id: A
+        text: Migrate all features to offline store only and use Athena queries for real-time inference
+      - id: B
+        text: Implement TTL (time-to-live) on online store features to automatically expire stale features
+      - id: C
+        text: Increase batch size for feature reads to reduce total number of read operations
+      - id: D
+        text: Migrate offline store from S3 Standard to S3 Glacier for long-term storage cost reduction
+    correctAnswer: B
+    explanation: >
+      Implementing TTL on online store features automatically expires and removes stale features, reducing storage
+      and read costs. Many ML applications have features that become stale (e.g., user activity features older than
+      30 days). By configuring TTL to remove features no longer needed for real-time inference, you reduce online
+      store size and associated costs. Online store pricing is based on storage ($0.25/GB-month) and throughput
+      (reads/writes), so removing unused features directly reduces costs. Option A is incorrect because offline store
+      with Athena queries cannot meet real-time inference latency requirements (online store provides single-digit
+      millisecond latency). Option C may reduce operation count slightly but doesn't address the fundamental issue
+      of potentially unnecessary feature storage. Option D targets the wrong store; the offline store ($50/month)
+      is already much cheaper than online store ($1,200/month), and Glacier's retrieval times are incompatible with
+      weekly training data queries. TTL on online store features provides the most effective cost reduction while
+      maintaining required performance characteristics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html
+    services: [Amazon SageMaker Feature Store]
+    concepts: [feature-store, ttl, online-store-optimization]
+
+  - id: co-014
+    type: single
+    text: >
+      A training job runs hyperparameter optimization (HPO) with 100 training jobs, each taking 2 hours on ml.m5.xlarge
+      instances. The current cost is $53.80 ($0.269/hour × 2 hours × 100 jobs). SageMaker automatic early stopping
+      is not enabled. CloudWatch logs show that 40% of jobs plateaued early (no improvement after 30 minutes). How
+      can HPO costs be reduced?
+    options:
+      - id: A
+        text: Reduce max parallel jobs from 10 to 5 to spread costs over longer time period
+      - id: B
+        text: Enable automatic early stopping to terminate poor-performing jobs before completion
+      - id: C
+        text: Migrate to ml.m5.large instances to reduce hourly costs by 50%
+      - id: D
+        text: Switch from Random search strategy to Grid search for more efficient exploration
+    correctAnswer: B
+    explanation: >
+      Automatic early stopping terminates training jobs that are unlikely to improve based on the objective metric,
+      reducing wasted compute time. With 40% of jobs plateauing early after 30 minutes but running for 2 hours,
+      enabling early stopping would save approximately: 40 jobs × 1.5 hours saved × $0.269/hour = $16.14 (30% cost
+      reduction). Early stopping uses statistical models to predict whether continued training will improve results,
+      stopping jobs when probability of improvement is low. Option A doesn't reduce total compute costs, just spreads
+      them over time. Option C (downsize instances) may work but could also increase training time, negating savings.
+      Option D is incorrect; Grid search typically requires MORE jobs than Random search to explore the hyperparameter
+      space exhaustively. Automatic early stopping is a built-in SageMaker feature specifically designed to optimize
+      HPO costs by eliminating wasteful training time on jobs that won't converge to better results.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-early-stopping.html
+    services: [Amazon SageMaker]
+    concepts: [hyperparameter-optimization, early-stopping, cost-optimization]
+
+  - id: co-015
+    type: multi
+    correctCount: 3
+    text: >
+      A company wants to optimize costs for a production ML pipeline that includes: (1) daily model retraining on
+      500 GB datasets, (2) real-time inference serving 5,000 requests/day with strict <100ms latency requirements,
+      (3) monthly batch scoring of 10 million records for reporting. Which THREE optimization strategies are
+      MOST appropriate? (Select THREE)
+    options:
+      - id: A
+        text: Use managed spot training with checkpointing for daily retraining jobs
+      - id: B
+        text: Deploy inference endpoint on ml.m5.xlarge with ML Savings Plan commitment
+      - id: C
+        text: Implement batch scoring using Batch Transform with spot instances
+      - id: D
+        text: Migrate inference endpoint to serverless to automatically scale to zero during low traffic
+      - id: E
+        text: Use S3 Intelligent-Tiering for all training datasets to optimize storage costs
+    correctAnswer: [A, B, C]
+    explanation: >
+      Each component requires different optimization strategies. Option A (spot training): Daily retraining jobs are
+      ideal for spot instances (up to 90% savings) with checkpointing for fault tolerance. Predictable daily schedule
+      doesn't require immediate completion guarantees. Option B (ML Savings Plan for inference): Real-time inference
+      with strict latency requirements needs provisioned capacity (not serverless). The predictable 24/7 workload
+      benefits from Savings Plan commitment (up to 64% savings). Option C (Batch Transform with spot): Monthly batch
+      scoring is offline processing ideal for Batch Transform, and spot instances provide additional savings without
+      impacting the monthly reporting schedule. Option D is incorrect because serverless inference has cold start
+      latency (1-5 seconds) that violates the <100ms requirement, and 5,000 requests/day is sufficient volume where
+      provisioned endpoints are cost-competitive. Option E is suboptimal; S3 Intelligent-Tiering works but daily access
+      means data stays in frequent-access tier at same cost as S3 Standard with added monitoring fees. The correct
+      strategy uses different cost optimization approaches for each workload type based on their specific requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    services: [Amazon SageMaker, Amazon S3]
+    concepts: [workload-specific-optimization, spot-instances, savings-plans]
+
+  - id: co-016
+    type: single
+    text: >
+      A company has deployed 5 ml.g5.2xlarge inference endpoints across different production applications. Cost Explorer
+      analysis shows consistent usage of 3,650 hours per month per endpoint (approximately $6,150/month per endpoint,
+      $30,750/month total). The workload will continue for the next 3 years. What is the MOST cost-effective pricing
+      strategy?
+    options:
+      - id: A
+        text: Purchase 5 Reserved Instances for ml.g5.2xlarge with 3-year all upfront payment
+      - id: B
+        text: Purchase a 3-year ML Savings Plan with $20,000/month commitment and all upfront payment
+      - id: C
+        text: Enable managed spot instances for inference endpoints with automatic failover
+      - id: D
+        text: Continue with on-demand pricing and implement auto-scaling to reduce usage
+    correctAnswer: B
+    explanation: >
+      ML Savings Plans provide up to 64% discount for commitment-based pricing and offer more flexibility than Reserved
+      Instances. With $30,750/month current spend, a 3-year Savings Plan commitment of ~$20,000/month (covering expected
+      discounted costs) would provide maximum savings while maintaining flexibility. ML Savings Plans automatically
+      apply across: (1) any instance family (ml.g5, ml.p3, ml.m5, etc.), (2) all regions, (3) different SageMaker
+      services (training, inference, notebooks). Option A (Reserved Instances) is incorrect because AWS doesn't offer
+      Reserved Instances for SageMaker ML instances; Savings Plans replaced RIs for ML workloads. Option C (spot
+      instances) is not suitable for production inference requiring guaranteed availability and consistent latency.
+      Option D doesn't leverage commitment pricing discounts and auto-scaling may not reduce costs significantly if
+      usage is already optimized. The 3-year term with all upfront payment maximizes discount (up to 64%), reducing
+      monthly costs from $30,750 to approximately $11,000-15,000 based on commitment level.
+    awsDocLink: https://aws.amazon.com/savingsplans/ml-pricing/
+    services: [AWS Savings Plans, Amazon SageMaker]
+    concepts: [ml-savings-plans, long-term-commitment, production-workloads]
+
+  - id: co-017
+    type: single
+    text: >
+      A data science team uses SageMaker Inference Recommender to benchmark a deep learning model. The recommender
+      output shows: (1) ml.c6i.4xlarge: 250 TPS, 45ms p99 latency, $520/month, (2) ml.g5.xlarge: 300 TPS, 38ms
+      p99 latency, $844/month, (3) ml.inf2.xlarge: 320 TPS, 40ms p99 latency, $553/month. Application requirements
+      are 200 TPS and <50ms p99 latency. Which instance type should be selected?
+    options:
+      - id: A
+        text: ml.c6i.4xlarge for the lowest cost option that meets requirements
+      - id: B
+        text: ml.g5.xlarge for the best latency performance under 50ms requirement
+      - id: C
+        text: ml.inf2.xlarge for the best price-performance ratio balancing cost and performance
+      - id: D
+        text: ml.g5.xlarge because GPU acceleration will provide better long-term scalability
+    correctAnswer: A
+    explanation: >
+      When all options meet performance requirements (all exceed 200 TPS and all under 50ms p99 latency), select the
+      lowest cost option. The ml.c6i.4xlarge at $520/month provides 250 TPS and 45ms p99 latency, meeting both
+      requirements (200 TPS needed, <50ms required) with 25% margin. There's no benefit to paying more for ml.g5.xlarge
+      ($844/month) or ml.inf2.xlarge ($553/month) when ml.c6i.4xlarge already exceeds requirements. Option B is
+      incorrect; while ml.g5.xlarge has slightly better latency (38ms vs 45ms), both are well under the 50ms threshold
+      and the marginal latency improvement doesn't justify 62% higher cost. Option C (ml.inf2.xlarge) has better
+      price-performance than ml.g5.xlarge but still costs 6% more than ml.c6i.4xlarge without providing necessary
+      additional performance. Option D incorrectly assumes GPU provides better scalability; scalability depends on
+      auto-scaling configuration and load balancing, not instance type. Always select the least expensive instance
+      that meets all requirements to optimize costs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    services: [Amazon SageMaker]
+    concepts: [inference-recommender, cost-performance-analysis, instance-selection]
+
+  - id: co-018
+    type: multi
+    correctCount: 2
+    text: >
+      A company's AWS Cost Explorer shows that SageMaker costs have increased by 150% over the past month with no
+      corresponding increase in model deployments or training schedules. Cost Anomaly Detection flagged unusual
+      spending. Which TWO actions should be taken to identify and remediate the root cause? (Select TWO)
+    options:
+      - id: A
+        text: Filter Cost Explorer by cost allocation tags to identify which projects or teams are driving increased costs
+      - id: B
+        text: Check for running notebook instances or endpoints using AWS CLI 'list-notebook-instances' and 'list-endpoints' commands
+      - id: C
+        text: Immediately purchase ML Savings Plans to reduce the higher costs by 64%
+      - id: D
+        text: Review CloudWatch metrics for all training jobs to identify inefficiently configured distributed training
+      - id: E
+        text: Query CloudTrail logs to identify who launched high-cost resources and when
+    correctAnswer: [A, B]
+    explanation: >
+      Unexpected cost increases require identifying runaway resources. Option A (Cost Explorer with tags) quickly
+      identifies which projects, teams, or environments are responsible for the cost spike, narrowing investigation
+      scope. Option B (list running resources) identifies forgotten or misconfigured resources that may be running
+      idle (e.g., notebook instances left running 24/7, unused endpoints). Together, these actions provide immediate
+      visibility into cost drivers. Option C (purchase Savings Plans) is premature; first identify and eliminate
+      wasteful spending before committing to higher baseline costs. Option D (CloudWatch metrics for training jobs)
+      is unlikely to reveal 150% cost increase since the scenario states training schedules haven't changed. Option E
+      (CloudTrail logs) can help but is more time-consuming than directly checking running resources. The most
+      efficient approach combines cost attribution (tags) with resource inventory (list commands) to quickly identify
+      and stop unnecessary spending. Common causes of sudden cost spikes include: forgotten notebook instances, zombie
+      endpoints from failed deployments, misconfigured auto-scaling, or over-provisioned test environments.
+    awsDocLink: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html
+    services: [AWS Cost Explorer, Amazon SageMaker, AWS CloudTrail]
+    concepts: [cost-spike-investigation, resource-inventory, cost-attribution]

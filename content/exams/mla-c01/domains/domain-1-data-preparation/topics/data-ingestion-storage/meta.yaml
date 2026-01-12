@@ -1,0 +1,53 @@
+id: data-ingestion-storage
+name: Data Ingestion and Storage Strategies
+shortName: Data Ingestion
+examTask: task-1-1
+description: |
+  Master the design and implementation of data ingestion pipelines and storage solutions
+  for machine learning workloads on AWS. This topic covers streaming and batch ingestion
+  patterns using Amazon Kinesis and AWS Glue, optimal storage strategies with Amazon S3
+  and data lakes, data format selection (Parquet, ORC, CSV, JSON, RecordIO), partitioning
+  and cataloging with AWS Glue Data Catalog, and integration with SageMaker training pipelines.
+  Learn to architect cost-effective, performant data ingestion systems that support both
+  real-time and batch ML workflows, optimize data formats for training performance, and
+  implement metadata management for ML feature discovery.
+estimatedStudyTime: 90
+difficulty: intermediate
+keyServices:
+  - Amazon S3
+  - Amazon Kinesis Data Streams
+  - Amazon Kinesis Data Firehose
+  - AWS Glue
+  - AWS Glue Data Catalog
+  - Amazon SageMaker Feature Store
+  - Amazon EMR
+  - AWS Lake Formation
+keyConcepts:
+  - Streaming vs batch ingestion patterns
+  - Data lake architecture and layering
+  - Columnar storage formats (Parquet, ORC)
+  - S3 partitioning strategies for ML
+  - Kinesis shard capacity planning
+  - RecordIO-Protobuf format for SageMaker
+  - Pipe mode vs File mode training
+  - Glue crawlers and schema discovery
+  - Feature Store online vs offline stores
+  - Data catalog metadata management
+  - S3 Intelligent-Tiering for training data
+  - Data format conversion and optimization
+awsDocLinks:
+  - title: "SageMaker Feature Store Data Ingestion"
+    url: "https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-ingest-data.html"
+    type: doc
+  - title: "AWS Data Ingestion Patterns and Practices"
+    url: "https://docs.aws.amazon.com/whitepapers/latest/aws-cloud-data-ingestion-patterns-practices/data-ingestion-patterns.html"
+    type: whitepaper
+  - title: "AWS Glue Data Catalog and Crawlers"
+    url: "https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html"
+    type: doc
+  - title: "Amazon Kinesis Data Streams Quotas and Limits"
+    url: "https://docs.aws.amazon.com/streams/latest/dev/service-sizes-and-limits.html"
+    type: doc
+  - title: "Common Data Formats for SageMaker Training"
+    url: "https://docs.aws.amazon.com/sagemaker/latest/dg/cdf-training.html"
+    type: doc

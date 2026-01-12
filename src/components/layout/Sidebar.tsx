@@ -38,7 +38,7 @@ export function Sidebar({ sidebarHierarchy, examId }: SidebarProps) {
       icon: ClipboardCheck,
     },
     {
-      href: '/experiments',
+      href: `/${examId}/labs`,
       label: 'Labs',
       icon: FlaskConical,
     },

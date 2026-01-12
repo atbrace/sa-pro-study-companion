@@ -1,0 +1,50 @@
+id: model-evaluation
+name: Model Evaluation and Performance Analysis
+shortName: Model Evaluation
+examTask: task-2-3
+description: >-
+  Master the techniques and tools for analyzing ML model performance using appropriate metrics,
+  comparing model versions, and iterating on improvements. Learn to use Amazon SageMaker Debugger
+  for training insights, SageMaker Experiments for tracking iterations, and Model Monitor for
+  production performance. Understand evaluation metrics for classification, regression, and
+  forecasting problems, including confusion matrices, precision-recall trade-offs, and statistical
+  validation techniques.
+estimatedStudyTime: 75
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Debugger
+  - Amazon SageMaker Experiments
+  - Amazon SageMaker Model Monitor
+  - Amazon SageMaker Autopilot
+  - Amazon SageMaker Model Registry
+  - Amazon CloudWatch
+
+keyConcepts:
+  - Classification Metrics (Accuracy, Precision, Recall, F1-Score)
+  - Confusion Matrix Analysis
+  - ROC-AUC and Precision-Recall Curves
+  - Regression Metrics (MAE, MSE, RMSE, R-squared)
+  - Cross-Validation Techniques
+  - Model Comparison and A/B Testing
+  - Overfitting and Underfitting Detection
+  - Model Quality Monitoring
+  - Performance Drift Detection
+  - Hyperparameter Impact Analysis
+
+awsDocLinks:
+  - title: Model Quality Metrics and CloudWatch Monitoring
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    type: doc
+  - title: Amazon SageMaker Debugger
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/train-debugger.html
+    type: doc
+  - title: Amazon SageMaker Experiments in Studio Classic
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/experiments.html
+    type: doc
+  - title: Data and Model Quality Monitoring with Model Monitor
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    type: doc
+  - title: Compare Model Versions in Model Registry
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-version-compare.html
+    type: doc

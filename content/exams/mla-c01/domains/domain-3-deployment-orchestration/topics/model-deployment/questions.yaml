@@ -1,0 +1,725 @@
+questions:
+  - id: md-001
+    type: single
+    text: |
+      A healthcare company needs to deploy a medical image classification model that processes
+      X-ray images averaging 8 MB in size. Processing each image requires 3 minutes due to
+      complex preprocessing steps. The application receives 50-100 requests per hour during
+      business hours and almost no requests overnight. Which deployment option provides the
+      most cost-effective solution while meeting these requirements?
+    options:
+      - id: A
+        text: Deploy using Amazon SageMaker real-time inference with ml.p3.2xlarge instances and autoscaling configured to scale to zero during idle periods
+      - id: B
+        text: Deploy using Amazon SageMaker serverless inference with 6144 MB memory configuration
+      - id: C
+        text: Deploy using Amazon SageMaker asynchronous inference with autoscaling configured to scale to zero during idle periods
+      - id: D
+        text: Deploy using Amazon SageMaker Batch Transform with scheduled jobs every hour
+    correctAnswer: C
+    explanation: |
+      Asynchronous inference is the correct choice because it supports large payloads up to 1 GB
+      (accommodating 8 MB images) and long processing times up to 60 minutes (supporting the
+      3-minute processing requirement). The autoscaling to zero capability eliminates charges
+      during overnight idle periods, optimizing costs. Real-time endpoints (A) have a 60-second
+      timeout limit and would fail for 3-minute processing. Serverless inference (B) has a
+      4 MB payload limit and 60-second timeout, both insufficient for this use case. Batch
+      Transform (D) would work but requires maintaining hourly schedules and doesn't provide
+      near-real-time results for business hours requests.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html
+    services:
+      - Amazon SageMaker Asynchronous Inference
+      - Application Auto Scaling
+    concepts:
+      - Asynchronous inference for long-running requests
+      - Payload size limits across deployment types
+      - Cost optimization with scale-to-zero
+
+  - id: md-002
+    type: single
+    text: |
+      A financial services company hosts 300 fraud detection models, each serving a different
+      customer segment. Most models receive fewer than 10 requests per hour, but a few models
+      handle 1000+ requests per hour. All models share the same framework and container
+      requirements. The company wants to minimize hosting costs. Which deployment strategy
+      should the ML engineer recommend?
+    options:
+      - id: A
+        text: Deploy each model on a separate real-time endpoint with t3.medium instances
+      - id: B
+        text: Deploy all models using serverless inference with separate endpoints per model
+      - id: C
+        text: Deploy models using multi-model endpoints on ml.m5.xlarge instances with autoscaling
+      - id: D
+        text: Deploy models using asynchronous inference with one endpoint per model
+    correctAnswer: C
+    explanation: |
+      Multi-model endpoints (MME) are specifically designed for this scenario where you have
+      many models with varying traffic patterns sharing the same framework. MME hosts multiple
+      models on shared infrastructure, dynamically loading models from S3 as needed. This
+      dramatically reduces costs compared to dedicated endpoints per model while maintaining
+      good performance. Models with higher traffic remain loaded in memory, while infrequently
+      accessed models are loaded on-demand. Option A would require 300 separate endpoints,
+      extremely costly. Option B would create 300 serverless endpoints with cold start latency
+      for each, unnecessary when models share infrastructure. Option D doesn't address the cost
+      efficiency of shared hosting for many models.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html
+    services:
+      - Amazon SageMaker Multi-Model Endpoints
+      - Application Auto Scaling
+      - Amazon S3
+    concepts:
+      - Multi-model endpoint hosting patterns
+      - Dynamic model loading
+      - Cost optimization for many models
+
+  - id: md-003
+    type: single
+    text: |
+      An e-commerce company runs a recommendation engine that serves product recommendations
+      to users browsing the website. The model must respond within 100 milliseconds to maintain
+      a smooth user experience. Traffic is highly variable, with peak traffic 10x higher than
+      average during flash sales and holidays. Which deployment configuration best meets these
+      requirements?
+    options:
+      - id: A
+        text: Serverless inference with 4096 MB memory to handle variable traffic automatically
+      - id: B
+        text: Real-time endpoint with ml.c5.2xlarge instances, autoscaling based on ConcurrentRequestsPerModel metric
+      - id: C
+        text: Asynchronous inference with high-memory instances to ensure fast processing
+      - id: D
+        text: Batch Transform jobs triggered by EventBridge rules when user sessions start
+    correctAnswer: B
+    explanation: |
+      Real-time endpoints with autoscaling provide the consistent low latency required for
+      interactive recommendations. The 100ms requirement eliminates serverless inference (A)
+      due to potential cold start latency when scaling up. Autoscaling based on
+      ConcurrentRequestsPerModel enables faster response to traffic spikes compared to
+      traditional invocation-based metrics, providing up to 6x faster scale-up detection.
+      This is crucial for handling 10x traffic spikes during flash sales. Asynchronous
+      inference (C) is designed for queued requests with near-real-time latency, not the
+      immediate responses needed here. Batch Transform (D) is for offline processing, not
+      interactive user experiences.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints-deploy-models.html
+    services:
+      - Amazon SageMaker Real-Time Endpoints
+      - Application Auto Scaling
+      - Amazon CloudWatch
+    concepts:
+      - Real-time inference endpoints and hosting
+      - Autoscaling policies and CloudWatch metrics
+      - ConcurrentRequestsPerModel for faster scaling
+
+  - id: md-004
+    type: multi
+    correctCount: 2
+    text: |
+      A data science team needs to deploy a natural language processing model for sentiment
+      analysis of customer reviews. The model will be deployed to production serving millions
+      of requests per day. Which actions should the team take to ensure high availability?
+      (Select TWO)
+    options:
+      - id: A
+        text: Deploy the endpoint with a minimum of 2 instances distributed across multiple Availability Zones
+      - id: B
+        text: Configure the VPC with subnets in at least two different Availability Zones
+      - id: C
+        text: Enable SageMaker automatic model tuning to optimize performance continuously
+      - id: D
+        text: Use Batch Transform instead of real-time endpoints to improve reliability
+      - id: E
+        text: Deploy the model using serverless inference to eliminate instance failures
+    correctAnswer: [A, B]
+    explanation: |
+      For high availability, AWS strongly recommends deploying multiple instances (A) across
+      multiple Availability Zones configured in your VPC (B). This ensures that if one AZ
+      experiences issues, traffic continues to be served by instances in other AZs. SageMaker
+      automatically distributes instances across available AZs when you specify multiple
+      instances. Option C (automatic model tuning) optimizes hyperparameters during training,
+      not deployment availability. Option D (Batch Transform) is for offline processing and
+      doesn't provide high availability for real-time requests. Option E (serverless) still
+      uses instances under the hood and doesn't inherently provide better availability than
+      properly configured real-time endpoints with multiple instances.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-best-practices.html
+    services:
+      - Amazon SageMaker Real-Time Endpoints
+      - Amazon VPC
+    concepts:
+      - High availability and multi-AZ deployment
+      - Production deployment best practices
+
+  - id: md-005
+    type: single
+    text: |
+      A robotics company needs to deploy computer vision models to autonomous robots operating
+      in warehouses with unreliable network connectivity. The robots must make real-time
+      navigation decisions even when disconnected from the cloud. Model updates should be
+      deployable remotely when connectivity is available. Which deployment approach should
+      be implemented?
+    options:
+      - id: A
+        text: Deploy models using SageMaker real-time endpoints with VPC endpoints for private connectivity
+      - id: B
+        text: Compile models with SageMaker Neo and deploy to robots using AWS IoT Greengrass V2
+      - id: C
+        text: Use SageMaker asynchronous inference with S3 for offline request queuing
+      - id: D
+        text: Deploy models using SageMaker serverless inference with long timeout configurations
+    correctAnswer: B
+    explanation: |
+      Edge deployment using SageMaker Neo compilation and AWS IoT Greengrass V2 is the correct
+      approach for edge devices requiring offline operation. Neo optimizes models for edge
+      hardware (up to 2x faster, up to 10x smaller), crucial for resource-constrained robots.
+      IoT Greengrass V2 enables local model execution without cloud connectivity and supports
+      over-the-air (OTA) model updates when network is available. Options A, C, and D all
+      require active cloud connectivity for inference, failing the offline operation
+      requirement. Real-time endpoints (A) need network access per request. Asynchronous
+      inference (C) queues in cloud. Serverless (D) runs in cloud, not on edge devices.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    services:
+      - Amazon SageMaker Neo
+      - AWS IoT Greengrass
+    concepts:
+      - Edge deployment with IoT Greengrass
+      - Model compilation and optimization with Neo
+      - Offline operation requirements
+
+  - id: md-006
+    type: single
+    text: |
+      An ML engineer is deploying a new version of a critical production model and wants to
+      validate its performance before fully replacing the existing model. The validation should
+      not impact end users even if the new model has issues. Which deployment strategy should
+      be used?
+    options:
+      - id: A
+        text: Deploy the new model to a separate endpoint and use weighted routing to gradually shift traffic
+      - id: B
+        text: Use shadow testing by deploying both models to the same endpoint, sending production traffic only to the existing model
+      - id: C
+        text: Replace the existing model with the new model during a scheduled maintenance window
+      - id: D
+        text: Use SageMaker Inference Recommender to test the model before deployment
+    correctAnswer: B
+    explanation: |
+      Shadow testing is specifically designed for this scenario. You deploy the new model
+      variant alongside the existing production variant on the same endpoint. Production
+      traffic invokes both variants, but only the existing model's responses are returned to
+      users. This allows you to compare metrics (latency, errors, resource utilization) between
+      variants without any user impact. Option A (weighted routing) exposes users to the new
+      model, potentially impacting them if issues exist. Option C (replacement during
+      maintenance) provides no validation before full deployment. Option D (Inference
+      Recommender) helps select optimal instance types but doesn't validate model behavior
+      in production.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-best-practices.html
+    services:
+      - Amazon SageMaker Real-Time Endpoints
+      - Amazon CloudWatch
+    concepts:
+      - Shadow testing and deployment validation
+      - Production deployment best practices
+      - Safe deployment strategies
+
+  - id: md-007
+    type: single
+    text: |
+      A marketing analytics team runs weekly batch predictions on their entire customer database
+      of 50 million records stored in Amazon S3. The predictions don't need to be real-time,
+      and the job should complete within 6 hours. Which deployment option provides the most
+      cost-effective solution?
+    options:
+      - id: A
+        text: Deploy a real-time endpoint and invoke it 50 million times programmatically
+      - id: B
+        text: Deploy a serverless inference endpoint and batch invoke it for all records
+      - id: C
+        text: Use SageMaker Batch Transform with multiple instances to process the data in parallel
+      - id: D
+        text: Deploy an asynchronous inference endpoint and queue all 50 million requests
+    correctAnswer: C
+    explanation: |
+      Batch Transform is specifically designed for offline processing of large datasets stored
+      in S3. It's the most cost-effective option because you only pay for compute while the
+      job runs, then resources are automatically released. Batch Transform can distribute
+      processing across multiple instances for parallel execution to meet the 6-hour deadline.
+      Option A (real-time endpoint) would require maintaining an endpoint and making 50 million
+      individual API calls, expensive and inefficient. Option B (serverless) has the same
+      invocation overhead. Option D (asynchronous) is designed for queued requests with large
+      payloads, not batch processing of entire datasets, and would require managing 50 million
+      individual requests.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html
+    services:
+      - Amazon SageMaker Batch Transform
+      - Amazon S3
+    concepts:
+      - Batch transform for offline processing
+      - Cost optimization for batch workloads
+      - Parallel processing with multiple instances
+
+  - id: md-008
+    type: multi
+    correctCount: 3
+    text: |
+      An ML engineer is configuring autoscaling for a production SageMaker real-time endpoint
+      serving a language translation model. The endpoint experiences significant traffic
+      variations throughout the day. Which autoscaling best practices should be implemented?
+      (Select THREE)
+    options:
+      - id: A
+        text: Use ConcurrentRequestsPerModel as the target tracking metric for faster scale-up detection
+      - id: B
+        text: Configure scale-in cooldown period longer than scale-out cooldown to prevent instance thrashing
+      - id: C
+        text: Set minimum instance count to 0 to minimize costs during off-peak hours
+      - id: D
+        text: Use InvocationsPerInstance as the primary metric for autoscaling decisions
+      - id: E
+        text: Configure the target value based on load testing to balance performance and cost
+    correctAnswer: [A, B, E]
+    explanation: |
+      ConcurrentRequestsPerModel (A) is the recommended metric because it provides up to 6x
+      faster scale-up detection by tracking actual in-flight requests rather than invocation
+      counts over time windows. Longer scale-in cooldown than scale-out (B) prevents rapid
+      oscillation between scaling up and down (thrashing), improving stability and reducing
+      costs from frequent instance launches. Load testing to determine target values (E) ensures
+      the autoscaling policy balances performance requirements with cost efficiency. Option C
+      is incorrect because real-time endpoints cannot scale to 0 instances; minimum must be 1+.
+      For scale-to-zero, use serverless or asynchronous inference. Option D uses the older
+      invocation-based metric, which is less responsive than concurrency-based metrics.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/endpoint-auto-scaling-policy.html
+    services:
+      - Application Auto Scaling
+      - Amazon CloudWatch
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Autoscaling policies and CloudWatch metrics
+      - ConcurrentRequestsPerModel for faster scaling
+      - Cooldown periods and scaling stability
+
+  - id: md-009
+    type: single
+    text: |
+      A research team has trained a PyTorch deep learning model for image classification that
+      will be deployed to ml.c5.xlarge instances. The team wants to optimize inference
+      performance and reduce costs. Which approach should they use?
+    options:
+      - id: A
+        text: Enable SageMaker automatic model tuning to optimize the deployed model
+      - id: B
+        text: Compile the model with SageMaker Neo before deployment
+      - id: C
+        text: Deploy using multi-model endpoints to share resources
+      - id: D
+        text: Configure the endpoint to use managed spot instances
+    correctAnswer: B
+    explanation: |
+      SageMaker Neo compiles models to run up to 2x faster with no loss in accuracy and can
+      reduce model size by up to 10x. Neo converts framework-specific operations to optimized
+      binary code for the target hardware (ml.c5.xlarge), improving performance and potentially
+      allowing use of smaller (cheaper) instance types for the same throughput. This directly
+      addresses both performance optimization and cost reduction. Option A (automatic model
+      tuning) optimizes hyperparameters during training, not inference performance. Option C
+      (multi-model endpoints) is for hosting many models, not optimizing a single model.
+      Option D (spot instances) is not available for SageMaker inference endpoints, only for
+      training jobs.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    services:
+      - Amazon SageMaker Neo
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Model compilation and optimization with Neo
+      - Inference performance optimization
+      - Cost optimization strategies
+
+  - id: md-010
+    type: single
+    text: |
+      A mobile application startup is deploying a recommendation model that will serve
+      predictions to their app users. Traffic is highly unpredictable, with periods of no
+      activity followed by sudden bursts when marketing campaigns launch. The application can
+      tolerate 1-2 seconds of latency during cold starts. Which deployment option minimizes
+      costs while meeting requirements?
+    options:
+      - id: A
+        text: Real-time endpoint with autoscaling configured to minimum 1 instance, maximum 10 instances
+      - id: B
+        text: Serverless inference with 2048 MB memory configuration
+      - id: C
+        text: Asynchronous inference with autoscaling to zero during idle periods
+      - id: D
+        text: Multi-model endpoint with autoscaling based on invocation metrics
+    correctAnswer: B
+    explanation: |
+      Serverless inference is optimal for unpredictable, intermittent traffic patterns. It
+      automatically scales to zero during idle periods, eliminating all compute charges when
+      no requests are being processed. This is perfect for a startup with sporadic traffic.
+      When requests arrive, serverless provisions resources with cold start latency (1-2
+      seconds), which is acceptable per requirements. You only pay for actual inference
+      processing time. Option A (real-time with min 1 instance) incurs charges 24/7 even
+      during idle periods. Option C (asynchronous) works but is designed for queued requests
+      with large payloads/long processing, not simple recommendations. Option D (multi-model)
+      is for hosting many models, not optimizing cost for variable traffic.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    services:
+      - Amazon SageMaker Serverless Inference
+    concepts:
+      - Serverless inference for variable workloads
+      - Cold start considerations
+      - Cost optimization for intermittent traffic
+
+  - id: md-011
+    type: single
+    text: |
+      An ML engineer needs to deploy a model that performs feature preprocessing, prediction,
+      and post-processing using three different containers (scikit-learn, PyTorch, and custom
+      business logic). The entire inference workflow must have latency under 200 milliseconds.
+      Which deployment approach should be used?
+    options:
+      - id: A
+        text: Deploy three separate real-time endpoints and orchestrate calls using AWS Step Functions
+      - id: B
+        text: Deploy an inference pipeline with all three containers on a single endpoint
+      - id: C
+        text: Deploy using multi-model endpoints with dynamic container loading
+      - id: D
+        text: Deploy using serverless inference with separate endpoints for each container
+    correctAnswer: B
+    explanation: |
+      Inference pipelines enable deploying a linear sequence of up to 15 containers that
+      process requests serially. All containers are co-located on the same EC2 instances,
+      providing low latency between processing steps. This is ideal for combining preprocessing,
+      prediction, and postprocessing in a single endpoint while maintaining the 200ms latency
+      requirement. Each container can use different frameworks. Option A (separate endpoints
+      with Step Functions) introduces significant latency from network calls between endpoints
+      and Step Functions orchestration overhead, likely exceeding 200ms. Option C (multi-model
+      endpoints) is for hosting many models, not sequential processing steps. Option D
+      (serverless with separate endpoints) has similar latency issues as A plus cold start
+      overhead.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-pipelines.html
+    services:
+      - Amazon SageMaker Inference Pipelines
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Inference pipeline serial processing
+      - Low-latency multi-container deployment
+      - Co-located containers for reduced latency
+
+  - id: md-012
+    type: multi
+    correctCount: 2
+    text: |
+      A company is preparing to deploy a business-critical model to production and wants to
+      implement comprehensive monitoring. Which CloudWatch metrics should be monitored to
+      detect performance degradation and availability issues? (Select TWO)
+    options:
+      - id: A
+        text: ModelLatency to track how long the model takes to respond to requests
+      - id: B
+        text: TrainingJobStatus to ensure the model training pipeline is healthy
+      - id: C
+        text: Invocation5XXErrors to detect server-side errors indicating endpoint issues
+      - id: D
+        text: DataCapturePercentage to monitor data quality
+      - id: E
+        text: HyperParameterTuningJobStatus to track model optimization
+    correctAnswer: [A, C]
+    explanation: |
+      ModelLatency (A) measures the time the model takes to respond, crucial for detecting
+      performance degradation. Increasing latency indicates the endpoint is struggling with
+      load or has underlying issues. Invocation5XXErrors (C) tracks server-side errors,
+      indicating problems with the endpoint, model, or infrastructure. These metrics directly
+      indicate endpoint health and performance. Option B (TrainingJobStatus) monitors training,
+      not deployed endpoint health. Option D (DataCapturePercentage) is for Model Monitor
+      data capture configuration, not endpoint performance. Option E
+      (HyperParameterTuningJobStatus) monitors tuning jobs, not inference endpoints.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html
+    services:
+      - Amazon CloudWatch
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Endpoint monitoring and CloudWatch metrics
+      - Performance degradation detection
+      - Availability monitoring
+
+  - id: md-013
+    type: single
+    text: |
+      A data science team wants to identify the most cost-effective instance type for deploying
+      their new natural language processing model. They have sample payloads representative of
+      production traffic. Which SageMaker feature should they use?
+    options:
+      - id: A
+        text: SageMaker Automatic Model Tuning to find optimal instance configurations
+      - id: B
+        text: SageMaker Inference Recommender to run load tests and compare instance types
+      - id: C
+        text: SageMaker Model Monitor to analyze instance performance over time
+      - id: D
+        text: SageMaker Experiments to track different instance type deployments
+    correctAnswer: B
+    explanation: |
+      SageMaker Inference Recommender is specifically designed to identify optimal endpoint
+      configurations. It runs comprehensive load tests across multiple instance types using
+      your sample payloads, then provides detailed performance metrics (latency percentiles,
+      throughput) and cost estimates for each configuration. This enables data-driven selection
+      of the most cost-effective instance type that meets performance requirements. Option A
+      (Automatic Model Tuning) optimizes hyperparameters during training, not deployment
+      instance selection. Option C (Model Monitor) tracks deployed model quality and data
+      drift, not instance performance. Option D (Experiments) tracks training runs, not
+      inference endpoint configurations.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    services:
+      - Amazon SageMaker Inference Recommender
+    concepts:
+      - Inference Recommender for instance selection
+      - Load testing and performance analysis
+      - Cost-performance optimization
+
+  - id: md-014
+    type: single
+    text: |
+      An e-commerce company has a SageMaker real-time endpoint that serves product
+      recommendations. The endpoint is experiencing high latency during traffic spikes despite
+      autoscaling being configured. Investigation reveals autoscaling is taking 5-10 minutes to
+      respond to load increases. How can the team improve scaling responsiveness?
+    options:
+      - id: A
+        text: Increase the maximum instance count in the autoscaling configuration
+      - id: B
+        text: Switch from InvocationsPerInstance to ConcurrentRequestsPerModel as the target tracking metric
+      - id: C
+        text: Decrease the target value for the autoscaling metric to trigger scaling earlier
+      - id: D
+        text: Configure scheduled scaling to pre-warm instances before expected traffic spikes
+    correctAnswer: B
+    explanation: |
+      Switching to ConcurrentRequestsPerModel provides up to 6x faster scale-up detection
+      compared to invocation-based metrics. This metric tracks actual in-flight requests,
+      providing a direct measure of current load rather than counting invocations over time
+      windows. This faster detection significantly reduces the lag between traffic increases
+      and autoscaling response. Option A (increasing max instances) doesn't address slow
+      scaling detection. Option C (decreasing target value) might trigger scaling earlier but
+      doesn't improve detection speed and could cause unnecessary scaling. Option D (scheduled
+      scaling) helps if traffic patterns are predictable but doesn't solve the underlying
+      detection latency issue.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/amazon-sagemaker-inference-launches-faster-auto-scaling-for-generative-ai-models/
+    services:
+      - Application Auto Scaling
+      - Amazon CloudWatch
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Faster auto scaling with concurrency metrics
+      - ConcurrentRequestsPerModel metric
+      - Autoscaling responsiveness optimization
+
+  - id: md-015
+    type: single
+    text: |
+      A video streaming platform needs to generate content recommendations for users. The
+      recommendation model requires processing user viewing history (typically 2-3 MB of data)
+      and returns results in under 50 milliseconds. The platform serves 10 million users with
+      sustained traffic throughout the day. Which deployment configuration is most appropriate?
+    options:
+      - id: A
+        text: Serverless inference with 4096 MB memory for automatic scaling
+      - id: B
+        text: Asynchronous inference with SQS queue integration for request management
+      - id: C
+        text: Real-time endpoint with multiple ml.c5.xlarge instances across multiple Availability Zones
+      - id: D
+        text: Batch Transform running every 5 minutes to precompute recommendations
+    correctAnswer: C
+    explanation: |
+      Real-time endpoints are required for the 50ms latency requirement and sustained high-
+      volume traffic. The 2-3 MB payload fits within the 6 MB limit. Multiple instances across
+      AZs provide high availability for 10 million users. Sustained traffic makes dedicated
+      instances more cost-effective than serverless. Option A (serverless) could have cold
+      start latency inconsistent with 50ms requirement and may be more expensive for sustained
+      high volume. Option B (asynchronous) is designed for queued requests with longer
+      processing times, not sub-second interactive responses. Option D (Batch Transform) runs
+      offline and can't provide personalized recommendations based on latest viewing activity.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints-deploy-models.html
+    services:
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - Real-time inference for low latency
+      - Sustained traffic deployment patterns
+      - High availability for production workloads
+
+  - id: md-016
+    type: multi
+    correctCount: 3
+    text: |
+      An organization is implementing a blue-green deployment strategy for updating a production
+      SageMaker endpoint. Which steps should be included in this deployment process?
+      (Select THREE)
+    options:
+      - id: A
+        text: Create a new endpoint (green) with the updated model while the existing endpoint (blue) continues serving traffic
+      - id: B
+        text: Gradually shift traffic from blue to green using weighted routing
+      - id: C
+        text: Update application configuration to route all traffic to the green endpoint after validation
+      - id: D
+        text: Monitor the green endpoint performance and error rates after traffic shift
+      - id: E
+        text: Use SageMaker automatic rollback if the green endpoint shows degraded performance
+    correctAnswer: [A, C, D]
+    explanation: |
+      Blue-green deployment involves creating a new endpoint (A) with updated model while the
+      existing endpoint remains active. After validating the green endpoint works correctly,
+      you update application configuration to route traffic to green (C), enabling instant
+      cutover. Monitoring the green endpoint after traffic shift (D) ensures the new version
+      performs as expected. Option B (gradual traffic shift) describes canary deployment, not
+      blue-green; blue-green switches all traffic at once. Option E is incorrect because
+      SageMaker doesn't provide automatic rollback; you must implement rollback by switching
+      traffic back to the blue endpoint if issues are detected.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-best-practices.html
+    services:
+      - Amazon SageMaker Real-Time Endpoints
+      - Amazon CloudWatch
+    concepts:
+      - Blue-green deployment strategy
+      - Zero-downtime updates
+      - Deployment validation and monitoring
+
+  - id: md-017
+    type: single
+    text: |
+      A pharmaceutical research company needs to run molecular structure analysis on 100,000
+      chemical compounds stored in S3. Each analysis takes 30-45 seconds and requires 8 GB of
+      memory. The analysis needs to complete within 24 hours and results are used for offline
+      research. Which deployment approach is most cost-effective?
+    options:
+      - id: A
+        text: Real-time endpoint with high-memory instances and parallel invocation from Lambda
+      - id: B
+        text: Batch Transform with multiple ml.m5.2xlarge instances to distribute processing
+      - id: C
+        text: Asynchronous inference with autoscaling configured for high throughput
+      - id: D
+        text: Serverless inference with 6144 MB memory and concurrent invocations
+    correctAnswer: B
+    explanation: |
+      Batch Transform is the most cost-effective solution for offline processing of large
+      datasets in S3. You only pay while the job runs, then resources are automatically
+      released. Multiple instances enable parallel processing to meet the 24-hour deadline.
+      The ml.m5.2xlarge instance (32 GB memory) easily handles the 8 GB requirement. Batch
+      Transform naturally reads from and writes to S3. Option A (real-time endpoint) requires
+      maintaining an endpoint and making 100,000 API calls, inefficient and costly. Option C
+      (asynchronous) works but requires managing 100,000 individual queued requests, more
+      complex than Batch Transform for this use case. Option D (serverless) has a 4 MB payload
+      limit, insufficient for molecular structure data.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html
+    services:
+      - Amazon SageMaker Batch Transform
+      - Amazon S3
+    concepts:
+      - Batch transform for offline processing
+      - Cost optimization for large-scale inference
+      - Parallel processing with multiple instances
+
+  - id: md-018
+    type: single
+    text: |
+      A logistics company deploys route optimization models to delivery vehicles. Vehicles
+      operate in areas with limited cellular connectivity and must calculate routes locally.
+      Models need to be updated monthly with new traffic patterns. Which deployment strategy
+      should be implemented?
+    options:
+      - id: A
+        text: SageMaker real-time endpoints with VPN connectivity to vehicles
+      - id: B
+        text: SageMaker Neo compilation with AWS IoT Greengrass V2 deployment to vehicles
+      - id: C
+        text: SageMaker asynchronous inference with offline request queuing
+      - id: D
+        text: SageMaker serverless inference with extended timeout configuration
+    correctAnswer: B
+    explanation: |
+      Edge deployment using Neo and IoT Greengrass V2 is required for local model execution
+      without cloud connectivity. Neo compiles and optimizes the model for vehicle hardware,
+      reducing size and improving performance on resource-constrained devices. IoT Greengrass
+      V2 manages the deployed model on vehicles and enables over-the-air (OTA) updates for
+      monthly model refreshes when connectivity is available. Options A, C, and D all require
+      active cloud connectivity for each inference request, which is unavailable in areas with
+      limited cellular service. The vehicles must process routes locally.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/neo-deployment-edge.html
+    services:
+      - Amazon SageMaker Neo
+      - AWS IoT Greengrass
+    concepts:
+      - Edge deployment for offline operation
+      - Model compilation for edge devices
+      - Over-the-air model updates
+
+  - id: md-019
+    type: multi
+    correctCount: 2
+    text: |
+      A startup is optimizing costs for their SageMaker inference workloads. Which strategies
+      can help reduce inference costs? (Select TWO)
+    options:
+      - id: A
+        text: Purchase SageMaker Savings Plans committing to consistent usage for 1 or 3 years
+      - id: B
+        text: Enable managed spot training for inference endpoints
+      - id: C
+        text: Use Inference Recommender to identify the most cost-effective instance type that meets performance requirements
+      - id: D
+        text: Configure all endpoints with maximum instance counts to handle any traffic spike
+      - id: E
+        text: Use GPU instances for all models to maximize inference throughput
+    correctAnswer: [A, C]
+    explanation: |
+      SageMaker Savings Plans (A) provide up to 64% savings compared to on-demand pricing when
+      you commit to consistent usage for 1 or 3 years, ideal for predictable production
+      workloads. Inference Recommender (C) identifies optimal instance types balancing cost
+      and performance through load testing, preventing over-provisioning. Option B is incorrect
+      because managed spot instances are only available for training jobs, not inference
+      endpoints. Option D (maximum instance counts) wastes money on idle capacity; use
+      autoscaling instead. Option E (always use GPU) is inefficient; many models perform well
+      on cheaper CPU instances.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    services:
+      - Amazon SageMaker Inference Recommender
+      - AWS Savings Plans
+    concepts:
+      - Inference cost optimization strategies
+      - Savings Plans for predictable workloads
+      - Right-sizing with Inference Recommender
+
+  - id: md-020
+    type: single
+    text: |
+      An ML engineer notices their SageMaker real-time endpoint's ModelLatency metric has
+      increased from 50ms to 300ms over the past week while traffic has remained constant.
+      CPUUtilization shows 40% and MemoryUtilization shows 35%. What is the most likely cause?
+    options:
+      - id: A
+        text: The endpoint needs more instances due to increased traffic
+      - id: B
+        text: The model itself has a performance issue or degradation
+      - id: C
+        text: The endpoint is experiencing network latency to downstream services
+      - id: D
+        text: The instance type lacks sufficient CPU or memory resources
+    correctAnswer: B
+    explanation: |
+      With stable traffic and low resource utilization (40% CPU, 35% memory), the endpoint has
+      sufficient capacity. The 6x increase in ModelLatency specifically (which measures only
+      the model's processing time, not SageMaker overhead) indicates the model itself is taking
+      longer to generate predictions. Possible causes include model quality degradation, data
+      drift causing more complex predictions, or model/code issues. Option A (need more
+      instances) doesn't fit with stable traffic and low utilization. Option C (network
+      latency) would show up in OverheadLatency, not ModelLatency. Option D (insufficient
+      resources) contradicts the 40% CPU and 35% memory readings.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html
+    services:
+      - Amazon CloudWatch
+      - Amazon SageMaker Real-Time Endpoints
+    concepts:
+      - CloudWatch metrics interpretation
+      - Performance troubleshooting
+      - ModelLatency vs OverheadLatency

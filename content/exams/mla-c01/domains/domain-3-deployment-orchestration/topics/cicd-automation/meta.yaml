@@ -1,0 +1,47 @@
+id: cicd-automation
+name: CI/CD Automation for ML
+shortName: CI/CD Automation
+examTask: task-3-3
+description: Set up continuous integration and continuous deployment (CI/CD) pipelines for ML workflows using SageMaker Projects, Model Registry, AWS CodePipeline, CodeBuild, and EventBridge. Learn MLOps best practices for automating model building, testing, approval, and deployment.
+estimatedStudyTime: 90
+difficulty: advanced
+keyServices:
+  - Amazon SageMaker Model Registry
+  - Amazon SageMaker Projects
+  - Amazon SageMaker Pipelines
+  - AWS CodePipeline
+  - AWS CodeBuild
+  - AWS CodeCommit
+  - Amazon EventBridge
+  - AWS Lambda
+  - AWS Step Functions
+  - AWS CloudFormation
+keyConcepts:
+  - MLOps workflow automation
+  - Model versioning and approval
+  - Continuous training (CT)
+  - Continuous integration (CI)
+  - Continuous deployment (CD)
+  - Blue/Green deployments
+  - Model lineage tracking
+  - Automated model validation
+  - Human-in-the-loop approval
+  - Cross-account model deployment
+  - Infrastructure as Code for ML
+  - Model monitoring triggers
+awsDocLinks:
+  - title: Amazon SageMaker Model Registry
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html
+    type: doc
+  - title: Use SageMaker AI-Provided Project Templates
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-projects-templates-sm.html
+    type: doc
+  - title: Events that Amazon SageMaker AI sends to Amazon EventBridge
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automating-sagemaker-with-eventbridge.html
+    type: doc
+  - title: MLOps - Machine Learning Best Practices
+    url: https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-public-sector-organizations/mlops.html
+    type: whitepaper
+  - title: SageMaker AI Workflows
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/workflows.html
+    type: doc

@@ -1,0 +1,50 @@
+id: drift-detection
+name: Drift Detection and Model Retraining
+shortName: Drift Detection
+examTask: task-4-1
+description: >
+  Master drift detection strategies for production ML models including data drift, concept drift,
+  and bias drift monitoring using Amazon SageMaker Model Monitor and Clarify. Learn to create
+  baselines, detect violations, configure automated retraining triggers, and implement A/B testing
+  and shadow deployments for model validation.
+estimatedStudyTime: 75
+difficulty: advanced
+prerequisites:
+  - model-monitoring
+  - sagemaker-endpoints
+keyServices:
+  - Amazon SageMaker Model Monitor
+  - Amazon SageMaker Clarify
+  - Amazon SageMaker Pipelines
+  - Amazon EventBridge
+  - Amazon CloudWatch
+  - AWS Step Functions
+keyConcepts:
+  - Data drift detection
+  - Concept drift vs data drift
+  - Bias drift monitoring
+  - Feature attribution drift
+  - Baseline creation and constraints
+  - Constraint violations
+  - Automated retraining triggers
+  - A/B testing with production variants
+  - Shadow deployments
+  - Model quality degradation
+  - Statistical distribution analysis
+  - Deequ for data quality metrics
+awsDocLinks:
+  - title: Data and Model Quality Monitoring with SageMaker Model Monitor
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    type: doc
+  - title: Bias Drift for Models in Production
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-monitor-bias-drift.html
+    type: doc
+  - title: Testing Models with Shadow Variants
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-shadow-deployment.html
+    type: doc
+  - title: Automate Model Retraining with SageMaker Pipelines When Drift is Detected
+    url: https://aws.amazon.com/blogs/machine-learning/automate-model-retraining-with-amazon-sagemaker-pipelines-when-drift-is-detected/
+    type: blog
+  - title: "Well-Architected ML Lens: Establish an Automated Re-training Framework"
+    url: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/mlper-16.html
+    type: whitepaper

@@ -1,0 +1,56 @@
+id: model-training
+name: Model Training with Amazon SageMaker
+shortName: Model Training
+examTask: task-2-2
+description: |
+  Master Amazon SageMaker training capabilities including training job configuration,
+  distributed training strategies (data parallel and model parallel), managed spot training
+  for cost optimization, hyperparameter tuning, regularization techniques, and training
+  performance optimization. Learn to configure training containers, implement checkpointing
+  for fault tolerance, and select appropriate instance types and training strategies for
+  different model architectures and data volumes.
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Training Jobs
+  - SageMaker Distributed Data Parallel
+  - SageMaker Distributed Model Parallel
+  - SageMaker Managed Spot Training
+  - SageMaker Automatic Model Tuning
+  - SageMaker Built-in Algorithms
+  - SageMaker Training Containers
+  - Amazon S3
+  - Amazon ECR
+
+keyConcepts:
+  - Training job configuration and lifecycle
+  - Distributed training strategies (data parallel vs model parallel)
+  - Managed spot training and checkpointing
+  - Hyperparameter optimization strategies (Bayesian, Random, Hyperband, Grid Search)
+  - Regularization techniques (L1, L2, dropout, early stopping)
+  - Training containers and framework support
+  - Instance type selection and resource allocation
+  - Training metrics and monitoring
+  - Checkpointing and fault tolerance
+  - Cost optimization for training workloads
+  - 3D parallelism (data, pipeline, tensor)
+  - Training performance optimization
+  - Model convergence and debugging
+
+awsDocLinks:
+  - title: Train a Model with Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works-training.html
+    type: doc
+  - title: Distributed Training in SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/distributed-training.html
+    type: doc
+  - title: Managed Spot Training in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-managed-spot-training.html
+    type: doc
+  - title: Automatic Model Tuning with SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning.html
+    type: doc
+  - title: Checkpoints in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/model-checkpoints.html
+    type: doc

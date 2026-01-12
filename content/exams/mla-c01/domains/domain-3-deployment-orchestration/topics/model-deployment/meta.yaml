@@ -1,0 +1,76 @@
+id: model-deployment
+name: Model Deployment Strategies
+shortName: Deployment
+examTask: task-3-1
+description: |
+  Master Amazon SageMaker model deployment infrastructure selection including real-time
+  endpoints, serverless inference, asynchronous inference, batch transform, and edge deployment
+  options. Learn to choose appropriate deployment patterns based on latency requirements, traffic
+  patterns, payload sizes, cost constraints, and operational considerations. Understand inference
+  optimization techniques, autoscaling strategies, multi-model endpoints, and integration with
+  AWS IoT Greengrass for edge deployments.
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Real-Time Endpoints
+  - Amazon SageMaker Serverless Inference
+  - Amazon SageMaker Asynchronous Inference
+  - Amazon SageMaker Batch Transform
+  - Amazon SageMaker Multi-Model Endpoints
+  - Amazon SageMaker Neo
+  - Amazon SageMaker Inference Recommender
+  - AWS IoT Greengrass
+  - Amazon CloudWatch
+  - Application Auto Scaling
+  - Amazon S3
+  - Amazon SNS
+
+keyConcepts:
+  - Real-time inference endpoints and hosting
+  - Serverless inference for variable workloads
+  - Asynchronous inference for long-running requests
+  - Batch transform for offline processing
+  - Multi-model endpoint hosting patterns
+  - Inference pipeline serial processing
+  - Model compilation and optimization with Neo
+  - Edge deployment with IoT Greengrass
+  - Autoscaling policies and CloudWatch metrics
+  - Instance type selection and cost optimization
+  - Endpoint monitoring and CloudWatch metrics
+  - Shadow testing and deployment validation
+  - Model deployment best practices
+  - High availability and multi-AZ deployment
+  - Inference cost optimization strategies
+
+awsDocLinks:
+  - title: Model Deployment Options in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works-deployment.html
+    type: doc
+  - title: Deploy Models for Real-Time Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints-deploy-models.html
+    type: doc
+  - title: Serverless Inference Documentation
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    type: doc
+  - title: Asynchronous Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html
+    type: doc
+  - title: Use Batch Transform for Offline Inference
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html
+    type: doc
+  - title: Multi-Model Endpoints
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html
+    type: doc
+  - title: Model Performance Optimization with SageMaker Neo
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    type: doc
+  - title: Amazon SageMaker Inference Recommender
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    type: doc
+  - title: Best Practices for Deploying Models on SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-best-practices.html
+    type: doc
+  - title: Inference Cost Optimization Best Practices
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    type: doc

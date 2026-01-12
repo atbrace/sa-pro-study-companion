@@ -1,0 +1,1345 @@
+questions:
+  - id: io-001
+    type: single
+    text: |
+      A financial services company has developed 500 fraud detection models, each trained for specific merchant categories.
+      Each model is approximately 200MB in size and receives an average of 10 requests per hour. The company needs to deploy
+      these models cost-effectively while maintaining sub-100ms inference latency for each request.
+
+      Which deployment strategy should a machine learning engineer recommend?
+    options:
+      - id: A
+        text: Deploy each model to a separate real-time endpoint using ml.t3.medium instances with auto-scaling enabled
+      - id: B
+        text: Deploy all models to a multi-model endpoint using ml.m5.2xlarge instances with 5 initial instances
+      - id: C
+        text: Deploy models to SageMaker Serverless Inference with 2GB memory configuration
+      - id: D
+        text: Deploy all models to a multi-container endpoint using ml.m5.xlarge instances with direct invocation
+    correctAnswer: B
+    explanation: |
+      Multi-model endpoints (B) are the optimal solution for this scenario. With 500 models of similar size (200MB each)
+      receiving low traffic (10 requests/hour), multi-model endpoints provide the best cost-performance balance by:
+
+      1. Sharing infrastructure across all models, dramatically reducing costs compared to 500 separate endpoints
+      2. Dynamically loading models from S3 when invoked, with intelligent caching of frequently used models
+      3. Supporting sub-100ms latency for cached models (warm start)
+      4. Using ml.m5.2xlarge instances (32GB memory) can cache approximately 150+ models simultaneously
+
+      Why other options are incorrect:
+      - A: 500 separate endpoints would be extremely expensive ($10,000+/month) and wasteful given low traffic per model
+      - C: Serverless inference has cold start latencies of 10-20 seconds, violating the sub-100ms requirement
+      - D: Multi-container endpoints support maximum 15 containers, not 500 models
+
+      The company can further optimize by monitoring ModelCacheHit metrics and adjusting instance count/type based on
+      cache hit rates and traffic patterns.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html
+    services:
+      - Amazon SageMaker Multi-Model Endpoints
+      - Amazon S3
+    concepts:
+      - Multi-model endpoint architecture
+      - Model caching and dynamic loading
+      - Cost optimization for many models
+      - Infrastructure sharing
+
+  - id: io-002
+    type: single
+    text: |
+      A data science team needs to deploy a computer vision pipeline consisting of three stages: image preprocessing
+      (scikit-learn), object detection (PyTorch), and result post-processing (custom Python code). The pipeline must
+      process each image through all three stages in sequence. The team wants to minimize operational complexity and cost.
+
+      What is the MOST appropriate deployment architecture?
+    options:
+      - id: A
+        text: Deploy three separate real-time endpoints and orchestrate with AWS Step Functions
+      - id: B
+        text: Deploy a multi-model endpoint with all three models and invoke them sequentially from the client
+      - id: C
+        text: Deploy a multi-container endpoint configured as a serial inference pipeline
+      - id: D
+        text: Deploy all models to SageMaker Batch Transform with custom preprocessing code
+    correctAnswer: C
+    explanation: |
+      A multi-container endpoint configured as a serial inference pipeline (C) is the optimal solution because:
+
+      1. Supports different frameworks (scikit-learn, PyTorch, custom Python) in separate containers
+      2. Automatically chains containers so output from one becomes input to the next
+      3. Single endpoint invocation processes through entire pipeline, reducing network overhead
+      4. Lower operational complexity than managing three separate endpoints
+      5. More cost-effective by sharing infrastructure across pipeline stages
+
+      Why other options are incorrect:
+      - A: Three separate endpoints add operational complexity, increase latency (3x network round trips), and cost more
+      - B: Multi-model endpoints require all models to use the SAME framework, which this scenario does not satisfy
+      - D: Batch Transform is for offline processing, not real-time inference pipelines
+
+      Multi-container endpoints support up to 15 containers in a pipeline, with each container running a different
+      framework or model. The team can define the pipeline using SageMaker SDK's PipelineModel class.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-container-endpoints.html
+    services:
+      - Amazon SageMaker Multi-Container Endpoints
+    concepts:
+      - Serial inference pipelines
+      - Multi-container architecture
+      - Framework diversity support
+      - Pipeline orchestration
+
+  - id: io-003
+    type: multi
+    correctCount: 3
+    text: |
+      A machine learning engineer is deploying a TensorFlow model for real-time inference and needs to optimize for both
+      cost and latency. The model currently achieves 50ms inference latency on ml.m5.xlarge instances, but the team wants
+      to reduce both latency and operational costs.
+
+      Which THREE optimization techniques should the engineer implement? (Choose 3)
+    options:
+      - id: A
+        text: Compile the model using SageMaker Neo to optimize for the target instance family
+      - id: B
+        text: Deploy the model to ml.p3.2xlarge GPU instances for faster inference
+      - id: C
+        text: Use SageMaker Inference Recommender to identify the optimal instance type and configuration
+      - id: D
+        text: Convert the model to use AWS Lambda for serverless inference
+      - id: E
+        text: Deploy the model to AWS Inferentia (ml.inf2.xlarge) instances for better price-performance
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: |
+      The three correct optimization techniques are:
+
+      A - SageMaker Neo compilation: Optimizes models through operator fusion, constant folding, and data layout
+      transformations, typically improving latency 2-5x WITHOUT increasing costs. Neo eliminates JIT compilation
+      overhead and generates hardware-specific optimized code. This directly addresses both cost and latency goals.
+
+      C - Inference Recommender: Automatically benchmarks the model across multiple instance types and configurations
+      to identify the optimal balance of cost and performance. It tests both compiled and uncompiled versions, providing
+      metrics for cost-per-inference and latency percentiles. This data-driven approach ensures optimal instance selection.
+
+      E - AWS Inferentia instances: Purpose-built for ML inference, Inferentia provides 30-70% better price-performance
+      than general-purpose instances for deep learning models. The ml.inf2.xlarge offers lower cost than ml.m5.xlarge
+      while typically providing better latency for TensorFlow models when compiled with AWS Neuron.
+
+      Why other options are less optimal:
+      - B: GPU instances (ml.p3.2xlarge) are more expensive than ml.m5.xlarge and overkill for a 50ms model. GPUs are
+        beneficial for large models or high-throughput scenarios, not necessarily for cost reduction
+      - D: AWS Lambda has a 15-minute timeout and is designed for event-driven computing, not optimized for real-time
+        ML inference. SageMaker endpoints with proper configuration provide better latency and integration
+
+      Combined, these three techniques can reduce costs by 40-60% while improving latency 2-3x.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    services:
+      - Amazon SageMaker Neo
+      - Amazon SageMaker Inference Recommender
+      - AWS Inferentia
+    concepts:
+      - Model compilation optimization
+      - Instance selection and right-sizing
+      - Hardware acceleration
+      - Cost-performance optimization
+
+  - id: io-004
+    type: single
+    text: |
+      A healthcare company runs inference on medical images that are typically 500MB each. Processing time per image is
+      approximately 10 minutes, and the company receives 50-100 images per day, primarily during business hours. The
+      application can tolerate processing delays of up to 30 minutes.
+
+      Which deployment option provides the MOST cost-effective solution?
+    options:
+      - id: A
+        text: Real-time inference endpoint with ml.g4dn.xlarge instances and auto-scaling from 1 to 5 instances
+      - id: B
+        text: SageMaker Serverless Inference with 6GB memory configuration and max concurrency of 10
+      - id: C
+        text: SageMaker Asynchronous Inference with ml.g4dn.xlarge instances and scale-to-zero configuration
+      - id: D
+        text: SageMaker Batch Transform scheduled to run every hour during business hours
+    correctAnswer: C
+    explanation: |
+      SageMaker Asynchronous Inference with scale-to-zero (C) is the most cost-effective solution because:
+
+      1. Supports large payloads up to 1GB (500MB images fit within limit)
+      2. Handles long processing times up to 60 minutes (10-minute processing time is well within limit)
+      3. Scales to zero instances when no requests are queued, eliminating costs outside of processing windows
+      4. Processes requests within 30-minute tolerance through automatic queue management
+      5. Cost = compute time only (approximately 16-33 instance-hours per day), not 24x7 operation
+
+      Cost comparison:
+      - Real-time (A): 24 instance-hours/day = 720 hours/month at $0.736/hour = ~$530/month
+      - Async (C): ~25 instance-hours/day = 750 hours/month at $0.736/hour = ~$552/month, BUT scales to zero
+        during idle periods, actual cost ~$100-150/month
+
+      Why other options are less optimal:
+      - A: Real-time endpoints remain running 24x7 even when no images are processed, wasting 80-90% of capacity
+      - B: Serverless inference maximum processing time is limited and not suitable for 10-minute processing. Also,
+        cold start overhead would be significant for large images
+      - D: Batch Transform runs on schedule rather than on-demand, potentially delaying processing unnecessarily and
+        not optimized for sporadic arrivals
+
+      The company should configure auto-scaling using ApproximateBacklogSizePerInstance metric to handle traffic variations.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/async-inference.html
+    services:
+      - Amazon SageMaker Asynchronous Inference
+      - Amazon S3
+      - Amazon SNS
+    concepts:
+      - Asynchronous inference architecture
+      - Scale-to-zero optimization
+      - Large payload handling
+      - Cost optimization for intermittent workloads
+
+  - id: io-005
+    type: multi
+    correctCount: 2
+    text: |
+      A company deployed 20 deep learning models to a multi-model endpoint using ml.m5.4xlarge instances (4 instances).
+      CloudWatch metrics show ModelLoadingWaitTime is consistently high (5-8 seconds) and ModelCacheHit is only 40%.
+      The models range from 500MB to 2GB in size and have varying traffic patterns.
+
+      Which TWO actions will MOST effectively improve cache hit rates and reduce model loading wait times? (Choose 2)
+    options:
+      - id: A
+        text: Increase the number of instances from 4 to 8 to provide more memory for caching
+      - id: B
+        text: Switch to ml.m5.8xlarge instances to increase memory capacity per instance
+      - id: C
+        text: Compile all models with SageMaker Neo to reduce model size
+      - id: D
+        text: Implement routing logic to direct requests for specific models to dedicated instances
+      - id: E
+        text: Configure auto-scaling to dynamically adjust instance count based on ModelLoadingWaitTime metric
+    correctAnswer:
+      - B
+      - D
+    explanation: |
+      The two most effective actions are:
+
+      B - Switch to larger instance types: ml.m5.8xlarge instances have 128GB memory vs. 64GB for ml.m5.4xlarge. With
+      models ranging from 500MB-2GB, the current setup can cache approximately 25-30 models per instance at best. The
+      40% cache hit rate indicates frequent evictions. Larger instances can cache more models simultaneously, reducing
+      evictions and improving cache hit rates to 70-80%.
+
+      D - Implement model-to-instance routing: By routing specific models (or groups of related models) to dedicated
+      instances, you ensure those models stay cached on their assigned instances. This is particularly effective when
+      traffic patterns show certain models are frequently used together. This sticky routing pattern can improve cache
+      hit rates to 80-90% for frequently accessed models.
+
+      Why other options are less effective:
+      - A: Increasing instance count without addressing memory capacity per instance won't significantly improve caching.
+        SageMaker will distribute models across instances, but each instance still has the same memory constraints
+      - C: Neo compilation optimizes inference performance but doesn't significantly reduce model artifact size on disk/memory.
+        While it may help marginally, it doesn't address the root cause of insufficient cache capacity
+      - E: Auto-scaling based on ModelLoadingWaitTime is reactive rather than preventive. It adds capacity after cache
+        misses occur, rather than preventing them. The fundamental issue is cache capacity, not scaling speed
+
+      After implementing B and D, monitor ModelCacheHit metric (target: >70%) and ModelLoadingWaitTime (target: <2 seconds).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoint-instance.html
+    services:
+      - Amazon SageMaker Multi-Model Endpoints
+      - Amazon CloudWatch
+    concepts:
+      - Model caching optimization
+      - Instance sizing for multi-model endpoints
+      - Model loading performance
+      - Traffic routing strategies
+
+  - id: io-006
+    type: single
+    text: |
+      A machine learning team needs to choose an auto-scaling policy for a real-time inference endpoint serving a sentiment
+      analysis model. Traffic patterns show gradual increases during business hours with occasional traffic spikes that are
+      10x normal volume. The endpoint must maintain P95 latency below 200ms.
+
+      What is the MOST appropriate auto-scaling configuration?
+    options:
+      - id: A
+        text: Step scaling policy with CloudWatch alarms based on CPUUtilization, scaling out 100% when CPU exceeds 80%
+      - id: B
+        text: Target tracking policy with SageMakerVariantInvocationsPerInstance target of 1000, scale-out cooldown of 300 seconds
+      - id: C
+        text: Scheduled scaling to increase capacity to 10 instances during business hours, 1 instance off-hours
+      - id: D
+        text: Target tracking policy with custom ModelLatency metric, targeting P95 latency of 180ms
+    correctAnswer: B
+    explanation: |
+      Target tracking policy with SageMakerVariantInvocationsPerInstance (B) is the most appropriate because:
+
+      1. AWS strongly recommends InvocationsPerInstance as the primary scaling metric for SageMaker endpoints
+      2. Target tracking automatically calculates when to scale out/in to maintain target value, handling both gradual
+         increases and sudden spikes
+      3. 300-second (5-minute) scale-out cooldown allows new instances to warm up before next scaling decision
+      4. InvocationsPerInstance is a leading indicator (predicts load) vs. lagging indicators like CPUUtilization
+      5. Automatically handles the 10x traffic spikes by scaling proportionally
+
+      The target value of 1000 invocations/minute/instance should be calibrated based on load testing to ensure
+      P95 latency remains below 200ms at that load level.
+
+      Why other options are less optimal:
+      - A: Step scaling with CPU is reactive (waits for CPU saturation) and may not scale fast enough for 10x spikes.
+        CPU is a lagging indicator that rises after requests are already queued
+      - C: Scheduled scaling assumes predictable traffic patterns and cannot handle unexpected spikes. The 10x spikes
+        mentioned would exceed scheduled capacity
+      - D: While latency-based scaling seems intuitive, it's reactive (scales after latency already degraded). Also,
+        ModelLatency doesn't include queuing time, so endpoint might be saturated before latency metric reflects it
+
+      Best practice: Combine target tracking on InvocationsPerInstance with CloudWatch alarms on ModelLatency as a
+      safety mechanism to detect if scaling isn't keeping up with latency requirements.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/endpoint-auto-scaling-policy.html
+    services:
+      - Amazon SageMaker Auto Scaling
+      - Application Auto Scaling
+      - Amazon CloudWatch
+    concepts:
+      - Target tracking scaling
+      - Auto-scaling metrics selection
+      - Cooldown period configuration
+      - Scaling policy optimization
+
+  - id: io-007
+    type: single
+    text: |
+      An ML engineer has deployed a PyTorch computer vision model to SageMaker and needs to reduce inference latency from
+      the current 150ms to below 50ms without significantly increasing costs. The model is deployed on ml.m5.2xlarge instances
+      and receives 500 requests per minute.
+
+      Which combination of optimizations will MOST likely achieve the latency goal?
+    options:
+      - id: A
+        text: Switch to ml.p3.2xlarge GPU instances and enable model caching
+      - id: B
+        text: Compile the model with SageMaker Neo targeting ml.m5 family and deploy to ml.inf2.xlarge instances
+      - id: C
+        text: Enable SageMaker Model Monitor to detect and optimize slow inference requests
+      - id: D
+        text: Deploy the model to a multi-model endpoint to improve caching efficiency
+    correctAnswer: B
+    explanation: |
+      Compiling with Neo and deploying to Inferentia instances (B) will most effectively achieve the latency goal because:
+
+      1. SageMaker Neo compilation typically reduces inference latency 2-5x through:
+         - Operator fusion (combining multiple operations into optimized kernels)
+         - Constant folding (pre-computing static operations)
+         - Framework-specific to hardware-specific optimization
+      2. AWS Inferentia instances (ml.inf2.xlarge) provide 30-70% better price-performance than CPU instances
+      3. Combined optimization: 150ms baseline → ~30-50ms after Neo compilation + Inferentia acceleration
+      4. Cost remains similar or lower: ml.inf2.xlarge costs less than ml.m5.2xlarge
+
+      Implementation approach:
+      ```python
+      # Compile model with Neo
+      compiled_model = pytorch_model.compile(
+          target_instance_family='ml_inf2',
+          input_shape={'input': [1, 3, 224, 224]},
+          framework='pytorch',
+          framework_version='1.13'
+      )
+
+      # Deploy to Inferentia
+      predictor = compiled_model.deploy(
+          initial_instance_count=1,
+          instance_type='ml.inf2.xlarge'
+      )
+      ```
+
+      Why other options won't achieve the goal:
+      - A: GPU instances are 3-4x more expensive than ml.m5.2xlarge and overkill for this computer vision model. While
+        they would reduce latency, the requirement is to not "significantly increase costs"
+      - C: Model Monitor is for detecting data drift and model quality issues, not for optimizing inference latency
+      - D: Multi-model endpoints share resources across models but don't inherently reduce single-model latency. They're
+        for cost optimization when deploying many models, not latency optimization
+
+      The engineer should use Inference Recommender to validate that the optimized configuration meets requirements
+      before production deployment.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/neo.html
+    services:
+      - Amazon SageMaker Neo
+      - AWS Inferentia
+      - AWS Neuron SDK
+    concepts:
+      - Model compilation optimization
+      - Hardware acceleration
+      - Latency optimization techniques
+      - Cost-performance balance
+
+  - id: io-008
+    type: multi
+    correctCount: 3
+    text: |
+      A company uses SageMaker Inference Recommender to optimize deployment of a new NLP model. The Inference Recommender
+      job completed successfully and provided 10 recommendations with varying instance types, configurations, and metrics.
+
+      Which THREE metrics should the team prioritize when selecting the optimal recommendation for a cost-sensitive
+      production deployment with a P95 latency SLA of 100ms? (Choose 3)
+    options:
+      - id: A
+        text: CostPerInference metric to understand cost efficiency of each recommendation
+      - id: B
+        text: MaxInvocations metric to ensure sufficient throughput capacity
+      - id: C
+        text: LatencyP95 metric to verify the 100ms SLA can be met
+      - id: D
+        text: ModelSetupTime to minimize cold start delays
+      - id: E
+        text: CompilationJobName presence to prefer Neo-compiled recommendations
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: |
+      The three critical metrics for this scenario are:
+
+      A - CostPerInference: Since the deployment is cost-sensitive, this metric is essential for comparing economic
+      efficiency across recommendations. It accounts for both instance costs and throughput, providing cost per 1M
+      inferences. The team should filter recommendations meeting the latency SLA, then select the lowest CostPerInference.
+
+      C - LatencyP95: This directly validates whether the recommendation meets the 100ms latency SLA. P95 means 95% of
+      requests complete within this time, which is the standard metric for SLA compliance. Any recommendation with
+      LatencyP95 > 100ms should be immediately eliminated regardless of cost.
+
+      E - CompilationJobName (Neo-compiled): Inference Recommender automatically includes Neo-compiled recommendations for
+      supported frameworks. Neo compilation typically provides 2-5x latency improvement and 20-40% cost reduction without
+      accuracy loss. For cost-sensitive deployments, Neo-compiled recommendations almost always offer better price-performance.
+
+      Selection workflow:
+      ```python
+      # Filter and rank recommendations
+      valid_recommendations = [
+          rec for rec in recommendations
+          if rec['Metrics']['LatencyP95'] <= 100  # Meet SLA
+      ]
+
+      # Prefer Neo-compiled recommendations
+      neo_compiled = [
+          rec for rec in valid_recommendations
+          if rec['ModelConfiguration'].get('CompilationJobName')
+      ]
+
+      # Sort by cost efficiency
+      optimal = sorted(
+          neo_compiled if neo_compiled else valid_recommendations,
+          key=lambda x: x['Metrics']['CostPerInference']
+      )[0]
+      ```
+
+      Why other options are secondary:
+      - B: MaxInvocations (throughput) is important but should be validated after cost and latency filtering. The team
+        can add instances if throughput is insufficient
+      - D: ModelSetupTime matters for cold starts but is less critical for production endpoints that stay warm. It's more
+        relevant for serverless inference or infrequently used endpoints
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    services:
+      - Amazon SageMaker Inference Recommender
+      - Amazon SageMaker Neo
+    concepts:
+      - Instance selection criteria
+      - Cost-performance optimization
+      - Latency SLA validation
+      - Model compilation benefits
+
+  - id: io-009
+    type: single
+    text: |
+      A retail company runs daily batch scoring of 10 million customer records for product recommendations. Each record
+      requires 50ms of model inference time. The batch job must complete within 4 hours to meet business requirements.
+      The company wants to minimize costs while meeting the time constraint.
+
+      What is the MOST cost-effective approach?
+    options:
+      - id: A
+        text: Deploy a real-time endpoint with 20 ml.m5.xlarge instances and invoke from AWS Lambda for each record
+      - id: B
+        text: Use SageMaker Batch Transform with 40 ml.m5.xlarge instances, MultiRecord strategy, and ShardedByS3Key distribution
+      - id: C
+        text: Deploy an asynchronous inference endpoint with scale-to-zero and process records individually
+      - id: D
+        text: Deploy a serverless inference endpoint with max concurrency of 200 and invoke for each record
+    correctAnswer: B
+    explanation: |
+      SageMaker Batch Transform with optimized configuration (B) is the most cost-effective because:
+
+      1. Calculation of required capacity:
+         - Total inference time: 10M records × 50ms = 500,000 seconds = 139 instance-hours
+         - Time constraint: 4 hours
+         - Minimum instances needed: 139 / 4 = 35 instances (40 provides buffer)
+
+      2. Batch Transform optimization features:
+         - MultiRecord strategy batches multiple records per request, reducing overhead from ~20ms to ~2ms per record
+         - ShardedByS3Key distributes data across instances for parallel processing
+         - MaxConcurrentTransforms=8 on ml.m5.xlarge (4 vCPUs) enables efficient parallelism
+         - No infrastructure runs after job completes (zero idle costs)
+
+      3. Cost calculation:
+         - Batch Transform: 40 instances × 4 hours × $0.23/hour = ~$37 per job
+         - No additional costs (networking, Lambda, data transfer)
+
+      Configuration example:
+      ```python
+      transformer = model.transformer(
+          instance_count=40,
+          instance_type='ml.m5.xlarge',
+          strategy='MultiRecord',
+          max_concurrent_transforms=8,
+          max_payload=6,  # MB
+          data_distribution_type='ShardedByS3Key'
+      )
+      ```
+
+      Why other options are significantly more expensive:
+      - A: Real-time endpoint runs 24x7 (720 hours/month) even though batch runs once daily (4 hours).
+           Cost: 20 × 720 × $0.23 = $3,312/month vs. $37/job for Batch Transform
+      - C: Asynchronous inference designed for individual large requests (up to 1GB), not efficient for 10M small records.
+           Per-request overhead and S3 I/O would significantly increase processing time and cost
+      - D: Serverless inference has per-request fee ($0.20 per 1M requests = $2) plus compute time.
+           Total: $2 + compute ≈ $40-50 per job, similar to Batch Transform but with less predictable performance
+
+      Further optimization: Consider using Spot instances for Batch Transform to reduce costs by up to 70%
+      (job is fault-tolerant).
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html
+    services:
+      - Amazon SageMaker Batch Transform
+      - Amazon S3
+    concepts:
+      - Batch transform optimization
+      - Data distribution strategies
+      - MultiRecord batching
+      - Cost optimization for offline inference
+
+  - id: io-010
+    type: single
+    text: |
+      An ML team deployed a real-time endpoint serving a recommendation model. CloudWatch metrics show:
+      - Average ModelLatency: 30ms
+      - Average OverheadLatency: 45ms
+      - Average total latency: 75ms
+
+      The team needs to reduce total latency to below 50ms. What is the MOST effective optimization approach?
+    options:
+      - id: A
+        text: Optimize the model inference code to reduce ModelLatency below 15ms
+      - id: B
+        text: Investigate and reduce OverheadLatency through batching and serialization optimization
+      - id: C
+        text: Deploy the endpoint to a different Availability Zone with lower network latency
+      - id: D
+        text: Compile the model with SageMaker Neo to reduce overall processing time
+    correctAnswer: B
+    explanation: |
+      Optimizing OverheadLatency (B) is the most effective approach because it constitutes 60% of total latency (45ms out
+      of 75ms). OverheadLatency includes:
+
+      1. Network latency (client to endpoint)
+      2. Deserialization of input data
+      3. Serialization of output data
+      4. Request queuing time
+      5. Container management overhead
+
+      Optimization strategies for OverheadLatency:
+
+      **Batching optimization:**
+      ```python
+      # Instead of individual requests
+      for item in items:
+          response = predictor.predict(item)  # 45ms overhead × N requests
+
+      # Batch multiple items
+      batch_response = predictor.predict(items)  # 45ms overhead × 1 request
+      ```
+
+      **Serialization optimization:**
+      ```python
+      # Use efficient serialization formats
+      # JSON (slowest): ~15-20ms for serialization
+      # CSV (faster): ~5-10ms for serialization
+      # Protobuf/RecordIO (fastest): ~2-3ms for serialization
+
+      predictor = Predictor(
+          endpoint_name=endpoint_name,
+          serializer=CSVSerializer(),  # Faster than JSON
+          deserializer=CSVDeserializer()
+      )
+      ```
+
+      **VPC Endpoint optimization:**
+      - Use VPC endpoints (PrivateLink) to reduce network hops
+      - Deploy client and endpoint in same AZ
+
+      Expected improvement: 45ms → 15-20ms OverheadLatency, achieving 45-50ms total latency.
+
+      Why other options are less effective:
+      - A: ModelLatency is only 30ms (40% of total latency). Reducing it from 30ms to 15ms (50% reduction, which is
+           aggressive) only saves 15ms total, resulting in 60ms total latency—still above 50ms target
+      - C: Network latency is a component of OverheadLatency but typically only 5-10ms of the 45ms. AZ changes provide
+           minimal improvement compared to serialization/batching optimization
+      - D: Neo compilation primarily optimizes ModelLatency (the 30ms component), not OverheadLatency. While it would help,
+           it doesn't address the larger bottleneck
+
+      Monitor improvements using CloudWatch metrics:
+      ```python
+      # Track latency breakdown
+      metrics = ['ModelLatency', 'OverheadLatency', 'Invocations']
+      # Target: OverheadLatency < 20ms, ModelLatency < 30ms, Total < 50ms
+      ```
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html
+    services:
+      - Amazon SageMaker Real-Time Inference
+      - Amazon CloudWatch
+    concepts:
+      - Latency breakdown analysis
+      - Overhead latency optimization
+      - Serialization performance
+      - Batching strategies
+
+  - id: io-011
+    type: multi
+    correctCount: 2
+    text: |
+      A startup has limited ML traffic initially (10 requests/hour) but expects rapid growth. They need a deployment
+      strategy that minimizes initial costs while handling potential 100x traffic growth without re-architecture. Their
+      latency SLA is flexible (P95 < 2 seconds is acceptable).
+
+      Which TWO deployment strategies best meet these requirements? (Choose 2)
+    options:
+      - id: A
+        text: Deploy to serverless inference with provisioned concurrency to handle traffic growth
+      - id: B
+        text: Deploy a real-time endpoint with auto-scaling from 1 to 50 instances using target tracking
+      - id: C
+        text: Start with serverless inference, migrate to real-time endpoints with auto-scaling as traffic increases
+      - id: D
+        text: Deploy to asynchronous inference with scale-to-zero and auto-scaling enabled
+      - id: E
+        text: Use SageMaker Batch Transform on a scheduled basis every hour
+    correctAnswer:
+      - B
+      - C
+    explanation: |
+      The two viable strategies are:
+
+      B - Real-time endpoint with auto-scaling (1 to 50 instances): This single architecture handles the entire growth
+      trajectory without re-architecture:
+
+      **Initial phase (10 requests/hour):**
+      - 1 instance minimum provides capacity
+      - Cost: 1 instance × 730 hours × $0.23 = ~$168/month
+
+      **Growth phase (1,000 requests/hour = 100x growth):**
+      - Auto-scaling automatically adds instances as traffic increases
+      - Target tracking on InvocationsPerInstance (e.g., target=1000) smoothly scales from 1→10→50 instances
+      - No manual intervention or re-architecture needed
+
+      **Configuration:**
+      ```python
+      predictor = model.deploy(
+          initial_instance_count=1,
+          instance_type='ml.m5.xlarge'
+      )
+
+      # Configure auto-scaling
+      client.register_scalable_target(
+          MinCapacity=1,
+          MaxCapacity=50,
+          ...
+      )
+      ```
+
+      C - Start serverless, migrate to real-time: This staged approach optimizes costs at each phase:
+
+      **Initial phase (10 requests/hour):**
+      - Serverless inference: Pay only for compute time (~$0.50-2/month)
+      - 10-20 second cold starts acceptable with 2-second SLA
+      - Minimal initial investment
+
+      **Growth phase (traffic increases):**
+      - Migrate to real-time endpoint when cost crossover occurs (~100-200 requests/hour)
+      - Auto-scaling handles continued growth
+      - One-time migration effort but optimizes cost throughout lifecycle
+
+      Why other options don't meet requirements:
+      - A: Provisioned concurrency keeps instances warm 24x7, eliminating serverless cost benefits. At 10 requests/hour,
+           standard serverless (with cold starts) is more cost-effective
+      - D: Asynchronous inference is designed for large payloads and longer processing times, not low-latency real-time
+           scenarios. The 2-second SLA suggests real-time requirements
+      - E: Batch Transform runs on schedule, not on-demand. This doesn't align with the real-time nature implied by
+           requests/hour metric and 2-second latency SLA
+
+      **Decision framework:**
+      - Traffic < 100 requests/hour → Serverless (if cold starts acceptable)
+      - Traffic 100-1000 requests/hour → Real-time with 1-3 instances
+      - Traffic > 1000 requests/hour → Real-time with auto-scaling
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-cost-optimization.html
+    services:
+      - Amazon SageMaker Serverless Inference
+      - Amazon SageMaker Real-Time Inference
+      - Application Auto Scaling
+    concepts:
+      - Cost optimization for variable traffic
+      - Deployment strategy evolution
+      - Auto-scaling for growth
+      - Serverless to real-time migration
+
+  - id: io-012
+    type: single
+    text: |
+      A company has three models in a deployment: a scikit-learn preprocessing model (50MB), a PyTorch inference model
+      (2GB), and a custom TensorFlow post-processing model (100MB). They currently deploy these as three separate real-time
+      endpoints. The preprocessing model receives 1000 requests/hour, but only 200 of those proceed to inference (filtering),
+      and all inference results go through post-processing.
+
+      How should the team optimize this deployment for cost and latency?
+    options:
+      - id: A
+        text: Deploy all three models to a multi-model endpoint using Triton Inference Server
+      - id: B
+        text: Deploy preprocessing and inference as a serial inference pipeline, keep post-processing separate
+      - id: C
+        text: Deploy all three models as a serial inference pipeline using multi-container endpoints
+      - id: D
+        text: Keep separate endpoints but use multi-container endpoints for preprocessing and inference only
+    correctAnswer: C
+    explanation: |
+      Deploying all three models as a serial inference pipeline (C) is optimal because:
+
+      1. **Pipeline efficiency**: Multi-container serial inference pipelines automatically chain containers where output
+         from one becomes input to the next:
+         - Request → Preprocessing (scikit-learn) → Inference (PyTorch) → Post-processing (TensorFlow) → Response
+         - Single endpoint invocation, eliminating 2 additional network round-trips
+         - Reduced total latency: 3× network overhead eliminated (60-90ms saved)
+
+      2. **Cost optimization**:
+         - Current: 3 endpoints × (instance cost) = 3× infrastructure cost
+         - Pipeline: 1 endpoint with 3 containers sharing infrastructure = 1× cost
+         - Potential savings: 60-70% reduction in hosting costs
+
+      3. **Framework diversity support**: Multi-container endpoints support up to 15 containers, each with different
+         frameworks (scikit-learn, PyTorch, TensorFlow)—perfect for this heterogeneous stack
+
+      4. **Traffic efficiency**: The 80% filtering (1000→200 requests) happens before inference, so inference and
+         post-processing containers process fewer requests, balancing container resource utilization
+
+      **Implementation:**
+      ```python
+      from sagemaker.model import Model
+      from sagemaker.pipeline import PipelineModel
+
+      preprocessing_model = Model(
+          image_uri=sklearn_container,
+          model_data='s3://bucket/preprocessing.tar.gz',
+          role=role
+      )
+
+      inference_model = Model(
+          image_uri=pytorch_container,
+          model_data='s3://bucket/inference.tar.gz',
+          role=role
+      )
+
+      postprocessing_model = Model(
+          image_uri=tensorflow_container,
+          model_data='s3://bucket/postprocessing.tar.gz',
+          role=role
+      )
+
+      pipeline = PipelineModel(
+          models=[preprocessing_model, inference_model, postprocessing_model],
+          role=role,
+          name='end-to-end-pipeline'
+      )
+
+      predictor = pipeline.deploy(
+          initial_instance_count=2,
+          instance_type='ml.m5.2xlarge'  # Sufficient for 2GB inference model
+      )
+      ```
+
+      Why other options are suboptimal:
+      - A: Multi-model endpoints require all models to use the SAME framework. This scenario has three different frameworks
+           (scikit-learn, PyTorch, TensorFlow), making MME incompatible
+      - B: Keeping post-processing separate maintains two endpoints instead of one, retaining 1 network round-trip overhead
+           and higher operational complexity
+      - D: Multi-container endpoints used for parallel invocation (not serial pipeline) doesn't optimize the sequential
+           processing flow. Also still maintains 2 separate deployments
+
+      **Additional benefits:**
+      - Simplified operations: One endpoint to manage vs. three
+      - Unified monitoring: Single set of CloudWatch metrics
+      - Atomic deployments: Update entire pipeline together
+      - Better resource utilization: Containers share instance resources
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-container-endpoints.html
+    services:
+      - Amazon SageMaker Multi-Container Endpoints
+      - Amazon SageMaker Pipeline Models
+    concepts:
+      - Serial inference pipelines
+      - Multi-framework deployment
+      - Pipeline optimization
+      - Cost reduction through consolidation
+
+  - id: io-013
+    type: single
+    text: |
+      An ML engineer used SageMaker Inference Recommender and received two top recommendations:
+
+      Recommendation 1:
+      - Instance: ml.m5.2xlarge
+      - P95 Latency: 45ms
+      - Max Throughput: 2000 TPS
+      - Cost per 1M inferences: $3.50
+      - Neo compiled: No
+
+      Recommendation 2:
+      - Instance: ml.inf2.xlarge
+      - P95 Latency: 28ms
+      - Max Throughput: 1500 TPS
+      - Cost per 1M inferences: $1.80
+      - Neo compiled: Yes
+
+      The workload requires 1200 TPS sustained throughput and P95 latency < 50ms. Which recommendation should be selected?
+    options:
+      - id: A
+        text: Recommendation 1, because it provides higher throughput capacity and headroom for growth
+      - id: B
+        text: Recommendation 2, because it offers 48% cost savings while meeting all performance requirements
+      - id: C
+        text: Recommendation 1, because uncompiled models are easier to update and maintain
+      - id: D
+        text: Deploy both recommendations behind an Application Load Balancer for redundancy
+    correctAnswer: B
+    explanation: |
+      Recommendation 2 (ml.inf2.xlarge with Neo compilation) is the correct choice because:
+
+      **Requirements validation:**
+      - ✓ Throughput: 1500 TPS > 1200 TPS required (20% headroom)
+      - ✓ Latency: 28ms P95 << 50ms SLA (44% faster than required)
+      - ✓ Cost: $1.80 per 1M inferences vs. $3.50 (48% cost reduction = $20,400/month savings at 1B requests/month)
+
+      **Additional benefits of Recommendation 2:**
+
+      1. **Better cost-performance ratio**:
+         - 37% lower latency AND 48% lower cost
+         - More efficient utilization of AWS Inferentia accelerators
+
+      2. **Neo compilation advantages**:
+         - Hardware-optimized inference code (no JIT compilation overhead)
+         - Lower memory footprint enables better scaling
+         - Faster cold starts for auto-scaling scenarios
+
+      3. **Sufficient capacity buffer**:
+         - 20% throughput headroom (1500 vs. 1200 TPS) provides room for traffic spikes
+         - Can handle 25% traffic increase before reaching capacity
+
+      4. **Future optimization path**:
+         - If throughput needs exceed 1500 TPS, add instances or enable auto-scaling
+         - Cost per 1M inferences remains $1.80 regardless of instance count
+
+      **Cost analysis at scale:**
+      ```python
+      # Assume 1 billion requests/month
+      monthly_requests = 1_000_000_000
+
+      # Recommendation 1 (ml.m5.2xlarge)
+      cost_rec1 = (monthly_requests / 1_000_000) * 3.50  # $3,500/month
+
+      # Recommendation 2 (ml.inf2.xlarge)
+      cost_rec2 = (monthly_requests / 1_000_000) * 1.80  # $1,800/month
+
+      # Annual savings: ($3,500 - $1,800) × 12 = $20,400
+      ```
+
+      Why other options are incorrect:
+      - A: While Recommendation 1 has higher max throughput (2000 TPS), the workload only requires 1200 TPS. The 33%
+           throughput advantage doesn't justify 48% higher costs. If throughput needs grow beyond 1500 TPS,
+           Recommendation 2 can scale horizontally
+      - C: Neo-compiled models are not harder to maintain. The compilation happens once during deployment, and model
+           updates simply require recompilation (automated in SageMaker). The 48% cost savings far outweigh any minimal
+           operational differences
+      - D: This doesn't make architectural sense. Inference Recommender provides alternatives to choose from, not to
+           deploy simultaneously. This would double costs unnecessarily
+
+      **Decision principle**: When multiple recommendations meet performance requirements, optimize for cost.
+      Recommendation 2 meets all SLAs with significant cost advantages.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    services:
+      - Amazon SageMaker Inference Recommender
+      - Amazon SageMaker Neo
+      - AWS Inferentia
+    concepts:
+      - Recommendation selection criteria
+      - Cost-performance trade-offs
+      - Throughput capacity planning
+      - Neo compilation benefits
+
+  - id: io-014
+    type: multi
+    correctCount: 3
+    text: |
+      A company is preparing to deploy a large language model (LLM) for real-time inference on SageMaker. The model is
+      7GB in size and requires GPU acceleration. The expected traffic is 50-500 requests per minute with high variability.
+      The team wants to optimize for both cost and performance.
+
+      Which THREE strategies should the ML engineer implement? (Choose 3)
+    options:
+      - id: A
+        text: Deploy to AWS Inferentia instances and compile with AWS Neuron SDK
+      - id: B
+        text: Configure auto-scaling with target tracking on SageMakerVariantInvocationsPerInstance
+      - id: C
+        text: Implement dynamic batching in the inference container to increase throughput
+      - id: D
+        text: Deploy to a multi-model endpoint to share GPU resources across multiple models
+      - id: E
+        text: Use SageMaker Inference Recommender to identify optimal instance type and configuration
+    correctAnswer:
+      - B
+      - C
+      - E
+    explanation: |
+      The three correct optimization strategies are:
+
+      B - Auto-scaling with target tracking: The 10x traffic variability (50-500 requests/minute) makes auto-scaling
+      essential for cost optimization:
+
+      ```python
+      asg_client.put_scaling_policy(
+          PolicyName='llm-scaling-policy',
+          ServiceNamespace='sagemaker',
+          ResourceId=f'endpoint/{endpoint_name}/variant/AllTraffic',
+          ScalableDimension='sagemaker:variant:DesiredInstanceCount',
+          PolicyType='TargetTrackingScaling',
+          TargetTrackingScalingPolicyConfiguration={
+              'TargetValue': 100.0,  # Target requests/minute/instance
+              'PredefinedMetricSpecification': {
+                  'PredefinedMetricType': 'SageMakerVariantInvocationsPerInstance'
+              },
+              'ScaleInCooldown': 600,  # 10 minutes
+              'ScaleOutCooldown': 300  # 5 minutes
+          }
+      )
+      ```
+
+      Without auto-scaling, you'd need to provision for peak (500 req/min), wasting 80-90% capacity during low traffic
+      (50 req/min). Auto-scaling provides 60-80% cost savings for variable traffic.
+
+      C - Dynamic batching: LLMs benefit significantly from batching multiple requests together:
+
+      **Benefits:**
+      - Increases GPU utilization from 40-60% (single requests) to 80-95% (batched)
+      - Reduces cost per inference by 40-60%
+      - Improves throughput by 3-5x on same hardware
+
+      **Implementation:**
+      ```python
+      # In inference.py
+      class BatchingHandler:
+          def __init__(self, model, max_batch_size=8, max_wait_ms=50):
+              self.model = model
+              self.max_batch_size = max_batch_size
+              self.max_wait_ms = max_wait_ms
+              self.batch_queue = []
+
+          def predict(self, input_text):
+              # Collect requests until batch size or timeout
+              self.batch_queue.append(input_text)
+
+              if len(self.batch_queue) >= self.max_batch_size or time_elapsed > self.max_wait_ms:
+                  return self._process_batch()
+      ```
+
+      For LLMs, batching 4-8 requests together typically provides optimal balance between latency and throughput.
+
+      E - Inference Recommender: Critical for LLM deployments because:
+      - Tests multiple GPU instance types (ml.g5.xlarge, ml.g5.2xlarge, ml.g5.4xlarge, etc.)
+      - Evaluates different configurations (container parameters, model optimizations)
+      - Provides data-driven instance selection with cost and performance metrics
+      - Tests with actual model and representative payloads
+
+      For a 7GB LLM, Inference Recommender might recommend:
+      - ml.g5.xlarge (24GB GPU memory) for cost optimization
+      - ml.g5.2xlarge (48GB GPU memory) if batching or multiple model versions needed
+
+      Why other options are incorrect or suboptimal:
+      - A: While AWS Inferentia is excellent for many models, large LLMs (7GB) requiring advanced GPU operations may not
+           be fully optimized for Inferentia yet. Inferentia excels at inference but some LLM-specific operations
+           (attention mechanisms) are highly optimized for NVIDIA GPUs. Inference Recommender (E) would test both and
+           provide data to decide
+      - D: Multi-model endpoints with GPU are supported only through Triton Inference Server and add complexity. For a
+           single LLM with variable traffic, auto-scaling (B) provides better resource optimization without the complexity
+           of multi-model serving. MME is ideal when you have many models, not optimizing a single model
+
+      **Combined impact:**
+      - Auto-scaling: 60-80% cost reduction for variable traffic
+      - Dynamic batching: 40-60% cost reduction per inference + 3-5x throughput
+      - Inference Recommender: Ensures optimal instance selection, preventing over-provisioning
+      - Total potential savings: 70-85% compared to naive deployment
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html
+    services:
+      - Amazon SageMaker Real-Time Inference
+      - Amazon SageMaker Inference Recommender
+      - Application Auto Scaling
+      - Amazon SageMaker GPU Instances
+    concepts:
+      - LLM inference optimization
+      - Dynamic batching strategies
+      - Auto-scaling for variable traffic
+      - GPU resource optimization
+
+  - id: io-015
+    type: single
+    text: |
+      A team deployed a model to a real-time endpoint and configured target tracking auto-scaling with
+      InvocationsPerInstance target of 1000, scale-out cooldown of 300 seconds, and scale-in cooldown of 600 seconds.
+
+      During testing, they observe that when traffic suddenly spikes from 500 to 3000 requests/minute, the endpoint
+      experiences elevated latency (P95 jumps from 80ms to 450ms) for approximately 15 minutes before returning to normal.
+
+      What is the MOST likely cause and solution?
+    options:
+      - id: A
+        text: The target value of 1000 is too high; reduce it to 500 to trigger scaling earlier
+      - id: B
+        text: The scale-out cooldown of 300 seconds is too long; reduce it to 60 seconds for faster scaling
+      - id: C
+        text: New instances take time to warm up; implement Least Outstanding Requests routing strategy
+      - id: D
+        text: The instance type is undersized; migrate to a larger instance type with more memory
+    correctAnswer: C
+    explanation: |
+      The issue is instance warm-up time, and implementing Least Outstanding Requests (LOR) routing (C) is the solution:
+
+      **Root cause analysis:**
+
+      1. **Traffic spike behavior:**
+         - Initial: 500 req/min ÷ 1000 target = 0.5 instances (rounds to 1 instance)
+         - Spike: 3000 req/min ÷ 1000 target = 3 instances needed
+         - Auto-scaling triggers correctly and launches 2 additional instances
+
+      2. **Warm-up period problem:**
+         - New instances require 5-10 minutes to warm up (container start, model loading, JIT compilation)
+         - During warm-up, new instances process requests slowly or not at all
+         - All traffic continues to hit the original instance, causing latency spike
+         - After warm-up (10-15 minutes), instances are ready and latency normalizes
+
+      3. **LOR routing solution:**
+         - Default routing distributes requests equally across instances
+         - LOR routing sends requests to instances with fewest pending requests
+         - Automatically reduces load on warm-up instances that are slow to respond
+         - Existing warm instances handle more traffic until new instances are ready
+         - Reduces latency spikes by 50-70% during scale-out events
+
+      **Implementation:**
+      ```python
+      # Update endpoint configuration with LOR routing
+      sagemaker.create_endpoint_config(
+          EndpointConfigName='endpoint-config-with-lor',
+          ProductionVariants=[
+              {
+                  'VariantName': 'AllTraffic',
+                  'ModelName': model_name,
+                  'InitialInstanceCount': 1,
+                  'InstanceType': 'ml.m5.xlarge',
+                  'RoutingConfig': {
+                      'RoutingStrategy': 'LEAST_OUTSTANDING_REQUESTS'
+                  }
+              }
+          ]
+      )
+
+      # Update endpoint to use new config
+      sagemaker.update_endpoint(
+          EndpointName=endpoint_name,
+          EndpointConfigName='endpoint-config-with-lor'
+      )
+      ```
+
+      **Why other options don't solve the problem:**
+
+      - A: Lowering target to 500 would cause scaling to trigger at 500 req/min instead of 1000 req/min, but doesn't
+           address the warm-up problem. New instances would still take 10-15 minutes to be ready, and you'd experience
+           the same latency spike at 500 req/min (just at a lower threshold). Plus, it would keep more instances running
+           during normal traffic, increasing costs by 50-100%
+
+      - B: Scale-out cooldown prevents rapid consecutive scaling events that cause thrashing. Reducing it to 60 seconds
+           is counterproductive because:
+           - Instances take 10-15 minutes to warm up, so 60 seconds is too short to assess if scaling worked
+           - Would trigger additional scaling before first batch is ready, wasting resources
+           - Doesn't address fundamental warm-up latency issue
+           - Best practice: cooldown should be ≥ instance warm-up time
+
+      - D: The latency spike is temporary (15 minutes) and resolves when scaling completes. This indicates a scaling
+           dynamic issue, not instance size issue. If instances were undersized, latency would remain high even after
+           scaling completed. The P95 latency of 80ms during normal operation confirms instances are appropriately sized
+
+      **Additional optimization - pre-warming strategy:**
+      ```python
+      # In inference.py - warm up model during container startup
+      def model_fn(model_dir):
+          model = load_model(model_dir)
+          model.eval()
+
+          # Warm up with dummy requests
+          dummy_input = create_dummy_input()
+          for _ in range(10):  # Multiple iterations to warm up JIT compiler
+              with torch.no_grad():
+                  _ = model(dummy_input)
+
+          return model
+      ```
+
+      **Expected improvement:**
+      - LOR routing reduces latency spike from 450ms to 150-200ms (60% improvement)
+      - Spike duration reduces from 15 minutes to 5-8 minutes
+      - Better distribution of load during scale-out events
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/minimize-real-time-inference-latency-by-using-amazon-sagemaker-routing-strategies/
+    services:
+      - Amazon SageMaker Real-Time Inference
+      - Application Auto Scaling
+    concepts:
+      - Routing strategies
+      - Auto-scaling warm-up behavior
+      - Least Outstanding Requests routing
+      - Scale-out performance optimization
+
+  - id: io-016
+    type: multi
+    correctCount: 2
+    text: |
+      An ML engineer is comparing serverless inference and real-time inference for a new model deployment. The model has
+      the following characteristics:
+      - Model size: 800MB
+      - Inference time: 150ms per request
+      - Traffic pattern: 20-200 requests per hour, highly variable
+      - Latency SLA: P95 < 5 seconds
+
+      Which TWO statements are TRUE regarding the cost and performance trade-offs? (Choose 2)
+    options:
+      - id: A
+        text: Serverless inference will be more cost-effective, saving 70-90% compared to real-time inference
+      - id: B
+        text: Real-time inference with auto-scaling will provide more consistent P95 latency
+      - id: C
+        text: Serverless inference requires 2GB memory configuration for the 800MB model
+      - id: D
+        text: Real-time inference will handle traffic spikes faster due to provisioned capacity
+      - id: E
+        text: Serverless inference cold start latency will violate the 5-second SLA
+    correctAnswer:
+      - A
+      - B
+    explanation: |
+      The two true statements are:
+
+      A - Serverless inference cost advantage (TRUE):
+
+      **Cost comparison:**
+      ```python
+      # Real-time inference (ml.m5.large: $0.115/hour)
+      real_time_monthly_cost = 0.115 * 730  # Always running
+      # = $83.95/month
+
+      # Serverless inference (2GB memory: $0.00003333/ms per GB)
+      # Average traffic: ~110 requests/hour, 150ms each
+      # Monthly requests: 110 * 730 = 80,300 requests
+      # Compute time: 80,300 * 0.15 seconds * 2 GB
+      serverless_compute = (80300 * 150 / 1000) * (0.00003333 * 2)
+      # = 12,045 GB-seconds * $0.00003333 = $0.80
+
+      # Request fees: 80,300 * $0.000020 = $1.61
+      serverless_total = $0.80 + $1.61 = $2.41/month
+
+      # Savings: ($83.95 - $2.41) / $83.95 = 97% cost reduction
+      ```
+
+      With highly variable, low-volume traffic (20-200 req/hour), serverless inference saves 90%+ in costs because:
+      - No idle time charges (real-time endpoint runs 24x7 regardless of traffic)
+      - Pay only for actual inference compute time
+      - Automatic scale-to-zero during idle periods
+
+      B - Real-time inference latency consistency (TRUE):
+
+      **Latency characteristics:**
+
+      Real-time inference with auto-scaling:
+      - Warm instances: P95 latency = 150ms + 30ms overhead = ~180ms (consistent)
+      - New instance warm-up: 5-10 minutes but LOR routing mitigates impact
+      - Consistent sub-second P95 latency once scaled
+
+      Serverless inference:
+      - Warm instances: P95 latency = 150ms + 50ms overhead = ~200ms
+      - Cold start: 10-20 seconds (highly variable based on model size)
+      - P95 latency varies between 200ms (warm) and 15 seconds (cold)
+      - Cold start frequency depends on traffic pattern and idle timeout
+
+      For applications requiring consistent latency (e.g., user-facing APIs), real-time inference provides predictable
+      performance. For applications tolerant of occasional multi-second latencies, serverless is acceptable.
+
+      **Why other statements are FALSE:**
+
+      C - Memory configuration requirement (FALSE):
+      - AWS recommends memory size ≥ model size, so 1024MB (1GB) would suffice for 800MB model
+      - 2GB provides more headroom but isn't strictly required
+      - Memory should be sized based on model size + overhead + request processing needs
+      - Could test 1024MB, 2048MB, 3072MB with Serverless Inference Benchmarking Toolkit
+
+      D - Traffic spike handling (FALSE):
+      - Serverless inference automatically scales within 30-60 seconds, similar to real-time auto-scaling
+      - Real-time endpoint requires scale-out cooldown (300 seconds typical) before adding more instances
+      - Serverless can scale out faster for sudden spikes because it doesn't have cooldown constraints
+      - Both have warm-up delays for new capacity, but serverless is more elastic
+
+      E - Cold start violating SLA (FALSE):
+      - Serverless cold starts are typically 10-20 seconds for 800MB model
+      - 5-second SLA allows for occasional cold starts (P95 means 95% of requests, so 5% can be slower)
+      - If traffic is 100 requests/hour, approximately 5 requests/hour could experience cold starts
+      - With provisioned concurrency, cold starts can be eliminated entirely if needed
+
+      **Recommendation for this scenario:**
+      Given the 5-second SLA flexibility and highly variable traffic, serverless inference is optimal. The 90%+ cost
+      savings outweigh occasional cold starts, and the P95 SLA accommodates the cold start distribution.
+
+      If consistent latency becomes critical:
+      ```python
+      # Add provisioned concurrency to warm 1-2 instances
+      serverless_config = ServerlessInferenceConfig(
+          memory_size_in_mb=2048,
+          max_concurrency=20,
+          provisioned_concurrency=2  # Keep 2 instances warm
+      )
+      # Cost increases to ~$10-15/month but still 80% cheaper than real-time
+      ```
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html
+    services:
+      - Amazon SageMaker Serverless Inference
+      - Amazon SageMaker Real-Time Inference
+    concepts:
+      - Cost comparison for variable traffic
+      - Latency consistency trade-offs
+      - Cold start behavior
+      - Serverless vs real-time selection criteria
+
+  - id: io-017
+    type: single
+    text: |
+      A machine learning engineer is configuring auto-scaling for a multi-model endpoint hosting 50 models. CloudWatch
+      metrics show that ModelLoadingWaitTime spikes during traffic increases, causing latency violations. The endpoint
+      currently uses target tracking auto-scaling with CPUUtilization target of 70%.
+
+      What change will MOST effectively reduce ModelLoadingWaitTime while maintaining cost efficiency?
+    options:
+      - id: A
+        text: Change auto-scaling metric to InvocationsPerInstance with a lower target value
+      - id: B
+        text: Increase the CPUUtilization target from 70% to 90% to delay scaling
+      - id: C
+        text: Add a custom metric for ModelLoadingWaitTime and create a step scaling policy
+      - id: D
+        text: Pre-load all 50 models into memory by increasing instance memory size
+    correctAnswer: A
+    explanation: |
+      Changing the auto-scaling metric to InvocationsPerInstance with a lower target (A) is the most effective solution:
+
+      **Problem analysis:**
+
+      ModelLoadingWaitTime spikes occur because:
+      1. Current metric (CPUUtilization) is a lagging indicator - it rises AFTER models are loaded and inferencing
+      2. Multi-model endpoints load models from S3 when invoked (if not cached)
+      3. During traffic increases, multiple model loads overwhelm instances before CPU shows saturation
+      4. By the time CPU hits 70% and triggers scaling, latency violations have already occurred
+
+      **Solution rationale:**
+
+      InvocationsPerInstance is the AWS-recommended metric for multi-model endpoints because:
+
+      1. **Leading indicator**: Predicts load before resource saturation
+         - Invocations increase → Auto-scaling triggers → New capacity before latency spikes
+         - CPU increases → Already saturated → Latency violations already occurring
+
+      2. **Multi-model endpoint optimization**:
+         - Each invocation potentially requires model loading from S3
+         - Lower target value (e.g., 400-600) ensures capacity exists before cache thrashing occurs
+         - Proactive scaling maintains healthy cache hit rates
+
+      3. **Model loading consideration**:
+         - Formula: Target = (Instance_Capacity / Avg_Models_Per_Request) * Cache_Hit_Rate
+         - Example: 1000 req/min capacity, 2 models avg, 70% cache = 1000 / 2 * 0.7 = 350 target
+
+      **Implementation:**
+      ```python
+      asg_client.put_scaling_policy(
+          PolicyName='mme-invocations-scaling',
+          ServiceNamespace='sagemaker',
+          ResourceId=f'endpoint/{endpoint_name}/variant/AllTraffic',
+          ScalableDimension='sagemaker:variant:DesiredInstanceCount',
+          PolicyType='TargetTrackingScaling',
+          TargetTrackingScalingPolicyConfiguration={
+              'TargetValue': 500.0,  # Lower target for multi-model endpoints
+              'PredefinedMetricSpecification': {
+                  'PredefinedMetricType': 'SageMakerVariantInvocationsPerInstance'
+              },
+              'ScaleInCooldown': 900,  # Longer to preserve cache warmth
+              'ScaleOutCooldown': 300  # Standard scale-out
+          }
+      )
+      ```
+
+      **Expected improvements:**
+      - ModelLoadingWaitTime: Reduces from 2-5 seconds to <500ms
+      - ModelCacheHit: Increases from 60-70% to 80-90%
+      - P95 Latency: More consistent, fewer spikes
+
+      **Why other options are incorrect:**
+
+      B - Increase CPU target to 90% (WRONG):
+      - This delays scaling even further, worsening the problem
+      - Multi-model endpoints experience cache thrashing before CPU saturation
+      - Would increase ModelLoadingWaitTime and latency violations
+      - Moves in opposite direction of solution
+
+      C - Custom metric with step scaling (LESS EFFECTIVE):
+      - ModelLoadingWaitTime is a reactive metric (problem already occurring)
+      - Step scaling adds complexity vs. target tracking
+      - Doesn't address root cause of late scaling decisions
+      - AWS documentation explicitly recommends InvocationsPerInstance, not custom metrics
+
+      D - Pre-load all models (INEFFICIENT AND COSTLY):
+      - 50 models may exceed instance memory capacity
+      - Multi-model endpoint design is based on dynamic loading, not pre-loading
+      - Would require very large (expensive) instances
+      - Defeats the cost optimization purpose of multi-model endpoints
+      - Not scalable as model count grows
+
+      **Additional monitoring:**
+      ```python
+      # Create CloudWatch alarm for ModelLoadingWaitTime as safety net
+      cloudwatch.put_metric_alarm(
+          AlarmName='high-model-loading-wait-time',
+          MetricName='ModelLoadingWaitTime',
+          Namespace='AWS/SageMaker',
+          Statistic='Average',
+          Period=300,
+          EvaluationPeriods=2,
+          Threshold=2000,  # 2 seconds
+          ComparisonOperator='GreaterThanThreshold',
+          Dimensions=[
+              {'Name': 'EndpointName', 'Value': endpoint_name},
+              {'Name': 'VariantName', 'Value': 'AllTraffic'}
+          ]
+      )
+      ```
+
+      This provides visibility if InvocationsPerInstance scaling isn't sufficient, but the primary scaling mechanism
+      should be InvocationsPerInstance target tracking.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints-autoscaling.html
+    services:
+      - Amazon SageMaker Multi-Model Endpoints
+      - Application Auto Scaling
+      - Amazon CloudWatch
+    concepts:
+      - Auto-scaling metric selection for MME
+      - Model loading performance
+      - Leading vs lagging indicators
+      - Multi-model endpoint optimization

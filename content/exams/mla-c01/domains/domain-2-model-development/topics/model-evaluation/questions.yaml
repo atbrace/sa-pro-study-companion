@@ -1,0 +1,850 @@
+questions:
+  - id: me-001
+    type: single
+    text: |
+      A machine learning engineer is evaluating a binary classification model for fraud detection.
+      The dataset contains 98% legitimate transactions and 2% fraudulent transactions. The model
+      achieves 97% accuracy on the validation set. However, when deployed to production, it fails
+      to catch any fraudulent transactions.
+
+      What is the MOST likely explanation for this issue?
+    options:
+      - id: A
+        text: The model is overfitting to the training data and needs regularization
+      - id: B
+        text: Accuracy is misleading for imbalanced datasets and the model is predicting the majority class for all instances
+      - id: C
+        text: The validation set does not have enough examples to properly evaluate the model
+      - id: D
+        text: The model needs more training epochs to learn the patterns in fraudulent transactions
+    correctAnswer: B
+    explanation: |
+      With 98% legitimate transactions, a model that always predicts "legitimate" achieves 98% accuracy
+      but 0% recall for fraud detection. Accuracy is misleading for imbalanced datasets because it does
+      not distinguish between performance on majority and minority classes.
+
+      The correct approach is to use precision, recall, F1-score, and AUC-PR metrics that focus on the
+      minority class (fraud). You should also examine the confusion matrix to verify that the model is
+      actually detecting fraudulent transactions, not just predicting the majority class.
+
+      Option A is incorrect because this is not overfitting - the model performs poorly on both training
+      and validation for fraud detection. Option C is incorrect because the validation set size is not
+      the issue; the metric choice is. Option D is incorrect because more training will not help if the
+      model is already converged to predicting the majority class.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    services:
+      - Amazon SageMaker
+      - Amazon SageMaker Model Monitor
+    concepts:
+      - Classification Metrics
+      - Imbalanced Datasets
+      - Precision and Recall
+
+  - id: me-002
+    type: single
+    text: |
+      A data scientist is training a regression model to predict house prices. After training, the model
+      achieves the following metrics on the test set:
+      - MAE: $25,000
+      - RMSE: $85,000
+      - R²: 0.78
+
+      What does the significant difference between MAE and RMSE indicate about the model's performance?
+    options:
+      - id: A
+        text: The model is overfitting to the training data
+      - id: B
+        text: The model has some large prediction errors (outliers) that are being penalized heavily by RMSE
+      - id: C
+        text: The model needs more training data to improve performance
+      - id: D
+        text: The R² value is too low and the model should be retrained with different features
+    correctAnswer: B
+    explanation: |
+      RMSE squares errors before averaging, so it penalizes large errors much more heavily than small ones.
+      When RMSE is significantly larger than MAE, it indicates the presence of large prediction errors or
+      outliers. An error of $200,000 contributes 40,000,000,000 to MSE but only 200,000 to MAE.
+
+      MAE of $25,000 indicates typical predictions are off by about $25,000, while RMSE of $85,000 indicates
+      that occasional large errors are pulling the metric up significantly. This suggests investigating
+      outliers - are there specific property types or price ranges where the model performs poorly?
+
+      Option A is incorrect because we do not have training metrics to compare. Option C may help but does
+      not explain the MAE-RMSE difference. Option D is incorrect because R² of 0.78 indicates the model
+      explains 78% of variance, which is reasonable; the issue is the presence of large errors, not overall
+      fit quality.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Regression Metrics
+      - MAE
+      - RMSE
+      - Outlier Detection
+
+  - id: me-003
+    type: single
+    text: |
+      During training of a deep learning model in Amazon SageMaker, the SageMaker Debugger triggers
+      the "VanishingGradient" rule. The training script uses a sigmoid activation function in all layers
+      of a 10-layer neural network.
+
+      What is the MOST effective solution to address this issue?
+    options:
+      - id: A
+        text: Increase the learning rate to allow larger gradient updates
+      - id: B
+        text: Replace sigmoid activation functions with ReLU in hidden layers and add batch normalization
+      - id: C
+        text: Reduce the number of layers from 10 to 5 to simplify the model
+      - id: D
+        text: Increase the batch size to stabilize gradient calculations
+    correctAnswer: B
+    explanation: |
+      The vanishing gradient problem occurs when gradients become extremely small during backpropagation,
+      preventing deep layers from learning effectively. Sigmoid activation functions saturate (output
+      close to 0 or 1) for large positive or negative inputs, producing gradients near zero. In deep
+      networks, multiplying many small gradients causes them to vanish.
+
+      ReLU (Rectified Linear Unit) does not saturate for positive values, maintaining gradient flow. Batch
+      normalization normalizes layer inputs, keeping them in ranges where activation functions do not
+      saturate. Together, these techniques solve vanishing gradients.
+
+      Option A is incorrect and dangerous - increasing the learning rate when gradients are vanishing will
+      not help them propagate better; it may even cause instability. Option C reduces capacity and may
+      cause underfitting; the goal is to train deep networks effectively, not avoid them. Option D does
+      not address the activation function saturation issue.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/debugger-built-in-rules.html
+    services:
+      - Amazon SageMaker Debugger
+    concepts:
+      - Vanishing Gradient
+      - Activation Functions
+      - Training Issues
+
+  - id: me-004
+    type: multi
+    correctCount: 2
+    text: |
+      A machine learning team needs to compare the performance of 50 different hyperparameter combinations
+      for a customer churn prediction model. They want to track all experiments, visualize metric trends,
+      and identify the best performing configuration.
+
+      Which TWO AWS services or features would be MOST appropriate for this use case?
+    options:
+      - id: A
+        text: Amazon SageMaker Experiments to track all 50 trials with their parameters and metrics
+      - id: B
+        text: Amazon SageMaker Debugger to monitor training progress for each trial
+      - id: C
+        text: Amazon SageMaker Automatic Model Tuning to automatically search the hyperparameter space
+      - id: D
+        text: Amazon SageMaker Model Monitor to track model performance over time
+      - id: E
+        text: AWS Lambda to run custom comparison scripts after each training job
+    correctAnswer: [A, C]
+    explanation: |
+      SageMaker Experiments (Option A) is designed specifically for tracking multiple training iterations.
+      It automatically logs hyperparameters, metrics, and artifacts for each trial, and provides visual
+      comparison tools in SageMaker Studio Classic. You can sort by validation accuracy, filter by
+      hyperparameter ranges, and identify the best configuration.
+
+      SageMaker Automatic Model Tuning (Option C) automates the hyperparameter search process. You define
+      hyperparameter ranges and an optimization metric, and the tuning job intelligently explores the
+      space using Bayesian optimization. It runs multiple training jobs in parallel and tracks all results,
+      which are also visible in Experiments.
+
+      Option B is incorrect because Debugger monitors individual training jobs for issues like overfitting
+      or vanishing gradients, not for comparing across trials. Option D is incorrect because Model Monitor
+      is for production model drift detection, not training-time comparison. Option E is unnecessary because
+      Experiments provides built-in comparison capabilities.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/experiments.html
+    services:
+      - Amazon SageMaker Experiments
+      - Amazon SageMaker Automatic Model Tuning
+    concepts:
+      - Experiment Tracking
+      - Hyperparameter Tuning
+      - Model Comparison
+
+  - id: me-005
+    type: single
+    text: |
+      A data scientist trained a binary classification model and generated the following confusion matrix
+      on the test set:
+
+                      Predicted Negative  Predicted Positive
+      Actual Negative        850                 50
+      Actual Positive        120                380
+
+      The business requirement states that false negatives are 10 times more costly than false positives.
+      Which metric should be prioritized when evaluating this model?
+    options:
+      - id: A
+        text: Accuracy
+      - id: B
+        text: Precision
+      - id: C
+        text: Recall
+      - id: D
+        text: F1-score
+    correctAnswer: C
+    explanation: |
+      False negatives occur when the model predicts negative but the actual label is positive (120 cases
+      in the confusion matrix). False positives occur when the model predicts positive but the actual label
+      is negative (50 cases).
+
+      Recall measures the proportion of actual positives that were correctly identified: TP / (TP + FN) =
+      380 / (380 + 120) = 0.76. Maximizing recall minimizes false negatives, which is critical when false
+      negatives are more costly.
+
+      Current model recall is 76%, meaning 24% of actual positives are missed (false negatives). Given the
+      10x cost difference, this is likely unacceptable. The team should lower the classification threshold
+      to increase recall, even if it increases false positives.
+
+      Option A is incorrect because accuracy treats all errors equally. Option B is incorrect because
+      precision focuses on minimizing false positives (TP / (TP + FP)), which is the opposite of what is
+      needed. Option D is incorrect because F1-score balances precision and recall equally; when false
+      negatives are much more costly, recall should be prioritized or F2-score (which weights recall higher)
+      should be used.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Confusion Matrix
+      - Recall
+      - Classification Metrics
+      - Business Requirements
+
+  - id: me-006
+    type: single
+    text: |
+      A machine learning engineer is using Amazon SageMaker Autopilot to train a classification model on
+      a dataset with 35,000 training examples. Autopilot automatically performs k-fold cross-validation
+      during the training process.
+
+      What is the PRIMARY benefit of cross-validation in this scenario?
+    options:
+      - id: A
+        text: It reduces training time by splitting the data into smaller subsets
+      - id: B
+        text: It provides more robust performance estimates and reduces overfitting to a single validation set
+      - id: C
+        text: It automatically selects the best features for the model
+      - id: D
+        text: It eliminates the need for a separate test set
+    correctAnswer: B
+    explanation: |
+      SageMaker Autopilot automatically performs 5-fold cross-validation for datasets with 50,000 or fewer
+      training instances. In k-fold cross-validation, the data is split into k folds, and the model is
+      trained k times using different train-validation splits. Performance metrics are averaged across all
+      k runs.
+
+      This provides more robust performance estimates than a single train-validation split because it uses
+      all data for both training and validation across the k runs. It also reduces the risk of overfitting
+      to a particular validation set or getting lucky/unlucky with the split. The standard deviation across
+      folds quantifies performance variance.
+
+      This is especially important for smaller datasets (like the 35,000-example dataset in this scenario)
+      where a single train-test split might not be representative.
+
+      Option A is incorrect - cross-validation increases training time because you train k models instead
+      of one. Option C is incorrect - cross-validation is about robust evaluation, not feature selection
+      (though it can be used within feature selection pipelines). Option D is incorrect - you still need
+      a held-out test set that was not used in cross-validation to get final unbiased performance estimates.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-metrics-validation.html
+    services:
+      - Amazon SageMaker Autopilot
+    concepts:
+      - Cross-Validation
+      - K-Fold Validation
+      - Model Evaluation
+
+  - id: me-007
+    type: multi
+    correctCount: 3
+    text: |
+      A company has deployed a machine learning model to production using Amazon SageMaker. Over time,
+      the model's performance has degraded. The team needs to implement comprehensive monitoring to detect
+      future issues early.
+
+      Which THREE types of monitoring should be implemented using Amazon SageMaker Model Monitor?
+    options:
+      - id: A
+        text: Data quality monitoring to detect drift in input feature distributions
+      - id: B
+        text: Code quality monitoring to detect bugs in the inference code
+      - id: C
+        text: Model quality monitoring to track prediction accuracy using ground truth labels
+      - id: D
+        text: Bias drift monitoring to detect fairness issues across demographic groups
+      - id: E
+        text: Infrastructure monitoring to detect EC2 instance failures
+    correctAnswer: [A, C, D]
+    explanation: |
+      Amazon SageMaker Model Monitor provides four types of monitoring capabilities:
+
+      1. Data Quality Monitoring (Option A): Detects drift in input data distributions compared to the
+      baseline from training. If feature distributions change (mean, standard deviation, category frequencies),
+      it indicates data drift that can degrade model performance.
+
+      2. Model Quality Monitoring (Option C): Evaluates prediction accuracy by comparing predictions to
+      ground truth labels collected from production. It computes metrics like accuracy, precision, recall,
+      F1-score, AUC-ROC for classification, and MAE, MSE, RMSE, R² for regression.
+
+      3. Bias Drift Monitoring (Option D): Detects when model predictions become biased toward or against
+      specific subgroups. This is integrated with SageMaker Clarify and monitors metrics like demographic
+      parity, equalized odds, and disparate impact.
+
+      The fourth type is Feature Attribution Drift monitoring, which tracks changes in feature importance.
+
+      Option B is incorrect because Model Monitor does not analyze code quality - it monitors data and model
+      performance. Option E is incorrect because infrastructure monitoring is handled by CloudWatch and AWS
+      Systems Manager, not Model Monitor.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon SageMaker Clarify
+      - Amazon CloudWatch
+    concepts:
+      - Data Drift
+      - Model Quality Monitoring
+      - Bias Detection
+      - Production Monitoring
+
+  - id: me-008
+    type: single
+    text: |
+      A machine learning team has trained two versions of a recommendation model and wants to test both
+      in production before deciding which to keep. They need to route 90% of traffic to the current model
+      (Version 1) and 10% to the new model (Version 2) while monitoring performance metrics for each version
+      separately.
+
+      What is the MOST appropriate approach using Amazon SageMaker?
+    options:
+      - id: A
+        text: Deploy both models as production variants on the same SageMaker endpoint with traffic weights of 90 and 10
+      - id: B
+        text: Deploy both models on separate endpoints and use Amazon API Gateway to split traffic
+      - id: C
+        text: Deploy only Version 2 and use SageMaker Model Monitor to compare it with Version 1
+      - id: D
+        text: Use SageMaker Experiments to run offline A/B testing before deploying either model
+    correctAnswer: A
+    explanation: |
+      Amazon SageMaker endpoints support multiple production variants, allowing you to test different models
+      with live traffic. You specify the percentage of traffic to route to each variant using weights. In
+      this case, you would configure:
+      - ProductionVariant 1 (current model): InitialVariantWeight = 90
+      - ProductionVariant 2 (new model): InitialVariantWeight = 10
+
+      SageMaker automatically distributes traffic according to these weights. Each variant emits separate
+      CloudWatch metrics for invocations, latency, and errors, allowing you to compare real-world performance.
+      You can adjust weights dynamically based on observed behavior without redeploying.
+
+      This approach is called A/B testing and allows safe validation of new models with live traffic before
+      full deployment. After monitoring confirms the new model performs better, you can shift 100% of traffic
+      to it or remove the old variant.
+
+      Option B is possible but unnecessarily complex - SageMaker provides built-in support for this pattern.
+      Option C is incorrect because Model Monitor detects drift over time; it does not compare two models
+      simultaneously. Option D is incorrect because offline testing cannot replace real-world validation
+      with live traffic; it should be done before A/B testing, not instead of it.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html
+    services:
+      - Amazon SageMaker Endpoints
+      - Amazon CloudWatch
+    concepts:
+      - A/B Testing
+      - Production Variants
+      - Model Comparison
+
+  - id: me-009
+    type: single
+    text: |
+      During training of an XGBoost model in Amazon SageMaker, the training loss continues to decrease but
+      the validation loss has stopped improving for the last 20 boosting rounds. Which SageMaker Debugger
+      rule would detect this issue?
+    options:
+      - id: A
+        text: VanishingGradient
+      - id: B
+        text: ExplodingGradient
+      - id: C
+        text: Overtraining
+      - id: D
+        text: PoorWeightInitialization
+    correctAnswer: C
+    explanation: |
+      The Overtraining rule detects when validation loss stops improving or worsens while training continues.
+      This is distinct from overfitting (where training and validation loss diverge) - overtraining
+      specifically looks for stagnation in validation performance, signaling that training should be stopped.
+
+      In this scenario, training loss is still decreasing, but validation loss has plateaued for 20 boosting
+      rounds. This indicates the model is not generalizing better despite continued training, which is the
+      definition of overtraining. The solution is early stopping - halt training when validation performance
+      stops improving for a specified number of iterations.
+
+      For XGBoost specifically, you can use the early_stopping_rounds parameter to automatically stop training
+      when validation metric does not improve for the specified number of rounds.
+
+      Option A is incorrect because vanishing gradients relate to deep neural networks with poor activation
+      functions or initialization, not tree-based models like XGBoost. Option B is similarly incorrect.
+      Option D is incorrect because weight initialization issues manifest at the start of training, not
+      after many rounds.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/debugger-built-in-rules.html
+    services:
+      - Amazon SageMaker Debugger
+      - Amazon SageMaker XGBoost
+    concepts:
+      - Overtraining
+      - Early Stopping
+      - Debugger Rules
+
+  - id: me-010
+    type: single
+    text: |
+      A binary classification model achieves the following metrics on the test set:
+      - Accuracy: 82%
+      - Precision: 0.75
+      - Recall: 0.68
+      - AUC-ROC: 0.89
+
+      The business team wants to reduce the number of false negatives, even if it increases false positives.
+      What should the machine learning engineer do?
+    options:
+      - id: A
+        text: Retrain the model with a higher learning rate
+      - id: B
+        text: Lower the classification threshold from the default 0.5 to a lower value like 0.3
+      - id: C
+        text: Increase the classification threshold from 0.5 to a higher value like 0.7
+      - id: D
+        text: Use a different algorithm that naturally has higher recall
+    correctAnswer: B
+    explanation: |
+      False negatives occur when the model predicts negative but the actual label is positive. Recall
+      measures the proportion of actual positives correctly identified: TP / (TP + FN). Increasing recall
+      reduces false negatives.
+
+      The classification threshold determines when a model predicts positive versus negative. By default,
+      most classifiers use 0.5 - if the predicted probability is above 0.5, predict positive. Lowering the
+      threshold to 0.3 means the model predicts positive more often (whenever probability > 0.3), which
+      increases recall and reduces false negatives.
+
+      The trade-off is that false positives will increase (some instances with probabilities between 0.3
+      and 0.5 that were correctly classified as negative will now be misclassified as positive). This is
+      acceptable based on the business requirement.
+
+      The high AUC-ROC of 0.89 indicates the model has good discriminative ability across thresholds, so
+      threshold tuning is a good approach.
+
+      Option A is incorrect because the learning rate affects training, not the precision-recall trade-off
+      of a trained model. Option C is incorrect because raising the threshold increases precision but
+      decreases recall, which is the opposite of what is needed. Option D is unnecessary - threshold tuning
+      is simpler and more direct than retraining with a different algorithm.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Classification Threshold
+      - Precision-Recall Trade-off
+      - False Negatives
+
+  - id: me-011
+    type: multi
+    correctCount: 2
+    text: |
+      A company is building a medical diagnosis system to detect a rare disease that affects 1 in 1,000
+      patients. They have a dataset of 100,000 patient records. Which TWO evaluation approaches should be
+      used to ensure the model is effective?
+    options:
+      - id: A
+        text: Use accuracy as the primary metric since it measures overall correctness
+      - id: B
+        text: Use stratified k-fold cross-validation to ensure each fold maintains the 0.1% positive class distribution
+      - id: C
+        text: Focus on AUC-PR (Area Under Precision-Recall Curve) rather than AUC-ROC for evaluation
+      - id: D
+        text: Split the data into 80% training and 20% testing using random sampling
+      - id: E
+        text: Train on all 100,000 records without splitting to maximize the number of positive examples
+    correctAnswer: [B, C]
+    explanation: |
+      With only 100 positive cases in 100,000 records (0.1% prevalence), this is an extremely imbalanced
+      dataset requiring special handling:
+
+      Option B: Stratified k-fold cross-validation is critical. Regular k-fold might create folds with
+      zero positive examples. Stratified splitting ensures each fold maintains approximately 0.1% positive
+      cases, allowing meaningful evaluation on each fold. This is especially important with only 100
+      positive cases total.
+
+      Option C: AUC-PR (precision-recall curve) is more informative than AUC-ROC for severely imbalanced
+      datasets. AUC-ROC can be misleadingly high because it includes true negatives (which are abundant).
+      AUC-PR focuses on the positive class performance, providing better insight into how well the rare
+      disease is detected.
+
+      Option A is incorrect - a model predicting "no disease" for everyone achieves 99.9% accuracy but is
+      useless. Use precision, recall, F1-score, or AUC-PR instead. Option D is risky without stratification;
+      random sampling might create imbalanced splits. Option E is incorrect because without a test set, you
+      cannot evaluate generalization performance, and with only 100 positive cases, k-fold cross-validation
+      is essential for robust estimates.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-metrics-validation.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Imbalanced Datasets
+      - Stratified Cross-Validation
+      - AUC-PR
+      - Rare Event Detection
+
+  - id: me-012
+    type: single
+    text: |
+      A regression model predicting daily sales has the following performance on the test set:
+      - MAE: $1,200
+      - RMSE: $1,350
+      - R²: 0.91
+
+      The business team is satisfied with the R² but concerned about prediction reliability. What does the
+      close similarity between MAE and RMSE indicate?
+    options:
+      - id: A
+        text: The model has many large outlier errors that need investigation
+      - id: B
+        text: The model's prediction errors are relatively consistent without extreme outliers
+      - id: C
+        text: The model is overfitting to the training data
+      - id: D
+        text: The R² value is incorrect and should be recalculated
+    correctAnswer: B
+    explanation: |
+      MAE measures average absolute error, while RMSE squares errors before averaging and then takes the
+      square root. RMSE heavily penalizes large errors due to squaring, so it is typically larger than MAE.
+
+      When MAE and RMSE are close (in this case, $1,200 vs $1,350), it indicates that prediction errors
+      are relatively uniform without extreme outliers. If there were large outliers, RMSE would be much
+      larger than MAE because squaring amplifies large errors.
+
+      For example, if the model had consistent errors around $1,200 with a few errors of $10,000, the MAE
+      might still be around $1,200-$1,500, but RMSE would jump to $3,000+ due to the squared $10,000 errors.
+
+      In this scenario, the close MAE-RMSE values suggest the model makes consistent predictions with
+      predictable error bounds, which supports business reliability requirements. Combined with R² of 0.91
+      (explaining 91% of variance), this is a strong performing model.
+
+      Option A is the opposite of the correct interpretation. Option C is incorrect because we do not have
+      training metrics to compare. Option D is incorrect - there is no indication the R² is wrong; the
+      metrics are consistent with each other.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
+    services:
+      - Amazon SageMaker
+    concepts:
+      - Regression Metrics
+      - MAE
+      - RMSE
+      - Error Consistency
+
+  - id: me-013
+    type: single
+    text: |
+      A machine learning team is comparing two model versions registered in Amazon SageMaker Model Registry.
+      Model A has 92% accuracy and Model B has 89% accuracy on the same test set. Before deploying Model A
+      to production, what additional comparison should be performed?
+    options:
+      - id: A
+        text: Deploy Model A immediately since it has higher accuracy
+      - id: B
+        text: Compare inference latency, resource costs, and class-specific metrics like precision and recall for each model
+      - id: C
+        text: Only compare the R² values between the two models
+      - id: D
+        text: Retrain both models to see if accuracy improves further
+    correctAnswer: B
+    explanation: |
+      Accuracy is just one dimension of model performance. Production deployment requires considering
+      multiple factors:
+
+      1. Inference Latency: Model B might be faster, which matters for real-time applications. A 3% accuracy
+      drop might be acceptable if latency improves by 50%.
+
+      2. Resource Costs: Model B might use fewer compute resources (smaller model size, simpler architecture),
+      reducing hosting costs. SageMaker Inference Recommender can test and compare instance types for each
+      model.
+
+      3. Class-Specific Metrics: For classification, overall accuracy can hide imbalanced performance across
+      classes. Model A might be better on majority classes while Model B is better on minority classes that
+      matter more to the business. Compare precision, recall, and F1-score for each class.
+
+      4. Robustness: Model B might be more robust to input variations or adversarial examples despite lower
+      accuracy.
+
+      SageMaker Model Registry enables side-by-side comparison of these dimensions in Studio Classic. You
+      can also perform A/B testing with production variants to compare real-world performance before
+      committing.
+
+      Option A is incorrect - blind deployment based on one metric is risky. Option C is incorrect because
+      R² is for regression, not classification (accuracy is mentioned). Option D delays deployment and does
+      not address the comparison question.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-version-compare.html
+    services:
+      - Amazon SageMaker Model Registry
+      - Amazon SageMaker Inference Recommender
+    concepts:
+      - Model Comparison
+      - Production Deployment
+      - Multi-Dimensional Evaluation
+
+  - id: me-014
+    type: multi
+    correctCount: 3
+    text: |
+      A deep learning model for image classification shows training accuracy of 95% but validation accuracy
+      of 68%. Which THREE techniques could help reduce this overfitting?
+    options:
+      - id: A
+        text: Add dropout layers to randomly deactivate neurons during training
+      - id: B
+        text: Increase the learning rate to speed up convergence
+      - id: C
+        text: Apply data augmentation to increase effective training set size
+      - id: D
+        text: Add L2 regularization to penalize large weights
+      - id: E
+        text: Increase the number of layers to add more model capacity
+    correctAnswer: [A, C, D]
+    explanation: |
+      The large gap between training accuracy (95%) and validation accuracy (68%) indicates overfitting -
+      the model has learned training data too well, including noise, and does not generalize.
+
+      Option A (Dropout): Dropout randomly deactivates a percentage of neurons during each training iteration,
+      forcing the network to learn redundant representations and preventing co-adaptation of features. This
+      is one of the most effective regularization techniques for neural networks.
+
+      Option C (Data Augmentation): Augmentation techniques (rotation, flipping, cropping, color jitter for
+      images) artificially expand the training set, helping the model learn invariances and reducing
+      overfitting. This is especially effective for image classification.
+
+      Option D (L2 Regularization): L2 regularization (weight decay) adds a penalty term to the loss function
+      proportional to the squared magnitude of weights. This discourages the model from learning large
+      weights that fit training data noise.
+
+      Option B is incorrect - increasing the learning rate affects convergence speed and stability, not
+      overfitting. It might even worsen overfitting by allowing the model to fit training data more quickly.
+
+      Option E is incorrect - adding more layers increases model capacity, making overfitting worse, not
+      better. Reducing capacity (fewer layers/neurons) would help, but is not listed.
+
+      SageMaker Debugger's Overfitting rule can detect this issue automatically during training, alerting
+      you to apply these remediation techniques.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/debugger-built-in-rules.html
+    services:
+      - Amazon SageMaker Debugger
+    concepts:
+      - Overfitting
+      - Regularization
+      - Dropout
+      - Data Augmentation
+
+  - id: me-015
+    type: single
+    text: |
+      A production model's accuracy has dropped from 88% to 79% over three months, as detected by Amazon
+      SageMaker Model Monitor. The monitoring job shows that the input feature distributions have shifted
+      significantly from the baseline.
+
+      What is the MOST appropriate immediate action?
+    options:
+      - id: A
+        text: Disable Model Monitor since it is generating false alarms
+      - id: B
+        text: Investigate the data drift to understand its cause, then retrain the model with recent data that includes the new distribution
+      - id: C
+        text: Increase the monitoring threshold so the alarms stop triggering
+      - id: D
+        text: Roll back to a previous model version from six months ago
+    correctAnswer: B
+    explanation: |
+      Model Monitor has detected both performance degradation (accuracy drop) and data drift (input feature
+      distribution shift). These are related - when input data changes, model performance often degrades
+      because the model was trained on different distributions.
+
+      The correct approach is to:
+      1. Investigate the root cause of data drift - has user behavior changed, did upstream data pipelines
+      change, is there a data quality issue, or is this seasonal variation?
+      2. Collect recent ground truth labels to validate the performance drop
+      3. Retrain the model using recent data that reflects the new distribution
+      4. Validate the retrained model on a held-out test set with the new distribution
+      5. Deploy the updated model using A/B testing to confirm improvement
+
+      Data drift is a natural occurrence in production ML systems. Model Monitor's job is to detect it early
+      so you can take corrective action before business impact worsens.
+
+      Option A is incorrect - disabling monitoring loses visibility into future issues. Option C is incorrect
+      and dangerous - raising thresholds to silence alarms does not fix the underlying problem. Option D is
+      incorrect because a six-month-old model was trained on even older data that likely drifted even more
+      from the current distribution.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+    concepts:
+      - Data Drift
+      - Model Degradation
+      - Retraining Strategy
+      - Production Monitoring
+
+  - id: me-016
+    type: single
+    text: |
+      A data scientist is using Amazon SageMaker to train a multi-class classification model with 8 classes.
+      After training, they examine the confusion matrix and notice that class 3 is frequently misclassified
+      as class 5, with 230 out of 300 class 3 examples being predicted as class 5.
+
+      What is the MOST effective approach to address this specific confusion?
+    options:
+      - id: A
+        text: Remove class 5 from the dataset entirely
+      - id: B
+        text: Gather more training data for classes 3 and 5, and add features that better distinguish between them
+      - id: C
+        text: Increase the learning rate to help the model learn faster
+      - id: D
+        text: Switch from multi-class classification to binary classification
+    correctAnswer: B
+    explanation: |
+      High confusion between specific classes indicates the model cannot distinguish them with the current
+      features and training data. The confusion matrix shows this is a class-specific problem (class 3 vs
+      class 5), not a general model failure.
+
+      The solution is to:
+      1. Gather more training examples for both classes 3 and 5 to give the model more opportunities to
+      learn their differences
+      2. Perform error analysis - examine the misclassified examples to understand what makes class 3 and
+      class 5 similar
+      3. Engineer features that distinguish between these classes based on the error analysis insights
+      4. Consider class weights to penalize class 3 vs class 5 confusion more heavily during training
+
+      For example, if classes 3 and 5 represent similar product categories, you might add features about
+      subcategories, price ranges, or customer segments that differentiate them.
+
+      Option A is incorrect and counterproductive - removing a class does not solve the business problem
+      of distinguishing these categories. Option C is incorrect - learning rate affects convergence and
+      stability, not the model's ability to distinguish similar classes. Option D is incorrect - converting
+      to binary classification loses information about the other 6 classes and does not address the
+      fundamental issue.
+
+      SageMaker Autopilot automatically generates confusion matrices with up to 15 classes, helping you
+      identify these class-specific issues.
+    awsDocLink: https://aws.amazon.com/blogs/machine-learning/automatically-generate-model-evaluation-metrics-using-sagemaker-autopilot-model-quality-reports/
+    services:
+      - Amazon SageMaker Autopilot
+    concepts:
+      - Confusion Matrix
+      - Multi-Class Classification
+      - Error Analysis
+      - Feature Engineering
+
+  - id: me-017
+    type: single
+    text: |
+      A machine learning team wants to build a scalable k-fold cross-validation pipeline for a dataset with
+      5 million records. Traditional sequential k-fold training takes 10 hours. Which AWS architecture would
+      MOST effectively reduce this time?
+    options:
+      - id: A
+        text: Use a single larger EC2 instance with more CPU and memory
+      - id: B
+        text: Implement SageMaker Pipelines with a preprocessing step that splits data into k folds, followed by k parallel SageMaker Training jobs
+      - id: C
+        text: Use AWS Lambda to train each fold sequentially
+      - id: D
+        text: Store the data in Amazon DynamoDB for faster access during training
+    correctAnswer: B
+    explanation: |
+      Traditional k-fold cross-validation trains k models sequentially on a single machine, which does not
+      scale well. The solution is to parallelize the k training jobs.
+
+      SageMaker Pipelines Architecture:
+      1. Preprocessing Step: Use SageMaker Processing to split the 5 million records into k folds (e.g., k=5)
+      and upload each fold combination to S3
+      2. Parallel Training: Launch k SageMaker Training jobs simultaneously, each using a different fold
+      combination for train/validation
+      3. Model Evaluation: Aggregate metrics from all k jobs to compute mean and standard deviation of
+      performance metrics
+      4. Model Registration: Register the best model or ensemble in Model Registry
+
+      By running k training jobs in parallel instead of sequentially, you reduce total time from k × training_time
+      to approximately training_time (plus overhead). In this scenario, 10 hours could become ~2 hours (plus
+      preprocessing and aggregation).
+
+      SageMaker Training automatically provisions and tears down compute resources, and supports distributed
+      training for large models and datasets.
+
+      Option A helps but does not eliminate the sequential bottleneck - you still train k models one after
+      another. Option C is incorrect because Lambda has a 15-minute timeout and limited resources, making
+      it unsuitable for training on 5 million records. Option D is incorrect because DynamoDB is not optimized
+      for ML training data access - S3 is the standard for SageMaker training data.
+    awsDocLink: https://aws.amazon.com/blogs/architecture/field-notes-build-a-cross-validation-machine-learning-model-pipeline-at-scale-with-amazon-sagemaker/
+    services:
+      - Amazon SageMaker Pipelines
+      - Amazon SageMaker Training
+      - Amazon SageMaker Processing
+    concepts:
+      - Cross-Validation
+      - Parallel Training
+      - MLOps
+      - Scalability
+
+  - id: me-018
+    type: multi
+    correctCount: 2
+    text: |
+      A model monitoring job using Amazon SageMaker Model Monitor detects that the mean of a critical feature
+      "transaction_amount" has drifted from $125 (baseline) to $340 (current production). Which TWO actions
+      should the team take?
+    options:
+      - id: A
+        text: Immediately retrain the model without investigating the cause of drift
+      - id: B
+        text: Investigate whether the drift is due to legitimate changes in user behavior or a data pipeline issue
+      - id: C
+        text: Disable monitoring for the transaction_amount feature
+      - id: D
+        text: Validate current model performance with recent ground truth data to quantify the impact of drift
+      - id: E
+        text: Increase the drift threshold to prevent future alarms
+    correctAnswer: [B, D]
+    explanation: |
+      Data drift detection is an early warning system, but not all drift requires the same response. The
+      team must understand the cause and impact:
+
+      Option B (Investigate Root Cause): The drift could be due to:
+      - Legitimate behavior change (customers purchasing higher-value items, seasonal effect, new product launch)
+      - Data pipeline bug (currency conversion error, data corruption, missing data being filled with defaults)
+      - Data quality issue (outliers, incorrect data source)
+      - Adversarial manipulation
+
+      Understanding the cause determines the appropriate response. If it is legitimate behavior change,
+      retraining is appropriate. If it is a bug, fix the pipeline before retraining.
+
+      Option D (Validate Performance Impact): Drift does not always degrade performance. Collect recent ground
+      truth labels and compute current model metrics (accuracy, precision, recall, etc.). If performance is
+      still acceptable, retraining may not be urgent. If performance has degraded significantly, prioritize
+      retraining.
+
+      Option A is incorrect - retraining without understanding the cause might not fix the issue (if it is
+      a data bug) or might introduce new problems. Option C is incorrect - disabling monitoring for a critical
+      feature loses important visibility. Option E is incorrect - raising thresholds to silence alarms does
+      not address the underlying drift.
+
+      Model Monitor integrates with CloudWatch Alarms and EventBridge to automate investigation workflows.
+    awsDocLink: https://aws.amazon.com/blogs/architecture/detecting-data-drift-using-amazon-sagemaker/
+    services:
+      - Amazon SageMaker Model Monitor
+      - Amazon CloudWatch
+    concepts:
+      - Data Drift
+      - Root Cause Analysis
+      - Model Performance Validation
+      - Incident Response

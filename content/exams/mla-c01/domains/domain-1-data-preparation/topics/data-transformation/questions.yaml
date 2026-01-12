@@ -1,0 +1,747 @@
+questions:
+  - id: dt-001
+    type: single
+    text: |
+      A data scientist is preparing features for a recommendation system that includes a user_country field with over 200 unique values. The team wants to avoid creating 200 one-hot encoded columns and maintain a compact feature representation. Which encoding technique is most appropriate?
+    options:
+      - id: A
+        text: Use label encoding to convert countries to integers 0-199
+      - id: B
+        text: Use feature hashing to map countries to a fixed-size vector of 50 dimensions
+      - id: C
+        text: Use frequency encoding based on the number of users per country
+      - id: D
+        text: Use target encoding with the mean conversion rate per country
+    correctAnswer: B
+    explanation: |
+      Feature hashing (option B) is the most appropriate technique for high-cardinality categorical features like country with 200+ unique values. It maps categories to a fixed-size vector (e.g., 50 dimensions) using a hash function, providing compact representation without creating hundreds of columns. While hash collisions are possible, the dimensionality reduction outweighs this risk for extremely high-cardinality features.
+
+      Label encoding (A) is incorrect because it assigns sequential integers that imply ordinal relationships between countries, which don't exist and will mislead models.
+
+      Frequency encoding (C) loses information by mapping multiple countries with similar frequencies to the same value, reducing feature informativeness.
+
+      Target encoding (D) could work but requires careful cross-validation to avoid data leakage and is more complex to implement correctly than feature hashing for this use case.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/feature-engineering.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Categorical encoding
+      - Feature hashing
+      - High-cardinality features
+
+  - id: dt-002
+    type: single
+    text: |
+      A machine learning engineer needs to transform a 5TB dataset stored in S3 using complex PySpark transformations that involve custom user-defined functions (UDFs) and multi-stage joins. The transformations will run daily as part of a scheduled pipeline. Which AWS service provides the most suitable solution?
+    options:
+      - id: A
+        text: AWS Glue with Python Shell jobs
+      - id: B
+        text: Amazon SageMaker Data Wrangler exported to Processing jobs
+      - id: C
+        text: AWS Glue Spark jobs with appropriate DPU allocation
+      - id: D
+        text: Amazon SageMaker Processing with scikit-learn container
+    correctAnswer: C
+    explanation: |
+      AWS Glue Spark jobs (option C) are the best choice for large-scale (5TB), complex PySpark transformations with custom UDFs on a scheduled basis. Glue provides serverless Spark execution with automatic scaling, job scheduling, and built-in integration with S3 and the Glue Data Catalog. The ability to configure DPU (Data Processing Units) allocation allows optimization for the 5TB workload.
+
+      Python Shell jobs (A) are limited to single-node execution and maximum 1 DPU, making them unsuitable for 5TB datasets that require distributed processing.
+
+      SageMaker Data Wrangler (B) is designed for interactive feature engineering with data samples, not scheduled production ETL on 5TB datasets. While it can export to Processing jobs, it's not optimized for complex Spark transformations.
+
+      SageMaker Processing with scikit-learn (D) is better suited for pandas-based transformations on smaller datasets and doesn't provide the Spark distributed processing capabilities needed for 5TB of data with complex joins.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/spark_and_pyspark.html
+    services:
+      - AWS Glue
+      - Apache Spark
+    concepts:
+      - Distributed data processing
+      - PySpark transformations
+      - ETL pipeline design
+
+  - id: dt-003
+    type: multi
+    correctCount: 2
+    text: |
+      A data scientist is standardizing numerical features for training a neural network model. The dataset contains features with different scales: customer_age (18-90), transaction_amount (0.99-15,000), and days_since_registration (1-3,650). Which statements are correct regarding feature scaling? (Select TWO)
+    options:
+      - id: A
+        text: Min-max normalization should be applied separately to each feature to scale values to [0, 1]
+      - id: B
+        text: Standardization (z-score) should use statistics calculated from both training and test sets combined
+      - id: C
+        text: Scaling parameters (mean, std, min, max) must be computed only on training data and then applied to test data
+      - id: D
+        text: Tree-based models like XGBoost also require feature scaling to achieve optimal performance
+      - id: E
+        text: For features with outliers, robust scaling using median and IQR is less sensitive than standard scaling
+    correctAnswer:
+      - C
+      - E
+    explanation: |
+      Options C and E are correct.
+
+      C is correct because scaling parameters must be fit only on training data to prevent data leakage. If you calculate statistics using test data, information from the test set influences the transformation, leading to overly optimistic training performance and poor generalization. The proper workflow is: fit scaler on training data, transform training data, transform test data using training statistics.
+
+      E is correct because robust scaling uses median and interquartile range (IQR) instead of mean and standard deviation, making it resistant to outliers. For the transaction_amount feature with potential outliers, robust scaling prevents extreme values from compressing the majority of data points.
+
+      A is partially true (scaling should be per-feature) but incomplete - for neural networks, standardization is often preferred over min-max normalization.
+
+      B is incorrect and represents a common data leakage mistake. Never use test data statistics for scaling.
+
+      D is incorrect because tree-based models like XGBoost make decisions based on threshold splitting and are invariant to monotonic transformations, meaning scaling doesn't affect their performance.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/data-preprocessing.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Feature scaling
+      - Normalization
+      - Data leakage prevention
+      - Robust scaling
+
+  - id: dt-004
+    type: single
+    text: |
+      A company is building an ML pipeline to retrain models weekly using new data. The pipeline must perform data validation, feature engineering, model training, and evaluation in sequence. Different steps require different AWS services (Glue for ETL, Lambda for validation, SageMaker for training). Which orchestration service is most appropriate?
+    options:
+      - id: A
+        text: Amazon SageMaker Pipelines with custom Lambda step integrations
+      - id: B
+        text: AWS Step Functions with integration for Glue, Lambda, and SageMaker
+      - id: C
+        text: AWS Glue workflows with Python Shell jobs for validation and training
+      - id: D
+        text: Amazon EventBridge rules triggering each step sequentially
+    correctAnswer: B
+    explanation: |
+      AWS Step Functions (option B) is the best choice for orchestrating hybrid workflows that involve multiple AWS services beyond SageMaker (Glue for ETL, Lambda for validation, SageMaker for training). Step Functions provides native integrations with all these services through direct SDK integration, built-in error handling, retry logic, and visual workflow visualization. It's specifically designed for coordinating heterogeneous service workflows.
+
+      SageMaker Pipelines (A) is optimized for pure ML workflows within the SageMaker ecosystem. While it has Lambda integration capabilities, it's less suitable when the majority of the workflow involves non-SageMaker services like Glue. SageMaker Pipelines excels when most steps use SageMaker services (Processing, Training, Transform, Deploy).
+
+      AWS Glue workflows (C) are designed primarily for ETL job orchestration and don't provide first-class integration with SageMaker training jobs or robust state management for complex ML pipelines.
+
+      EventBridge rules (D) can trigger workflows but don't provide orchestration, state management, error handling, or sequential execution guarantees needed for complex pipelines with dependencies between steps.
+    awsDocLink: https://aws.amazon.com/blogs/big-data/prepare-transform-and-orchestrate-your-data-using-aws-glue-databrew-aws-glue-etl-and-aws-step-functions/
+    services:
+      - AWS Step Functions
+      - AWS Glue
+      - AWS Lambda
+      - Amazon SageMaker
+    concepts:
+      - Workflow orchestration
+      - ETL pipeline design
+      - Service integration
+
+  - id: dt-005
+    type: single
+    text: |
+      A data analyst with no programming experience needs to prepare a 50GB CSV dataset for ML training. The tasks include removing duplicates, handling missing values, standardizing date formats, and encoding categorical variables. Which AWS service provides the most suitable solution?
+    options:
+      - id: A
+        text: Amazon SageMaker Data Wrangler with visual interface
+      - id: B
+        text: AWS Glue DataBrew with point-and-click transformations
+      - id: C
+        text: Amazon SageMaker Processing with scikit-learn container
+      - id: D
+        text: Amazon EMR with PySpark scripts
+    correctAnswer: B
+    explanation: |
+      AWS Glue DataBrew (option B) is the ideal solution for data analysts without programming experience who need visual, no-code data preparation. DataBrew provides over 250 pre-built transformations accessible through a point-and-click interface, including all required operations: duplicate removal, missing value handling, date standardization, and categorical encoding. At 50GB, the dataset is within DataBrew's processing capabilities, and transformations can be saved as reusable recipes.
+
+      SageMaker Data Wrangler (A) is also a visual tool but is more tightly integrated with the SageMaker Studio environment, which requires more ML and cloud expertise to navigate. DataBrew is simpler and more focused specifically on data preparation without the broader ML workflow context.
+
+      SageMaker Processing (C) requires writing Python code (scikit-learn scripts), making it inappropriate for users without programming experience.
+
+      EMR with PySpark (D) requires significant programming and big data expertise, making it the least suitable option for a non-technical data analyst. It's also over-engineered for 50GB, which doesn't require distributed Spark processing.
+    awsDocLink: https://docs.aws.amazon.com/databrew/latest/dg/what-is.html
+    services:
+      - AWS Glue DataBrew
+    concepts:
+      - Visual data preparation
+      - No-code transformations
+      - Data cleaning
+
+  - id: dt-006
+    type: single
+    text: |
+      A time-series forecasting model uses hourly energy consumption data. The data scientist wants to create features from the hour field (0-23) but preserve the cyclical nature where hour 23 is close to hour 0. Which feature engineering technique is most appropriate?
+    options:
+      - id: A
+        text: One-hot encode the hour field into 24 binary columns
+      - id: B
+        text: Use label encoding to convert hour to integers 0-23
+      - id: C
+        text: Create sine and cosine transformations of hour using 2π * hour / 24
+      - id: D
+        text: Bin hours into categories (morning, afternoon, evening, night) and one-hot encode
+    correctAnswer: C
+    explanation: |
+      Cyclical encoding using sine and cosine transformations (option C) is the correct approach for representing cyclical datetime features like hour of day, day of week, or month of year. By using sin(2π * hour / 24) and cos(2π * hour / 24), the encoding preserves the cyclical relationship where hour 23 is mathematically close to hour 0. This creates two continuous features that maintain the circular nature of time.
+
+      One-hot encoding (A) creates 24 binary columns and treats each hour as completely independent, losing the information that consecutive hours are related. While it works, it's less efficient and doesn't capture the cyclical pattern.
+
+      Label encoding (B) assigns sequential integers (0, 1, 2, ..., 23) which creates a discontinuity between hour 23 and hour 0, failing to represent the cyclical nature. The model would incorrectly learn that hour 0 is far from hour 23.
+
+      Binning into periods (D) loses granularity by grouping hours together and doesn't preserve the specific hour information or the cyclical relationship within each bin.
+
+      SageMaker Data Wrangler includes built-in cyclical encoding transformations for datetime features.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Cyclical encoding
+      - Datetime feature engineering
+      - Feature engineering techniques
+
+  - id: dt-007
+    type: multi
+    correctCount: 3
+    text: |
+      A company needs to store transformed ML training data in S3 for use by multiple downstream analytics and training jobs. The data will be queried using Amazon Athena and read by SageMaker training jobs. Which storage format best practices should be followed? (Select THREE)
+    options:
+      - id: A
+        text: Use Apache Parquet format for efficient columnar storage and compression
+      - id: B
+        text: Store data in CSV format for maximum compatibility with all tools
+      - id: C
+        text: Partition data by frequently filtered columns such as date to improve query performance
+      - id: D
+        text: Use JSON format to preserve nested data structures and support schema evolution
+      - id: E
+        text: Implement Hive-style partitioning (key=value format) for Athena compatibility
+      - id: F
+        text: Store all data in a single large file to minimize S3 API calls
+    correctAnswer:
+      - A
+      - C
+      - E
+    explanation: |
+      Options A, C, and E represent best practices for ML training data storage.
+
+      A is correct because Apache Parquet is the recommended format for ML workloads. It provides columnar storage enabling column pruning (reading only needed features), excellent compression (up to 75% space savings vs. CSV), predicate pushdown for filtering at the storage layer, and native support in Spark, Athena, Redshift Spectrum, and SageMaker.
+
+      C is correct because partitioning by frequently filtered columns (like date, region, or category) allows query engines to skip irrelevant data partitions, dramatically improving query performance and reducing data scanned (and therefore costs for Athena).
+
+      E is correct because Hive-style partitioning using the key=value directory structure (e.g., year=2026/month=01/) is the standard format compatible with Athena, Glue, Spark, and other AWS analytics services. This partitioning scheme is automatically recognized by these tools.
+
+      B is incorrect because CSV is row-based, has poor compression, doesn't support column pruning, and is inefficient for ML training. Use CSV only for human readability or small datasets.
+
+      D is incorrect because while JSON supports nested structures, it's row-based and less efficient than Parquet for ML training data. Use Parquet with nested schemas instead.
+
+      F is incorrect because very large files reduce parallelism and make partial reading inefficient. Aim for 128MB-1GB per file for optimal performance.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/building-data-lakes/transforming-data-assets.html
+    services:
+      - Amazon S3
+      - Amazon Athena
+      - AWS Glue
+      - Amazon SageMaker
+    concepts:
+      - Data format optimization
+      - Partitioning strategies
+      - Storage best practices
+
+  - id: dt-008
+    type: single
+    text: |
+      A model was trained with target-encoded categorical features and performs well during cross-validation (AUC = 0.89) but poorly in production (AUC = 0.72). Investigation reveals that target encoding statistics were calculated using the entire dataset before splitting into train and test sets. What is the root cause of the performance degradation?
+    options:
+      - id: A
+        text: Concept drift caused by changing data distributions in production
+      - id: B
+        text: Data leakage where test set information influenced training feature values
+      - id: C
+        text: Insufficient training data to learn target encoding patterns
+      - id: D
+        text: Target encoding requires regularization that wasn't applied
+    correctAnswer: B
+    explanation: |
+      Data leakage (option B) is the root cause. When target encoding statistics (mean of target variable per category) are calculated using the entire dataset before train-test split, information from the test set leaks into training. This happens because the target-encoded feature values in the training set are partially based on test set target values, allowing the model to "see" test set information indirectly during training. This inflates training and cross-validation performance but fails on truly unseen production data.
+
+      The correct implementation is:
+      1. Split data into train and test sets
+      2. Calculate target encoding statistics only on training data
+      3. Apply those statistics to transform both training and test data
+      4. Use K-fold cross-validation with target encoding fit on training folds only
+
+      Concept drift (A) refers to changing relationships between features and target over time in production. While possible, the specific issue described (calculating encoding before split) points directly to data leakage.
+
+      Insufficient training data (C) would cause poor training performance, not the observed pattern of good training/poor production performance.
+
+      Missing regularization (D) might contribute to overfitting but isn't the primary issue described. The temporal aspect of when statistics were calculated is the key problem.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/data-preprocessing.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Data leakage prevention
+      - Target encoding
+      - Train-test split
+      - Cross-validation
+
+  - id: dt-009
+    type: single
+    text: |
+      A SageMaker Processing job runs a scikit-learn preprocessing script that handles missing values, scales features, and encodes categorical variables. The transformed data will be used to train multiple models over several months. How should the fitted preprocessing transformers (scalers, encoders) be preserved for consistent inference?
+    options:
+      - id: A
+        text: Save transformer objects as pickle files to S3 and load them during inference
+      - id: B
+        text: Recalculate scaling parameters from production data at inference time
+      - id: C
+        text: Store scaling parameters in DynamoDB for fast retrieval during inference
+      - id: D
+        text: Hard-code transformation parameters directly in the inference code
+    correctAnswer: A
+    explanation: |
+      Saving transformer objects as pickle files to S3 (option A) is the standard and recommended approach. Scikit-learn transformers (StandardScaler, OneHotEncoder, SimpleImputer) can be serialized using pickle or joblib and stored in S3. During inference, load the same fitted transformers to ensure test/production data undergoes identical transformations using the same parameters (mean, std, categories) learned from training data. This prevents train-serve skew where training and inference use different transformation logic.
+
+      Common implementation:
+      ```python
+      import joblib
+      # After fitting on training data
+      joblib.dump(scaler, '/opt/ml/processing/model/scaler.pkl')
+
+      # During inference
+      scaler = joblib.load('scaler.pkl')
+      scaled_features = scaler.transform(new_data)
+      ```
+
+      Recalculating from production data (B) is incorrect because it uses different statistics than training, causing train-serve skew and potentially poor model performance. Scaling must use training data statistics.
+
+      DynamoDB storage (C) is unnecessary complexity. While technically possible to store numeric parameters, it doesn't work well for complex transformer objects with methods and state. Pickle files in S3 are simpler and standard practice.
+
+      Hard-coding parameters (D) is brittle, not maintainable, and error-prone. When retraining models, parameters change and code must be manually updated. Using serialized objects is more robust and automated.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+    services:
+      - Amazon SageMaker Processing
+      - Amazon S3
+    concepts:
+      - Model artifacts
+      - Train-serve consistency
+      - Preprocessing transformers
+      - Inference preprocessing
+
+  - id: dt-010
+    type: single
+    text: |
+      A Glue ETL job processes daily incremental data from S3, applies transformations, and writes results back to S3. The job should only process new data added since the last run to avoid reprocessing. Which Glue feature enables this incremental processing pattern?
+    options:
+      - id: A
+        text: AWS Glue Data Catalog partitioning
+      - id: B
+        text: AWS Glue job bookmarks
+      - id: C
+        text: AWS Glue dynamic frames
+      - id: D
+        text: AWS Glue development endpoints
+    correctAnswer: B
+    explanation: |
+      AWS Glue job bookmarks (option B) track data that has already been processed during previous job runs, enabling incremental data processing. When enabled, Glue persists state information about the data processed (e.g., S3 object timestamps, database table watermarks) and uses this state to process only new data in subsequent runs. This prevents reprocessing of existing data, saves processing time and costs, and ensures idempotent job execution.
+
+      Job bookmarks work by:
+      1. Recording metadata about processed data (file paths, modification times)
+      2. On next run, identifying new/modified data by comparing current state to bookmark
+      3. Processing only the delta (new data)
+      4. Updating bookmark with new state
+
+      Enable via job parameter: `--job-bookmark-option job-bookmark-enable`
+
+      Data Catalog partitioning (A) helps organize data by partitions (date, region) for query optimization but doesn't track which data has been processed by ETL jobs.
+
+      Dynamic frames (C) are Glue's schema-flexible data structure that can handle semi-structured data, but they don't provide incremental processing logic.
+
+      Development endpoints (D) are interactive environments for authoring and testing Glue scripts, not a feature for incremental processing in production jobs.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/spark_and_pyspark.html
+    services:
+      - AWS Glue
+    concepts:
+      - Incremental processing
+      - Job bookmarks
+      - ETL optimization
+
+  - id: dt-011
+    type: multi
+    correctCount: 2
+    text: |
+      A data scientist is evaluating AWS services for an interactive feature engineering workflow where they want to visually explore transformations, see immediate data quality insights, and export validated transformations to a production pipeline. Which capabilities are provided by Amazon SageMaker Data Wrangler? (Select TWO)
+    options:
+      - id: A
+        text: Automatic generation of data quality reports showing missing values, correlations, and outliers
+      - id: B
+        text: Serverless execution of PySpark jobs on managed EMR clusters
+      - id: C
+        text: Export data preparation flows as SageMaker Processing jobs for production scale
+      - id: D
+        text: Built-in integration with AWS Glue Data Catalog for metadata management
+      - id: E
+        text: Natural language interface to generate transformation code from text descriptions
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Options A and C are correct capabilities of SageMaker Data Wrangler.
+
+      A is correct - Data Wrangler provides built-in data quality and insights reports that automatically analyze datasets and show: missing value percentages per feature, outlier detection using IQR method, class imbalance metrics, feature correlation matrices, target leakage warnings, and statistical summaries. These insights help data scientists understand data quality issues before building transformation flows.
+
+      C is correct - Data Wrangler flows can be exported as SageMaker Processing jobs that run transformations at production scale on full datasets (not just the development sample). Other export options include: SageMaker Pipelines for automated ML workflows, Python notebooks for customization, and direct integration with SageMaker Feature Store for feature storage and reuse.
+
+      B is incorrect - While Data Wrangler transformations can ultimately run on EMR (by exporting and adapting the code), Data Wrangler itself doesn't directly execute PySpark jobs on EMR clusters. It runs transformations in SageMaker Processing or as part of SageMaker Pipelines.
+
+      D is incorrect - Glue Data Catalog integration is a feature of AWS Glue and Glue DataBrew, not SageMaker Data Wrangler. Data Wrangler connects to data sources directly (S3, Athena, Redshift, Snowflake) without requiring Glue Data Catalog.
+
+      E is correct - Data Wrangler recently added a natural language interface where users can describe transformations in plain English (e.g., "remove rows where age is less than 18") and Data Wrangler generates the corresponding code (PySpark, SQL, or Pandas).
+
+      Note: The question asks for TWO, and both A and C are definitively correct. E is also a real feature, but if strictly choosing two, A and C are the most established and exam-relevant capabilities.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Data quality analysis
+      - Interactive feature engineering
+      - Production pipeline export
+
+  - id: dt-012
+    type: single
+    text: |
+      A retail company has a product_category field with 1,200 unique values. Most categories have only 5-10 samples, while the top 50 categories account for 85% of the data. The data scientist wants to reduce dimensionality while preserving information. Which approach is most effective?
+    options:
+      - id: A
+        text: Apply one-hot encoding only to the top 50 categories and group remaining categories as "Other"
+      - id: B
+        text: Use target encoding for all 1,200 categories with cross-validation
+      - id: C
+        text: Apply feature hashing to map all categories to a 100-dimensional vector
+      - id: D
+        text: Use label encoding to convert categories to integers 0-1,199
+    correctAnswer: A
+    explanation: |
+      Option A (one-hot encoding top categories + "Other" grouping) is the most effective approach for this long-tail distribution. By identifying the top 50 categories that represent 85% of the data and grouping rare categories into "Other," you achieve:
+      1. Manageable dimensionality (51 columns vs. 1,200)
+      2. Preservation of important category information for frequent items
+      3. Handling of rare categories that have insufficient samples for reliable patterns
+      4. Prevention of overfitting on low-sample categories
+
+      This approach balances information preservation with dimensionality control and is particularly effective when data follows a long-tail distribution.
+
+      Target encoding (B) is risky for categories with only 5-10 samples because mean target estimates will be unreliable (high variance). While cross-validation helps, the fundamental problem of insufficient data per category remains. Target encoding works better when categories have sufficient samples for stable statistics.
+
+      Feature hashing (C) would cause hash collisions that merge unrelated categories, losing valuable information about the top 50 categories that actually have sufficient data for meaningful patterns.
+
+      Label encoding (D) assigns sequential integers that imply ordinal relationships between categories that don't exist (e.g., "Electronics" = 42 is not mathematically related to "Clothing" = 43). This misleads models, especially linear models.
+
+      AWS Glue DataBrew and SageMaker Data Wrangler both support frequency-based category grouping and conditional transformations to implement this pattern.
+    awsDocLink: https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/feature-engineering.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - AWS Glue DataBrew
+    concepts:
+      - Categorical encoding
+      - High-cardinality features
+      - Long-tail distribution
+      - Dimensionality reduction
+
+  - id: dt-013
+    type: single
+    text: |
+      A manufacturing company collects sensor data every second, resulting in a 10TB time-series dataset. The data scientist needs to aggregate data to 1-minute intervals, calculate rolling window statistics (mean, std, min, max over 10-minute windows), and join with equipment metadata. Which service is most appropriate for this large-scale transformation?
+    options:
+      - id: A
+        text: AWS Glue with Spark jobs using window functions and aggregations
+      - id: B
+        text: Amazon SageMaker Data Wrangler with custom PySpark transforms
+      - id: C
+        text: AWS Glue DataBrew with aggregation transformations
+      - id: D
+        text: Amazon SageMaker Processing with pandas-based scripts
+    correctAnswer: A
+    explanation: |
+      AWS Glue with Spark jobs (option A) is the most appropriate service for this large-scale (10TB) time-series transformation workload. Glue provides distributed Spark processing with built-in support for:
+      - Window functions for rolling statistics (avg, stddev, min, max over time windows)
+      - GroupBy aggregations for downsampling from seconds to minutes
+      - Join operations for combining sensor data with equipment metadata
+      - Serverless auto-scaling to handle 10TB datasets
+      - Optimized Spark engine with predicate pushdown and partition pruning
+
+      Example Spark code for this use case:
+      ```python
+      from pyspark.sql import functions as F
+      from pyspark.sql.window import Window
+
+      # Aggregate to 1-minute intervals
+      df_minute = df.groupBy(
+          F.window("timestamp", "1 minute"),
+          "sensor_id"
+      ).agg(
+          F.avg("value").alias("avg_value")
+      )
+
+      # Rolling 10-minute window statistics
+      window_spec = Window.partitionBy("sensor_id").orderBy("timestamp").rangeBetween(-600, 0)
+      df_rolling = df_minute.withColumn("rolling_mean", F.avg("avg_value").over(window_spec))
+      ```
+
+      SageMaker Data Wrangler (B) is designed for interactive exploration on data samples (default 100K rows), not production-scale 10TB transformations. While it supports custom PySpark, it's not optimized for this scale.
+
+      Glue DataBrew (C) focuses on visual data preparation and is not designed for petabyte-scale time-series aggregations with complex window functions.
+
+      SageMaker Processing with pandas (D) doesn't scale efficiently to 10TB datasets. Pandas is single-node and would require manual data partitioning and distributed processing logic, which Spark handles natively.
+    awsDocLink: https://docs.aws.amazon.com/glue/latest/dg/spark_and_pyspark.html
+    services:
+      - AWS Glue
+      - Apache Spark
+    concepts:
+      - Time-series aggregation
+      - Window functions
+      - Large-scale data transformation
+      - Distributed processing
+
+  - id: dt-014
+    type: multi
+    correctCount: 2
+    text: |
+      A team is designing an ML pipeline where feature transformations must be applied consistently during both training and real-time inference. Which strategies help prevent train-serve skew? (Select TWO)
+    options:
+      - id: A
+        text: Recalculate feature statistics (mean, std) from production data at inference time for accurate scaling
+      - id: B
+        text: Save fitted scikit-learn transformers as artifacts and load them during inference
+      - id: C
+        text: Use SageMaker Feature Store to precompute features and serve them for both training and inference
+      - id: D
+        text: Implement separate transformation code for training and inference to optimize each independently
+      - id: E
+        text: Apply different scaling methods during training (standardization) vs inference (min-max) to handle production data distributions
+    correctAnswer:
+      - B
+      - C
+    explanation: |
+      Options B and C are correct strategies for preventing train-serve skew.
+
+      B is correct - Saving fitted transformers (StandardScaler, OneHotEncoder, etc.) as serialized artifacts (pickle/joblib) and loading them during inference ensures identical transformation logic and parameters are used for both training and inference. The transformers contain the exact statistics (mean, std, categories) learned from training data, guaranteeing consistency. This prevents train-serve skew caused by different transformation implementations or parameters.
+
+      C is correct - SageMaker Feature Store enables feature consistency by precomputing features once and serving them to both training (offline store) and inference (online store) workloads. Since features are computed by a single transformation pipeline and stored centrally, train-serve skew from differing feature logic is eliminated. Feature Store maintains feature metadata, versioning, and lineage tracking.
+
+      A is incorrect and causes train-serve skew. Recalculating statistics from production data means inference uses different scaling parameters than training (production mean/std vs. training mean/std), violating the requirement that test data be transformed using training statistics. This is a common anti-pattern.
+
+      D is incorrect - Separate transformation code for training and inference is a primary cause of train-serve skew. Even with the best intentions, maintaining two codebases leads to divergence, bugs, and inconsistencies. Always use the same transformation code/artifacts.
+
+      E is incorrect - Using different scaling methods (standardization vs. min-max) during training and inference directly causes train-serve skew. The model was trained on standardized features and expects the same distribution at inference time.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+    services:
+      - Amazon SageMaker Processing
+      - Amazon SageMaker Feature Store
+      - Amazon S3
+    concepts:
+      - Train-serve consistency
+      - Model artifacts
+      - Feature store
+      - ML pipeline design
+
+  - id: dt-015
+    type: single
+    text: |
+      A Glue ETL job writes transformed data to S3 in Parquet format for downstream consumption by Amazon Athena and SageMaker Training. The dataset contains 500 million rows across 5 years of data, and most queries filter by date. How should the output data be organized for optimal query performance and cost?
+    options:
+      - id: A
+        text: Write to a single Parquet file to minimize S3 API overhead
+      - id: B
+        text: Partition by year, month, and day using Hive-style key=value format
+      - id: C
+        text: Partition by customer_id to support customer-specific queries
+      - id: D
+        text: Write to multiple small files (1MB each) for maximum parallelism
+    correctAnswer: B
+    explanation: |
+      Partitioning by year, month, and day using Hive-style format (option B) is the optimal approach because:
+
+      1. **Query Performance**: Most queries filter by date. Partitioning by date enables Athena to skip irrelevant partitions, scanning only data for the requested time range. For a query filtering to one day, this reduces data scanned by >99%.
+
+      2. **Cost Savings**: Athena charges based on data scanned ($5 per TB). Partition pruning dramatically reduces data scanned and therefore query costs.
+
+      3. **Hive-Style Format**: The key=value directory structure (year=2026/month=01/day=11/) is automatically recognized by Athena, Glue, Spark, and Redshift Spectrum without manual partition registration (with Glue Crawler).
+
+      4. **Appropriate Granularity**: Day-level partitioning for 5 years creates ~1,825 partitions (5 * 365), which is well within recommended limits and provides good filtering granularity.
+
+      5. **Compatible with Training**: SageMaker can efficiently read partitioned Parquet data, and partitioning doesn't interfere with training data loading.
+
+      Example Glue output configuration:
+      ```python
+      glueContext.write_dynamic_frame.from_options(
+          frame=transformed_data,
+          connection_type="s3",
+          connection_options={"path": "s3://bucket/output", "partitionKeys": ["year", "month", "day"]},
+          format="parquet"
+      )
+      ```
+
+      A single file (A) eliminates parallelism in reading, increases query latency, and prevents Athena from pruning data based on date filters.
+
+      Partitioning by customer_id (C) would create too many partitions (millions) and doesn't match the primary query pattern (date filtering). This causes the "small file problem" with poor performance.
+
+      Very small files (D) create S3 overhead, slow query performance, and result in inefficient Parquet file structure. Aim for 128MB-1GB per file.
+    awsDocLink: https://docs.aws.amazon.com/whitepapers/latest/building-data-lakes/transforming-data-assets.html
+    services:
+      - AWS Glue
+      - Amazon Athena
+      - Amazon S3
+    concepts:
+      - Data partitioning
+      - Query optimization
+      - Hive-style partitioning
+      - Parquet format
+
+  - id: dt-016
+    type: single
+    text: |
+      A data scientist working in SageMaker Studio wants to interactively explore a dataset, apply feature transformations, visualize the impact on target variable distributions, and then scale the transformations to the full 2TB dataset in S3. Which workflow provides this capability?
+    options:
+      - id: A
+        text: Use AWS Glue DataBrew to profile data, create recipes, and run jobs on the full dataset
+      - id: B
+        text: Use SageMaker Data Wrangler to explore on a sample, apply transforms, then export to a Processing job
+      - id: C
+        text: Use SageMaker Processing jobs with iterative script development and testing
+      - id: D
+        text: Use EMR notebooks for interactive Spark development, then submit production jobs
+    correctAnswer: B
+    explanation: |
+      SageMaker Data Wrangler with export to Processing job (option B) is the ideal workflow for this scenario because:
+
+      1. **Interactive Exploration**: Data Wrangler works on data samples (default 100K rows) within SageMaker Studio, enabling fast iteration on transformations with immediate visual feedback.
+
+      2. **Built-in Visualizations**: Provides automatic insights showing feature distributions, correlations with target variable, data quality issues, and the impact of transformations on data characteristics.
+
+      3. **Transformation Library**: Over 300 built-in transforms plus custom PySpark, SQL, and Pandas code for complex feature engineering.
+
+      4. **Scalable Export**: Once transformations are validated on samples, export the Data Wrangler flow as a SageMaker Processing job that runs on the full 2TB dataset with configurable instance types and counts. The export generates production-ready Python code.
+
+      5. **Studio Integration**: Seamlessly works within SageMaker Studio environment where data scientists already work, avoiding context switching.
+
+      Workflow:
+      1. Import sample from S3 to Data Wrangler
+      2. Apply transformations interactively with visual feedback
+      3. Use "Quick Model" to assess feature importance
+      4. Export as Processing job configuration
+      5. Run Processing job on full 2TB dataset with ml.m5.4xlarge instances
+
+      Glue DataBrew (A) is also a visual tool but requires leaving Studio and doesn't integrate as tightly with SageMaker workflows. It's better for non-technical users outside the ML development environment.
+
+      SageMaker Processing directly (C) requires writing code without interactive visual exploration and feedback on data samples, slowing iteration.
+
+      EMR notebooks (D) work but require managing EMR clusters and add infrastructure complexity. For 2TB, SageMaker Processing with exported Data Wrangler flows is simpler and more integrated with SageMaker Studio.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+      - Amazon SageMaker Studio
+    concepts:
+      - Interactive feature engineering
+      - Data exploration
+      - Scalable transformation
+      - ML workflow integration
+
+  - id: dt-017
+    type: single
+    text: |
+      A dataset contains a text review field with customer feedback. The data scientist wants to create numerical features from this text for a classification model. The approach should capture semantic meaning beyond simple word counts. Which feature engineering technique is most appropriate?
+    options:
+      - id: A
+        text: Bag-of-words encoding counting word frequencies in each review
+      - id: B
+        text: TF-IDF vectorization to weight words by importance
+      - id: C
+        text: Word embeddings using pre-trained models like Word2Vec or GloVe to create dense vector representations
+      - id: D
+        text: Extract text length and character count as numerical features
+    correctAnswer: C
+    explanation: |
+      Word embeddings using pre-trained models (option C) are the most appropriate technique for capturing semantic meaning in text. Word embeddings represent words as dense vectors in a continuous vector space where semantically similar words are located close together. Pre-trained models like Word2Vec, GloVe, or FastText have learned these representations from large text corpora and capture semantic relationships like synonyms, analogies, and context.
+
+      For customer reviews, embeddings can:
+      - Understand that "excellent" and "outstanding" are semantically similar
+      - Capture sentiment and context beyond individual word presence
+      - Create fixed-length dense representations regardless of review length
+      - Serve as input to neural networks or averaged to create review-level features
+
+      Modern approaches use contextual embeddings from transformer models (BERT, RoBERTa) that consider word context, further improving semantic understanding.
+
+      Bag-of-words (A) only captures word presence/frequency and treats each word independently, missing semantic relationships. "Good product" and "excellent product" would be treated as completely different despite similar meanings.
+
+      TF-IDF (B) improves on bag-of-words by weighting words by importance (rare words get higher weight) but still treats words as independent tokens without semantic understanding. It's better than BoW but inferior to embeddings for semantic tasks.
+
+      Text length and character count (D) are simple features that might correlate with sentiment (longer reviews may be more extreme) but capture no semantic content about what the review actually says.
+
+      SageMaker Data Wrangler includes built-in text embedding transformations using vectorization and pre-trained models.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/data-wrangler.html
+    services:
+      - Amazon SageMaker Data Wrangler
+      - Amazon SageMaker Processing
+    concepts:
+      - Text featurization
+      - Word embeddings
+      - Semantic representation
+      - Feature engineering techniques
+
+  - id: dt-018
+    type: multi
+    correctCount: 2
+    text: |
+      A company is implementing a data transformation pipeline that will process data from multiple sources (S3, RDS, Redshift), apply standardized transformations, and output to a feature store for use by multiple ML teams. Which design patterns support reusability and consistency? (Select TWO)
+    options:
+      - id: A
+        text: Create AWS Glue Data Catalog tables for all data sources to provide a unified metadata layer
+      - id: B
+        text: Implement transformation logic separately in each team's ML pipeline for customization
+      - id: C
+        text: Use AWS Glue DataBrew recipes as reusable transformation templates that can be applied to new datasets
+      - id: D
+        text: Hard-code data source connection strings in transformation scripts for each data source
+      - id: E
+        text: Store transformation code in Git repositories with version control and automated testing
+    correctAnswer:
+      - A
+      - C
+    explanation: |
+      Options A and C promote reusability and consistency in transformation pipelines.
+
+      A is correct - AWS Glue Data Catalog provides a centralized metadata repository that catalogs data sources across S3, RDS, Redshift, and other systems. By creating catalog tables for all sources, teams can:
+      - Discover available data sources through a unified interface
+      - Access consistent schema definitions across sources
+      - Reference data using logical table names instead of physical paths
+      - Enable automatic schema evolution tracking
+      - Support cross-service querying (Athena, Glue, Redshift Spectrum, EMR)
+      This centralization ensures teams work with standardized metadata and don't duplicate schema discovery efforts.
+
+      C is correct - AWS Glue DataBrew recipes are reusable transformation templates that encapsulate a sequence of data preparation steps. Teams can:
+      - Define standard transformations once (e.g., "standardize customer data")
+      - Apply recipes to multiple datasets consistently
+      - Parameterize recipes for different inputs
+      - Version recipes as they evolve
+      - Share recipes across teams through recipe publishing
+      This ensures transformation logic is consistent and reduces redundant development of similar transformations.
+
+      B is incorrect and causes inconsistency - Implementing transformations separately in each pipeline leads to:
+      - Divergent transformation logic across teams
+      - Duplicate effort building similar transformations
+      - Inconsistent feature definitions (one team scales differently than another)
+      - Difficult to maintain and update transformations globally
+
+      D is incorrect - Hard-coding connection strings creates brittleness and makes the pipeline difficult to maintain when sources change. Use Glue Data Catalog connections, AWS Secrets Manager, or parameter stores instead.
+
+      E, while a good practice for version control, doesn't directly address the reusability and consistency of transformations across data sources as directly as A and C do within AWS's data transformation ecosystem. However, it's worth noting that in practice, version control should also be used.
+    awsDocLink: https://aws.amazon.com/blogs/big-data/7-most-common-data-preparation-transformations-in-aws-glue-databrew/
+    services:
+      - AWS Glue Data Catalog
+      - AWS Glue DataBrew
+      - Amazon SageMaker Feature Store
+    concepts:
+      - Reusable transformations
+      - Metadata management
+      - Pipeline design patterns
+      - Centralized data catalog

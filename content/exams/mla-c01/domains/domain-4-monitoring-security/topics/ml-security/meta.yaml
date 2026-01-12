@@ -1,0 +1,49 @@
+id: ml-security
+name: Security for ML Solutions
+shortName: ML Security
+examTask: task-4-3
+description: Implement comprehensive security controls for machine learning workloads including IAM policies and execution roles, KMS encryption for data and models, VPC network isolation, secrets management, and compliance controls using AWS SageMaker security features and best practices.
+estimatedStudyTime: 90
+difficulty: advanced
+keyServices:
+  - AWS IAM
+  - AWS KMS
+  - Amazon VPC
+  - AWS Secrets Manager
+  - Amazon SageMaker
+  - AWS CloudTrail
+  - AWS Security Hub
+  - Amazon GuardDuty
+  - AWS Resource Access Manager
+keyConcepts:
+  - IAM execution roles
+  - SageMaker condition keys
+  - Resource-based policies
+  - KMS customer-managed keys
+  - Encryption at rest and in transit
+  - VPC endpoints and PrivateLink
+  - Network isolation
+  - Inter-container encryption
+  - VPC-only mode
+  - Secrets rotation
+  - Model registry access control
+  - Cross-account model sharing
+  - CloudTrail audit logging
+  - Security monitoring
+  - Compliance validation
+awsDocLinks:
+  - title: Security in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/security.html
+    type: doc
+  - title: AWS Identity and Access Management for SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/security-iam.html
+    type: doc
+  - title: Data Protection in Amazon SageMaker
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/data-protection.html
+    type: doc
+  - title: Build a Secure Enterprise ML Platform on AWS
+    url: https://docs.aws.amazon.com/whitepapers/latest/build-secure-enterprise-ml-platform/
+    type: whitepaper
+  - title: SageMaker Infrastructure Security
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/infrastructure-security.html
+    type: doc

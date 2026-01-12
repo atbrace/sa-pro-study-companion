@@ -1,0 +1,608 @@
+questions:
+  - id: ma-001
+    type: single
+    text: >
+      A financial services company needs to predict whether loan applications will default based on applicant
+      data including income, credit score, employment history, and previous loans. The dataset contains
+      150,000 records with 45 features, including several categorical variables and some missing values.
+      The business requires high accuracy and the ability to explain which factors most influenced each prediction.
+      Which SageMaker built-in algorithm is MOST appropriate?
+    options:
+      - id: A
+        text: Linear Learner, because it provides interpretable coefficients for regulatory compliance
+      - id: B
+        text: XGBoost, because it handles missing values natively, captures non-linear relationships, and provides feature importance
+      - id: C
+        text: Factorization Machines, because it captures feature interactions in high-dimensional data
+      - id: D
+        text: K-Nearest Neighbors, because it provides instance-based explanations for predictions
+    correctAnswer: B
+    explanation: >
+      XGBoost is the best choice for this loan default prediction problem. It handles missing values natively
+      without requiring imputation, captures complex non-linear relationships between features (e.g., interaction
+      between income and credit score), and provides feature importance scores for interpretability. The dataset
+      size (150K rows) and feature count (45) are well-suited to XGBoost. While Linear Learner offers interpretability
+      through coefficients, it assumes linear relationships which may not capture the complexity of credit risk.
+      Factorization Machines are better suited for extremely sparse, high-dimensional data (millions of dimensions).
+      K-NN would be slow for inference on 150K training examples and doesn't scale well.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost.html
+    services: [Amazon SageMaker, XGBoost]
+    concepts: [algorithm-selection, supervised-learning, missing-values, interpretability]
+
+  - id: ma-002
+    type: single
+    text: >
+      An e-commerce company wants to detect fraudulent transactions in real-time. They have historical
+      transaction data but only 0.2% of transactions are labeled as fraudulent. The ML engineer needs
+      an approach that can identify unusual patterns without relying heavily on the small number of fraud examples.
+      Which algorithm approach is BEST suited for this scenario?
+    options:
+      - id: A
+        text: XGBoost with class weighting to handle the imbalanced dataset
+      - id: B
+        text: Random Cut Forest for unsupervised anomaly detection
+      - id: C
+        text: Linear Learner with SMOTE oversampling to balance classes
+      - id: D
+        text: K-Means clustering to group fraudulent transactions
+    correctAnswer: B
+    explanation: >
+      Random Cut Forest (RCF) is the best choice because it's an unsupervised anomaly detection algorithm that
+      doesn't rely on labeled fraud examples. RCF assigns anomaly scores to transactions based on how different
+      they are from normal patterns, making it ideal for detecting novel fraud types. It works well with streaming
+      data for real-time detection and doesn't suffer from the extreme class imbalance problem. While Option A
+      (XGBoost with class weighting) could work, it still relies on the small number of fraud examples and may
+      not generalize to new fraud patterns. Option C requires creating synthetic examples which may not represent
+      real fraud. Option D (K-Means) is for clustering, not anomaly detection, and requires knowing the number
+      of clusters in advance.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html
+    services: [Amazon SageMaker, Random Cut Forest]
+    concepts: [anomaly-detection, unsupervised-learning, imbalanced-data, real-time-inference]
+
+  - id: ma-003
+    type: single
+    text: >
+      A data science team needs to build a spam classifier for email messages. The dataset consists of
+      500,000 emails with text content, and they need a solution that trains quickly and provides high accuracy
+      for text classification. Which SageMaker algorithm is MOST appropriate?
+    options:
+      - id: A
+        text: BlazingText in text classification mode
+      - id: B
+        text: XGBoost with TF-IDF features
+      - id: C
+        text: Linear Learner with one-hot encoded words
+      - id: D
+        text: Sequence-to-Sequence for text understanding
+    correctAnswer: A
+    explanation: >
+      BlazingText in text classification mode is specifically optimized for supervised text classification tasks.
+      It's a highly optimized implementation that trains quickly on large text datasets, supports multiclass
+      classification, and leverages word embeddings for accuracy. BlazingText can handle 500,000 emails efficiently
+      and provides excellent performance for spam detection. Option B (XGBoost with TF-IDF) could work but requires
+      manual feature engineering and won't leverage word semantics as effectively. Option C (Linear Learner with
+      one-hot encoding) would create an extremely high-dimensional sparse matrix and doesn't capture word semantics.
+      Option D (Sequence-to-Sequence) is designed for sequence translation tasks like machine translation, not
+      classification.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/blazingtext.html
+    services: [Amazon SageMaker, BlazingText]
+    concepts: [text-classification, supervised-learning, natural-language-processing]
+
+  - id: ma-004
+    type: single
+    text: >
+      A startup with limited ML expertise wants to quickly build a customer churn prediction model using their
+      tabular customer data (50 MB CSV file with 30 features). They need a solution that automatically handles
+      feature engineering, algorithm selection, and hyperparameter tuning. Which AWS service should they use?
+    options:
+      - id: A
+        text: Amazon SageMaker Autopilot in auto mode
+      - id: B
+        text: Amazon SageMaker with manual XGBoost training
+      - id: C
+        text: Amazon Comprehend Custom Classification
+      - id: D
+        text: Amazon Forecast for predictive analytics
+    correctAnswer: A
+    explanation: >
+      Amazon SageMaker Autopilot is the best choice because it automates the entire ML workflow for tabular data.
+      With a 50 MB dataset, Autopilot will automatically select ensembling mode (dataset <100 MB threshold),
+      explore multiple algorithms (XGBoost, LightGBM, CatBoost, etc.), perform feature engineering, tune
+      hyperparameters, and provide the best model. It generates transparent notebooks showing all steps, making it
+      ideal for teams with limited ML expertise. Autopilot handles binary classification (churn/no churn) natively.
+      Option B requires manual algorithm selection and tuning. Option C (Comprehend) is for text classification,
+      not tabular churn prediction. Option D (Forecast) is specifically for time series forecasting, not
+      classification problems.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-automate-model-development.html
+    services: [Amazon SageMaker Autopilot]
+    concepts: [automl, tabular-data, binary-classification, automated-ml]
+
+  - id: ma-005
+    type: multi
+    correctCount: 2
+    text: >
+      A retail company wants to forecast daily sales for 10,000 products across 500 stores for the next 30 days.
+      They have 2 years of historical sales data and information about promotions, holidays, and weather.
+      Which TWO algorithms would be most appropriate for this use case? (Select TWO)
+    options:
+      - id: A
+        text: DeepAR, because it learns across multiple related time series and provides probabilistic forecasts
+      - id: B
+        text: Amazon Forecast, because it's a fully managed service with AutoML for time series prediction
+      - id: C
+        text: XGBoost, because it handles regression problems with tabular data
+      - id: D
+        text: K-Means, because it can cluster similar products for forecasting
+      - id: E
+        text: Linear Learner, because it can model linear trends in sales data
+    correctAnswer: [A, B]
+    explanation: >
+      Both DeepAR (Option A) and Amazon Forecast (Option B) are designed for time series forecasting and are
+      appropriate for this scenario. DeepAR is a SageMaker built-in algorithm that uses recurrent neural networks
+      to learn patterns across multiple related time series (10,000 product-store combinations). It generates
+      probabilistic forecasts with prediction intervals and can incorporate related features like promotions and
+      holidays. Amazon Forecast is a fully managed AutoML service specifically built for time series forecasting
+      that automatically selects the best algorithm (including DeepAR+, CNN-QR, Prophet) and handles feature
+      engineering. For a team wanting less operational overhead, Forecast is ideal. XGBoost (Option C) could work
+      with careful feature engineering of time-based features, but it's not specialized for time series and won't
+      capture temporal dependencies as effectively. K-Means (Option D) is for clustering, not forecasting.
+      Linear Learner (Option E) doesn't capture complex temporal patterns and seasonality.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html
+    services: [Amazon SageMaker, DeepAR, Amazon Forecast]
+    concepts: [time-series-forecasting, probabilistic-forecasting, related-time-series]
+
+  - id: ma-006
+    type: single
+    text: >
+      An ML engineer needs to reduce the dimensionality of a dataset from 500 features to 50 features for
+      visualization and to improve training speed for downstream models. The dataset has 100,000 samples.
+      Which unsupervised algorithm should they use?
+    options:
+      - id: A
+        text: Principal Component Analysis (PCA)
+      - id: B
+        text: K-Means clustering
+      - id: C
+        text: Random Cut Forest
+      - id: D
+        text: XGBoost for feature selection
+    correctAnswer: A
+    explanation: >
+      Principal Component Analysis (PCA) is the correct choice for dimensionality reduction. PCA is an unsupervised
+      algorithm that transforms the original features into a smaller set of principal components (orthogonal linear
+      combinations) that capture the maximum variance in the data. Reducing from 500 to 50 features while preserving
+      most of the information is exactly what PCA is designed for. This helps with visualization (can project to 2-3
+      dimensions) and speeds up downstream model training by reducing feature count. Option B (K-Means) is for
+      clustering data points into groups, not dimensionality reduction. Option C (RCF) is for anomaly detection,
+      not dimensionality reduction. Option D (XGBoost feature selection) is supervised and requires labels, plus
+      it selects existing features rather than creating new compressed representations.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/pca.html
+    services: [Amazon SageMaker, PCA]
+    concepts: [dimensionality-reduction, unsupervised-learning, feature-engineering]
+
+  - id: ma-007
+    type: single
+    text: >
+      A content streaming company wants to build a recommendation system suggesting movies to users based on
+      their viewing history and ratings. The user-item matrix is extremely sparse (millions of users and movies,
+      but each user has rated <50 movies). Which algorithm is BEST suited for this recommendation task?
+    options:
+      - id: A
+        text: XGBoost with user and movie features
+      - id: B
+        text: Factorization Machines to capture user-item interactions in sparse data
+      - id: C
+        text: K-Nearest Neighbors to find similar users
+      - id: D
+        text: Linear Learner with one-hot encoded user and movie IDs
+    correctAnswer: B
+    explanation: >
+      Factorization Machines (FM) are specifically designed for sparse, high-dimensional data like user-item
+      matrices in recommendation systems. FM automatically learns pairwise feature interactions (user-movie
+      relationships) using latent factors, making it ideal for collaborative filtering with sparse data. Each
+      user has rated very few movies out of millions, creating extreme sparsity that FM handles efficiently.
+      FM learns latent representations that generalize to unobserved user-item pairs. Option A (XGBoost) doesn't
+      inherently model user-item interactions as effectively and requires extensive feature engineering. Option C
+      (k-NN) would find similar users but doesn't scale well to millions of users and doesn't learn latent factors.
+      Option D (Linear Learner with one-hot encoding) would create an astronomically high-dimensional sparse matrix
+      (millions of users × millions of movies) and doesn't capture interactions effectively. For a fully managed
+      alternative, Amazon Personalize would also be appropriate.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/fact-machines.html
+    services: [Amazon SageMaker, Factorization Machines]
+    concepts: [recommendation-systems, sparse-data, collaborative-filtering, feature-interactions]
+
+  - id: ma-008
+    type: single
+    text: >
+      A manufacturing company collects sensor data from production equipment (temperature, vibration, pressure)
+      and wants to detect equipment failures before they occur. They don't have labeled failure data.
+      Which approach should they take?
+    options:
+      - id: A
+        text: Use XGBoost to predict failures based on historical sensor patterns
+      - id: B
+        text: Use Random Cut Forest to detect anomalous sensor readings indicating potential failures
+      - id: C
+        text: Use K-Means to cluster normal vs failure states
+      - id: D
+        text: Use Linear Learner to model sensor correlations
+    correctAnswer: B
+    explanation: >
+      Random Cut Forest (RCF) is the correct choice because it's an unsupervised anomaly detection algorithm
+      that doesn't require labeled failure data. RCF can monitor multivariate sensor streams (temperature,
+      vibration, pressure) and assign anomaly scores to unusual patterns that may indicate impending equipment
+      failure. It works well with real-time streaming data from sensors and can detect anomalies across multiple
+      correlated variables. This is predictive maintenance use case where anomalies often precede failures.
+      Option A (XGBoost) requires labeled failure examples which aren't available. Option C (K-Means clustering)
+      requires knowing the number of clusters and doesn't focus on anomaly detection. Option D (Linear Learner)
+      is supervised and needs labels. NASA and Blue Origin used RCF successfully for spacecraft sensor anomaly
+      detection in 2025, demonstrating its effectiveness for multivariate sensor monitoring.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/randomcutforest.html
+    services: [Amazon SageMaker, Random Cut Forest]
+    concepts: [anomaly-detection, predictive-maintenance, unsupervised-learning, sensor-data]
+
+  - id: ma-009
+    type: single
+    text: >
+      A marketing team wants to segment customers into distinct groups based on purchasing behavior, demographics,
+      and engagement metrics (25 features total, 500,000 customers). They don't have predefined segments.
+      Which algorithm should they use?
+    options:
+      - id: A
+        text: K-Means clustering to identify natural customer segments
+      - id: B
+        text: XGBoost to classify customers into segments
+      - id: C
+        text: Random Cut Forest to detect unusual customers
+      - id: D
+        text: Linear Learner to predict customer segments
+    correctAnswer: A
+    explanation: >
+      K-Means clustering is the correct choice for customer segmentation when you don't have predefined segments
+      (unsupervised learning). K-Means partitions the 500,000 customers into K clusters based on similarity across
+      the 25 features (purchasing behavior, demographics, engagement). The marketing team can experiment with
+      different values of K to find meaningful customer segments (e.g., "high-value frequent buyers", "price-sensitive
+      occasional shoppers", etc.). K-Means scales well to 500K customers and 25 features. Options B and D assume
+      supervised learning with pre-labeled segments, which don't exist in this scenario. Option C (RCF) focuses on
+      finding anomalous outliers rather than grouping normal customers into segments. K-Means is the standard
+      unsupervised algorithm for clustering and segmentation tasks.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/k-means.html
+    services: [Amazon SageMaker, K-Means]
+    concepts: [clustering, customer-segmentation, unsupervised-learning]
+
+  - id: ma-010
+    type: single
+    text: >
+      A legal tech company needs to automatically extract and classify clauses from thousands of contracts (PDF documents).
+      The solution should identify clause types (liability, termination, confidentiality) and extract the relevant text.
+      Which AWS approach provides the BEST solution with minimal ML expertise?
+    options:
+      - id: A
+        text: Use Amazon Textract to extract text, then Amazon Comprehend Custom Classification to classify clauses
+      - id: B
+        text: Use SageMaker BlazingText to process PDFs and classify text
+      - id: C
+        text: Use Amazon Bedrock with Claude to extract and classify clauses via prompts
+      - id: D
+        text: Use SageMaker Object Detection to locate clauses in PDF images
+    correctAnswer: A
+    explanation: >
+      The best approach is Option A: Amazon Textract for text extraction from PDFs followed by Amazon Comprehend
+      Custom Classification for clause classification. Textract is specifically designed to extract text, tables,
+      and forms from scanned or digital documents (PDFs). It provides structured output with text location and
+      confidence scores. Amazon Comprehend Custom Classification can then be trained on labeled contract clauses
+      to classify extracted text into categories (liability, termination, confidentiality). This combination requires
+      minimal ML expertise (both are fully managed AI services) and is purpose-built for document analysis. Option B
+      (BlazingText) requires manual PDF text extraction and operates at lower level. Option C (Bedrock with Claude)
+      could work but would be more expensive at scale and less structured than a custom classifier. Option D
+      (Object Detection) is for images/objects, not text classification.
+    awsDocLink: https://docs.aws.amazon.com/comprehend/latest/dg/how-document-classification.html
+    services: [Amazon Textract, Amazon Comprehend]
+    concepts: [document-processing, text-extraction, custom-classification, ai-services]
+
+  - id: ma-011
+    type: single
+    text: >
+      An ML team is building a conversational AI assistant for customer support that needs to understand complex
+      queries, maintain conversation context, and provide helpful responses. They want a fully managed solution
+      without training custom models. Which AWS service is MOST appropriate?
+    options:
+      - id: A
+        text: Amazon SageMaker with a custom-trained transformer model
+      - id: B
+        text: Amazon Bedrock with Claude 3.7 Sonnet
+      - id: C
+        text: Amazon Comprehend for sentiment analysis and entity extraction
+      - id: D
+        text: Amazon Lex with built-in conversation flows
+    correctAnswer: B
+    explanation: >
+      Amazon Bedrock with Claude 3.7 Sonnet (or Claude 3.5 Sonnet) is the best choice for a conversational AI
+      assistant requiring complex understanding and contextual responses. Claude models excel at dialogue, reasoning,
+      and maintaining conversation context across multiple turns. Bedrock provides fully managed access to foundation
+      models via API without requiring model training. Claude 3.7 Sonnet offers extended context (200K tokens) for
+      long conversations and superior reasoning capabilities. Option A (custom SageMaker model) requires significant
+      ML expertise and training, which contradicts the requirement for a fully managed solution without custom
+      training. Option C (Comprehend) provides sentiment and entity extraction but doesn't generate conversational
+      responses. Option D (Amazon Lex) is good for structured chatbots with intent-based flows but doesn't offer
+      the same level of natural language understanding and generation as foundation models. For advanced customer
+      support requiring nuanced understanding, Bedrock with Claude is optimal.
+    awsDocLink: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+    services: [Amazon Bedrock, Claude]
+    concepts: [conversational-ai, foundation-models, generative-ai, natural-language-understanding]
+
+  - id: ma-012
+    type: multi
+    correctCount: 2
+    text: >
+      An ML engineer needs to decide between using Amazon Bedrock and Amazon SageMaker for a new project.
+      Which TWO scenarios would favor using Amazon Bedrock? (Select TWO)
+    options:
+      - id: A
+        text: Building a content generation system for marketing copy using pre-trained language models
+      - id: B
+        text: Training a custom fraud detection model on proprietary financial transaction data
+      - id: C
+        text: Creating a document summarization tool that processes legal contracts
+      - id: D
+        text: Developing a specialized computer vision model for identifying manufacturing defects
+      - id: E
+        text: Building a reinforcement learning agent for warehouse robot optimization
+    correctAnswer: [A, C]
+    explanation: >
+      Options A and C favor Amazon Bedrock because they involve generative AI tasks (content generation, summarization)
+      that can be accomplished using pre-trained foundation models without custom training. Option A (marketing
+      content generation) aligns perfectly with Bedrock's text generation capabilities using models like Claude or
+      Titan. Option C (document summarization) is a natural fit for foundation models that excel at understanding
+      and condensing long documents. Both use cases benefit from Bedrock's serverless, fully managed approach with
+      no model training required. Options B, D, and E favor SageMaker because they require custom models trained on
+      proprietary data: B needs a custom fraud detection model specific to the company's transaction patterns, D
+      requires custom computer vision for specialized manufacturing defects, and E needs custom reinforcement
+      learning for specific warehouse environments. The key distinction is: Bedrock for generative AI with
+      pre-trained models, SageMaker for custom models on proprietary data.
+    awsDocLink: https://docs.aws.amazon.com/decision-guides/latest/bedrock-or-sagemaker/bedrock-or-sagemaker.html
+    services: [Amazon Bedrock, Amazon SageMaker]
+    concepts: [foundation-models, custom-models, model-selection, generative-ai]
+
+  - id: ma-013
+    type: single
+    text: >
+      A company receives customer feedback through text reviews and wants to understand sentiment (positive, negative,
+      neutral) and extract key topics automatically. They need a quick solution without building ML models.
+      Which AWS AI service should they use?
+    options:
+      - id: A
+        text: Amazon Comprehend for sentiment analysis and topic modeling
+      - id: B
+        text: Amazon Translate to translate reviews to English
+      - id: C
+        text: Amazon Textract to extract text from review images
+      - id: D
+        text: Amazon SageMaker BlazingText for text analysis
+    correctAnswer: A
+    explanation: >
+      Amazon Comprehend is the correct choice because it provides pre-trained NLP capabilities including sentiment
+      analysis (positive, negative, neutral, mixed) and topic modeling to discover themes across documents. Comprehend
+      requires no ML expertise or model building - simply send text via API and receive structured sentiment and
+      topic results. It also provides entity extraction, key phrase extraction, and language detection as bonus
+      features. Option B (Translate) is for language translation, not sentiment analysis. Option C (Textract) extracts
+      text from images/PDFs but doesn't analyze sentiment. Option D (SageMaker BlazingText) requires training a
+      custom model and ML expertise, contradicting the "quick solution without building models" requirement. Comprehend
+      is the purpose-built AI service for text analytics without custom training.
+    awsDocLink: https://docs.aws.amazon.com/comprehend/latest/dg/how-it-works.html
+    services: [Amazon Comprehend]
+    concepts: [sentiment-analysis, topic-modeling, nlp, ai-services]
+
+  - id: ma-014
+    type: single
+    text: >
+      An application needs to provide real-time product recommendations to users browsing an e-commerce website.
+      The ML team wants a fully managed service that handles real-time personalization without building custom models.
+      Which AWS service should they use?
+    options:
+      - id: A
+        text: Amazon SageMaker with Factorization Machines
+      - id: B
+        text: Amazon Personalize with real-time event tracking
+      - id: C
+        text: Amazon Bedrock with recommendation prompts
+      - id: D
+        text: Amazon Forecast for demand prediction
+    correctAnswer: B
+    explanation: >
+      Amazon Personalize is the fully managed AI service specifically designed for real-time personalized
+      recommendations. It automatically trains recommendation models based on user-item interaction data and provides
+      real-time inference APIs. Personalize supports user personalization (recommend products based on user history),
+      similar items (find products similar to one being viewed), and personalized ranking (rerank items for a user).
+      It ingests real-time events (clicks, views, purchases) to continuously update recommendations. Option A
+      (SageMaker Factorization Machines) requires manual model building, training, and deployment - not fully managed.
+      Option C (Bedrock) is for generative AI, not purpose-built recommendation systems. Option D (Forecast) is for
+      time series forecasting, not personalization. Personalize abstracts all ML complexity, making it ideal for
+      teams wanting managed recommendations without building custom models.
+    awsDocLink: https://docs.aws.amazon.com/personalize/latest/dg/what-is-personalize.html
+    services: [Amazon Personalize]
+    concepts: [recommendation-systems, real-time-personalization, ai-services, managed-service]
+
+  - id: ma-015
+    type: single
+    text: >
+      A media company wants to automatically generate captions for thousands of video files in their archive.
+      The videos contain speech in English. Which AWS AI service provides the BEST solution?
+    options:
+      - id: A
+        text: Amazon Transcribe to convert speech to text
+      - id: B
+        text: Amazon Translate to translate audio to text
+      - id: C
+        text: Amazon Comprehend to extract speech content
+      - id: D
+        text: Amazon Bedrock to generate captions from video
+    correctAnswer: A
+    explanation: >
+      Amazon Transcribe is the correct choice for converting speech in videos to text captions. Transcribe provides
+      automatic speech recognition (ASR) that supports batch processing of video/audio files stored in S3. It generates
+      time-stamped text transcripts that can be formatted as captions/subtitles (SRT, VTT formats). Transcribe handles
+      English and 30+ other languages, provides speaker diarization (identify who is speaking), custom vocabulary
+      for domain-specific terms, and automatic punctuation. For video captioning, Transcribe is the purpose-built
+      service. Option B (Translate) is for translating text between languages, not speech-to-text. Option C
+      (Comprehend) analyzes text but doesn't convert speech. Option D (Bedrock) is for generative AI and doesn't
+      directly process audio. Transcribe's batch API is optimized for processing large video archives efficiently.
+    awsDocLink: https://docs.aws.amazon.com/transcribe/latest/dg/what-is.html
+    services: [Amazon Transcribe]
+    concepts: [speech-to-text, automatic-speech-recognition, video-processing, ai-services]
+
+  - id: ma-016
+    type: single
+    text: >
+      A data science team has a dataset with 200 MB of tabular data and wants to build a regression model to predict
+      housing prices. They want SageMaker Autopilot to automatically find the best model. Which training mode will
+      Autopilot use by default?
+    options:
+      - id: A
+        text: Ensembling mode, because it provides higher accuracy through stacked ensembles
+      - id: B
+        text: Hyperparameter Optimization (HPO) mode, because the dataset is larger than 100 MB
+      - id: C
+        text: AutoGluon mode, because it's optimized for regression problems
+      - id: D
+        text: Manual mode, requiring the team to specify algorithms
+    correctAnswer: B
+    explanation: >
+      Autopilot will automatically select Hyperparameter Optimization (HPO) mode because the dataset (200 MB) exceeds
+      the 100 MB threshold. Autopilot uses automatic mode selection by default: ensembling mode for datasets <100 MB,
+      and HPO mode for datasets >=100 MB. HPO mode uses Bayesian optimization to find optimal hyperparameters for
+      selected algorithms (XGBoost, Linear Learner, etc.) and is more efficient for larger datasets than building
+      stacked ensembles. Option A is incorrect because ensembling is used for datasets <100 MB. Option C is incorrect
+      because AutoGluon-Tabular is an algorithm choice, not a training mode. Option D is incorrect because Autopilot
+      defaults to auto mode (automatic selection) unless manually overridden. Understanding this 100 MB threshold
+      is important for the MLA-C01 exam.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-model-support-validation.html
+    services: [Amazon SageMaker Autopilot]
+    concepts: [automl, training-modes, hyperparameter-optimization, ensembling]
+
+  - id: ma-017
+    type: single
+    text: >
+      An ML engineer needs to build an image classification model to categorize product photos into 50 different
+      product categories. They have 100,000 labeled product images. Which approach should they take?
+    options:
+      - id: A
+        text: Use Amazon Rekognition Custom Labels to train a custom image classifier
+      - id: B
+        text: Use SageMaker Image Classification algorithm with transfer learning from ImageNet
+      - id: C
+        text: Use XGBoost with manually extracted image features
+      - id: D
+        text: Use Amazon Bedrock with Stable Diffusion for image classification
+    correctAnswer: B
+    explanation: >
+      SageMaker Image Classification algorithm is the best choice for training a custom image classifier on 50
+      product categories. This built-in algorithm uses ResNet architecture pre-trained on ImageNet and supports
+      transfer learning - fine-tuning on the 100,000 product images. It's optimized for multiclass classification,
+      supports distributed training and GPU acceleration, and provides production-ready deployment. While Amazon
+      Rekognition Custom Labels (Option A) is also viable for custom image classification without ML expertise,
+      SageMaker Image Classification provides more control over training, hyperparameters, and deployment infrastructure,
+      making it better for ML engineers who want flexibility. Option C (XGBoost) is not designed for raw image data -
+      it requires extensive manual feature extraction. Option D (Stable Diffusion via Bedrock) is for image generation,
+      not classification. For the MLA-C01 exam, know that SageMaker Image Classification is the built-in algorithm
+      for custom image classification tasks.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html
+    services: [Amazon SageMaker, Image Classification]
+    concepts: [computer-vision, transfer-learning, multiclass-classification, deep-learning]
+
+  - id: ma-018
+    type: multi
+    correctCount: 2
+    text: >
+      An ML engineer is comparing Linear Learner and XGBoost for a binary classification problem with 80 features
+      and 500,000 samples. Which TWO statements are TRUE about these algorithms? (Select TWO)
+    options:
+      - id: A
+        text: XGBoost can handle missing values natively, while Linear Learner requires imputation
+      - id: B
+        text: Linear Learner is better suited for non-linear relationships than XGBoost
+      - id: C
+        text: Linear Learner provides interpretable coefficients, while XGBoost provides feature importance
+      - id: D
+        text: XGBoost requires data in LibSVM format, while Linear Learner requires RecordIO-protobuf format exclusively
+      - id: E
+        text: Linear Learner trains faster than XGBoost for high-dimensional sparse data
+    correctAnswer: [A, C]
+    explanation: >
+      Option A is correct: XGBoost handles missing values natively as part of its tree-building algorithm, while
+      Linear Learner requires missing values to be imputed before training. This is a key practical difference.
+      Option C is correct: Linear Learner provides interpretable model coefficients (weights for each feature),
+      while XGBoost provides feature importance scores (how much each feature contributes to predictions). Both
+      offer interpretability but in different forms. Option B is false - XGBoost is better for non-linear
+      relationships (tree-based), while Linear Learner assumes linear relationships. Option D is false - both
+      algorithms support multiple formats; XGBoost accepts CSV, LibSVM, Parquet, RecordIO, while Linear Learner
+      accepts RecordIO and CSV. Option E is partially true but not universally - Linear Learner can be faster for
+      very high-dimensional sparse data, but this depends on data characteristics and hyperparameters. Options A
+      and C are definitively true.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html
+    services: [Amazon SageMaker, XGBoost, Linear Learner]
+    concepts: [algorithm-comparison, missing-values, interpretability, feature-importance]
+
+  - id: ma-019
+    type: single
+    text: >
+      A healthcare company wants to analyze medical images (X-rays) to detect potential abnormalities and route
+      them to radiologists. They need a solution that works without extensive labeled medical data. Which approach
+      is MOST appropriate?
+    options:
+      - id: A
+        text: Use Amazon Rekognition to detect abnormalities in medical images
+      - id: B
+        text: Use SageMaker Image Classification with transfer learning and the available labeled images
+      - id: C
+        text: Use Amazon Bedrock with Claude to analyze image descriptions
+      - id: D
+        text: Use K-Means clustering to group similar X-rays
+    correctAnswer: B
+    explanation: >
+      SageMaker Image Classification with transfer learning is the most appropriate approach for medical image
+      analysis with limited labeled data. Transfer learning leverages a model pre-trained on ImageNet (or medical
+      imaging datasets if available) and fine-tunes it on the available labeled X-rays for abnormality detection.
+      Even with limited labeled examples (few hundred to few thousand), transfer learning can achieve good performance
+      by leveraging learned low-level image features. This is a supervised approach appropriate for binary or
+      multiclass classification (normal vs abnormal, or specific condition types). Option A (Rekognition) is trained
+      on general objects/scenes, not medical images, and doesn't support custom medical image classification without
+      Rekognition Custom Labels. Option C (Bedrock with Claude) would require describing images as text, which loses
+      visual information critical for medical diagnosis. Option D (K-Means) is unsupervised clustering, not
+      classification for routing decisions. For specialized medical imaging, SageMaker provides the necessary
+      customization capability.
+    awsDocLink: https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html
+    services: [Amazon SageMaker, Image Classification]
+    concepts: [transfer-learning, medical-imaging, computer-vision, limited-labeled-data]
+
+  - id: ma-020
+    type: single
+    text: >
+      A SaaS company wants to embed a question-answering capability into their application where users can ask
+      questions about their product documentation (1,000+ pages). They want accurate answers grounded in their
+      documentation. Which architecture provides the BEST solution?
+    options:
+      - id: A
+        text: Use Amazon Comprehend to extract entities and answers from documentation
+      - id: B
+        text: Use Amazon Bedrock with Retrieval Augmented Generation (RAG) using document embeddings
+      - id: C
+        text: Use SageMaker BlazingText to train a question-answering model
+      - id: D
+        text: Use Amazon Kendra with built-in natural language querying
+    correctAnswer: B
+    explanation: >
+      Amazon Bedrock with Retrieval Augmented Generation (RAG) is the best architecture for accurate question-answering
+      grounded in proprietary documentation. RAG works by: (1) creating embeddings of documentation chunks using
+      Titan Embeddings or Cohere Embed, (2) storing embeddings in a vector database (OpenSearch, Pinecone, etc.),
+      (3) retrieving relevant documentation sections when user asks a question, (4) passing retrieved context to
+      a foundation model like Claude or Command R+ to generate an accurate answer. This grounds responses in actual
+      documentation, reducing hallucinations. Option A (Comprehend) extracts entities but doesn't generate answers
+      to open-ended questions. Option C (BlazingText) is for text classification/embeddings, not question-answering.
+      Option D (Amazon Kendra) is also excellent for intelligent search and Q&A over documents and is a strong
+      alternative - it's a managed search service with built-in NLU. Both B and D are good, but Option B (Bedrock
+      with RAG) provides more flexibility for customization and leverages the latest foundation models. For the
+      MLA-C01 exam, understand RAG architecture as a key pattern for grounded generative AI.
+    awsDocLink: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+    services: [Amazon Bedrock, RAG, Embeddings]
+    concepts: [retrieval-augmented-generation, question-answering, foundation-models, embeddings]

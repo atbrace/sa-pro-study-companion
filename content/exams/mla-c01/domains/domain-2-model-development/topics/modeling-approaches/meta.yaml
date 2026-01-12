@@ -1,0 +1,55 @@
+id: modeling-approaches
+name: ML Modeling Approaches and Algorithm Selection
+shortName: Modeling Approaches
+examTask: task-2-1
+description: >
+  Select appropriate ML algorithms and AWS AI services based on business requirements,
+  problem type, and data characteristics. Understand when to use built-in algorithms,
+  AutoML, foundation models, or specialized AI services.
+
+estimatedStudyTime: 90
+difficulty: intermediate
+
+keyServices:
+  - Amazon SageMaker Built-in Algorithms
+  - Amazon SageMaker Autopilot
+  - Amazon Bedrock
+  - Amazon Rekognition
+  - Amazon Comprehend
+  - Amazon Translate
+  - Amazon Transcribe
+  - Amazon Forecast
+  - Amazon Personalize
+
+keyConcepts:
+  - Supervised vs unsupervised learning
+  - Algorithm selection criteria
+  - XGBoost vs Linear Learner
+  - Built-in algorithm use cases
+  - AutoML capabilities
+  - Foundation model selection
+  - AI service vs custom model decision
+  - Problem type mapping
+  - Data type considerations
+
+awsDocLinks:
+  - title: SageMaker Built-in Algorithms
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html
+    type: doc
+  - title: Types of Algorithms - Choose Algorithm
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/algorithms-choose.html
+    type: doc
+  - title: SageMaker Autopilot Training Modes
+    url: https://docs.aws.amazon.com/sagemaker/latest/dg/autopilot-model-support-validation.html
+    type: doc
+  - title: Amazon Bedrock Foundation Models
+    url: https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html
+    type: doc
+  - title: Choosing an AWS ML Service Decision Guide
+    url: https://docs.aws.amazon.com/decision-guides/latest/machine-learning-on-aws-how-to-choose/guide.html
+    type: doc
+
+relatedExperiments:
+  - lab-sagemaker-xgboost
+  - lab-autopilot-training
+  - lab-bedrock-inference
