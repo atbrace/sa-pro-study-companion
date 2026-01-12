@@ -20,9 +20,11 @@ interface TutorPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context?: TutorContext;
+  examId: string;
+  examName: string;
 }
 
-export function TutorPanel({ open, onOpenChange, context }: TutorPanelProps) {
+export function TutorPanel({ open, onOpenChange, context, examId, examName }: TutorPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +53,7 @@ export function TutorPanel({ open, onOpenChange, context }: TutorPanelProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText,
+          examId,
           context,
           conversationId,
         }),
@@ -131,7 +134,7 @@ export function TutorPanel({ open, onOpenChange, context }: TutorPanelProps) {
                 <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p className="text-sm font-medium mb-1">Start a conversation</p>
                 <p className="text-xs">
-                  Ask me anything about AWS Solutions Architect Professional exam topics
+                  Ask me anything about {examName} exam topics
                 </p>
               </div>
             )}

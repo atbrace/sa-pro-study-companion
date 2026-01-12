@@ -3,6 +3,7 @@
 import { TutorPanel } from '@/components/tutor/TutorPanel';
 import { useTutor } from '@/hooks/useTutor';
 import { TutorProvider } from '@/contexts/TutorContext';
+import { useExam } from '@/contexts/ExamContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import type { SidebarHierarchy } from '@/types/sidebar';
@@ -15,6 +16,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, sidebarHierarchy, examId }: AppLayoutProps) {
   const { isOpen, context, openTutor, closeTutor } = useTutor();
+  const { config: examConfig } = useExam();
 
   const handleTutorToggle = () => {
     if (isOpen) {
@@ -53,6 +55,8 @@ export function AppLayout({ children, sidebarHierarchy, examId }: AppLayoutProps
           if (!open) closeTutor();
         }}
         context={context}
+        examId={examId}
+        examName={examConfig.name}
       />
     </div>
   );

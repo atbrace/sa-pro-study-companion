@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useTutorContext } from '@/contexts/TutorContext';
+import { useExam } from '@/contexts/ExamContext';
 import { extractSubsectionContent } from '@/lib/content/subsection-extractor';
 
 interface HeadingWithTutorProps {
@@ -31,6 +32,7 @@ export function HeadingWithTutor({
   topicName,
 }: HeadingWithTutorProps) {
   const { openTutor } = useTutorContext();
+  const { examId } = useExam();
   const headingText = String(children);
 
   // Extract subsection content specific to this heading (memoized for performance)
@@ -41,6 +43,7 @@ export function HeadingWithTutor({
 
   const handleAskTutor = () => {
     openTutor({
+      examId,
       domainId,
       domainName,
       topicId,

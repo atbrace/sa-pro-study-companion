@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     if (!dbConversationId) {
       const result = db.prepare(`
         INSERT INTO tutor_conversations (
-          exam_id,
+          context_exam,
           context_domain,
           context_topic,
           context_question_id,
