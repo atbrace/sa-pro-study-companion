@@ -183,13 +183,15 @@ export async function POST(request: NextRequest) {
           context_domain,
           context_topic,
           context_question_id,
+          context_lab_id,
           messages_json
-        ) VALUES (?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?)
       `).run(
         examId,
         context?.domainId || null,
         context?.topicId || null,
         context?.questionId || null,
+        context?.labId || null,
         JSON.stringify(messages)
       );
 

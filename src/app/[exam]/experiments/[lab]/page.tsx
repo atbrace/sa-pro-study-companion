@@ -1,19 +1,28 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Terminal, Code2, Info, ExternalLink, AlertCircle } from 'lucide-react';
+import { Terminal, Code2, Info, ExternalLink, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { StudyContent } from '@/components/study/StudyContent';
 import { getLabById, labExists } from '@/lib/content/experiments';
+import { validateExamId } from '@/lib/content/exam-loader';
 import { LabCodeBlocks } from './LabCodeBlocks';
+import { LabTutorButton } from './LabTutorButton';
 
 interface LabPageProps {
-  params: Promise<{ lab: string }>;
+  params: Promise<{ exam: string; lab: string }>;
 }
 
 export default async function LabPage({ params }: LabPageProps) {
-  const { lab: labId } = await params;
+  const { exam, lab: labId } = await params;
+
+  // Validate exam exists
+  if (!validateExamId(exam)) {
+    notFound();
+  }
 
   // Validate lab exists
   if (!labExists(labId)) {
@@ -60,12 +69,27 @@ pnpm cdk destroy -c labId=${labId} --force`;
 
   return (
     <div className="container py-8 max-w-5xl">
+      {/* Back to Labs Link */}
+      <div className="mb-4">
+        <Button variant="ghost" size="sm" asChild className="-ml-2">
+          <Link href={`/${exam}/labs`}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Labs
+          </Link>
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">{meta.name}</h1>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline">{meta.estimatedCost}</Badge>
-          <Badge variant="outline">~{meta.estimatedTime} min</Badge>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{meta.name}</h1>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline">{meta.estimatedCost}</Badge>
+              <Badge variant="outline">~{meta.estimatedTime} min</Badge>
+            </div>
+          </div>
+          <LabTutorButton labId={meta.id} labName={meta.name} />
         </div>
       </div>
 

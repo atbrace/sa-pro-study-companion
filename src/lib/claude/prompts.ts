@@ -50,6 +50,9 @@ export interface TutorContext {
   userAnswer?: string;
   correctAnswer?: string;
   isCorrect?: boolean;
+  // Lab context
+  labId?: string;
+  labName?: string;
 }
 
 /**
@@ -57,6 +60,14 @@ export interface TutorContext {
  */
 export function buildContextPrompt(context: TutorContext): string {
   const parts: string[] = [];
+
+  // Lab context takes precedence if present
+  if (context.labId && context.labName) {
+    parts.push(`## Lab Context`);
+    parts.push(`The student is working on a hands-on lab: **${context.labName}**`);
+    parts.push(`They may have questions about the lab exercises, CDK infrastructure code, AWS services involved, or troubleshooting deployment issues.`);
+    return parts.join('\n');
+  }
 
   if (context.domainName) {
     parts.push(`## Current Context`);
@@ -93,6 +104,15 @@ export function buildContextPrompt(context: TutorContext): string {
  */
 export function generateSuggestedQuestions(context: TutorContext): string[] {
   const suggestions: string[] = [];
+
+  // Lab-specific suggestions
+  if (context.labId && context.labName) {
+    suggestions.push("What AWS services does this lab use?");
+    suggestions.push("How do I troubleshoot deployment errors?");
+    suggestions.push("What exam topics does this lab cover?");
+    suggestions.push("How can I extend this lab to learn more?");
+    return suggestions.slice(0, 4);
+  }
 
   if (context.questionText && !context.isCorrect) {
     suggestions.push("Why did I get this wrong?");

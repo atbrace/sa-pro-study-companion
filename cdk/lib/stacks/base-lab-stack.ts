@@ -121,4 +121,82 @@ export abstract class BaseLabStack extends cdk.Stack {
   protected getDynamoDbConsoleUrl(tableName: string): string {
     return `https://${this.region}.console.aws.amazon.com/dynamodbv2/home?region=${this.region}#table?name=${tableName}`;
   }
+
+  /**
+   * Helper to create console URL for SageMaker Studio Domain
+   */
+  protected getSageMakerStudioConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/studio`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Training Jobs
+   */
+  protected getSageMakerTrainingJobsConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/jobs`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Endpoints
+   */
+  protected getSageMakerEndpointsConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/endpoints`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Feature Store
+   */
+  protected getSageMakerFeatureStoreConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/feature-store`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Pipelines
+   */
+  protected getSageMakerPipelinesConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/pipelines`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Model Registry
+   */
+  protected getSageMakerModelRegistryConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/model-registry`;
+  }
+
+  /**
+   * Helper to create console URL for SageMaker Model Monitor
+   */
+  protected getSageMakerModelMonitorConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/sagemaker/home?region=${this.region}#/model-monitor`;
+  }
+
+  /**
+   * Helper to create console URL for AWS Glue
+   */
+  protected getGlueConsoleUrl(): string {
+    return `https://${this.region}.console.aws.amazon.com/glue/home?region=${this.region}`;
+  }
+
+  /**
+   * Helper to create console URL for S3 bucket
+   */
+  protected getS3BucketConsoleUrl(bucketName: string): string {
+    return `https://s3.console.aws.amazon.com/s3/buckets/${bucketName}?region=${this.region}`;
+  }
+
+  /**
+   * Helper to create console URL for IAM role
+   */
+  protected getIamRoleConsoleUrl(roleName: string): string {
+    return `https://console.aws.amazon.com/iam/home#/roles/details/${roleName}`;
+  }
+
+  /**
+   * Helper to create console URL for CloudWatch Logs
+   */
+  protected getCloudWatchLogsConsoleUrl(logGroupName: string): string {
+    const encodedLogGroup = encodeURIComponent(logGroupName).replace(/%/g, '$');
+    return `https://${this.region}.console.aws.amazon.com/cloudwatch/home?region=${this.region}#logsV2:log-groups/log-group/${encodedLogGroup}`;
+  }
 }

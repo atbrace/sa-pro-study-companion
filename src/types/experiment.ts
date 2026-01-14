@@ -7,6 +7,7 @@ export interface LabMeta {
   stackClass: string;
   estimatedCost: string;
   estimatedTime: number;
+  exam?: 'sap-c02' | 'mla-c01';  // Optional: defaults to sap-c02
 }
 
 export interface Lab {
