@@ -33,19 +33,51 @@ interface TutorResponse {
   suggestedQuestions: string[];
 }
 
+/**
+ * Validate tutor request body
+ */
+function validateTutorBody(body: unknown): { valid: true; data: TutorRequest } | { valid: false; error: string } {
+  if (!body || typeof body !== 'object') {
+    return { valid: false, error: 'Invalid request body' };
+  }
+
+  const b = body as Record<string, unknown>;
+
+  // Validate message
+  if (typeof b.message !== 'string' || b.message.trim().length === 0) {
+    return { valid: false, error: 'Message is required' };
+  }
+
+  // Validate examId if provided
+  if (b.examId !== undefined && typeof b.examId !== 'string') {
+    return { valid: false, error: 'Invalid exam ID format' };
+  }
+
+  // Validate conversationId if provided
+  if (b.conversationId !== undefined && typeof b.conversationId !== 'string') {
+    return { valid: false, error: 'Invalid conversation ID format' };
+  }
+
+  return { valid: true, data: body as TutorRequest };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body: TutorRequest = await request.json();
-    const { message, examId: requestExamId, context, conversationId } = body;
-    const examId = requestExamId || 'sap-c02';
-    const examConfig = getExamById(examId);
+    const rawBody = await request.json();
 
-    if (!message || message.trim().length === 0) {
+    // Validate request body structure
+    const validation = validateTutorBody(rawBody);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Message is required' },
+        { error: validation.error },
         { status: 400 }
       );
     }
+
+    const body = validation.data;
+    const { message, examId: requestExamId, context, conversationId } = body;
+    const examId = requestExamId || 'sap-c02';
+    const examConfig = getExamById(examId);
 
     if (!examConfig) {
       return NextResponse.json(
@@ -67,7 +99,12 @@ export async function POST(request: NextRequest) {
       `).get(conversationId) as { messages_json: string } | undefined;
 
       if (conversation) {
-        messages = JSON.parse(conversation.messages_json);
+        try {
+          messages = JSON.parse(conversation.messages_json);
+        } catch (parseError) {
+          console.error('Failed to parse conversation messages:', parseError);
+          messages = []; // Reset to empty conversation on malformed JSON
+        }
       }
     }
 

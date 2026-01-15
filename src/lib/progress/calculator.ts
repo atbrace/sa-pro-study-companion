@@ -45,6 +45,26 @@ export interface ProgressSummary {
 }
 
 /**
+ * Get all domain mastery scores in a single query (batch optimization)
+ */
+function getAllDomainMasteryScores(examId: string): Map<string, number> {
+  const results = db.prepare(`
+    SELECT
+      domain_id,
+      AVG(mastery_level) as avg_mastery
+    FROM topic_progress
+    WHERE exam_id = ?
+    GROUP BY domain_id
+  `).all(examId) as Array<{ domain_id: string; avg_mastery: number | null }>;
+
+  const masteryMap = new Map<string, number>();
+  for (const result of results) {
+    masteryMap.set(result.domain_id, result.avg_mastery ? result.avg_mastery * 100 : 0);
+  }
+  return masteryMap;
+}
+
+/**
  * Calculate mastery score for a domain based on topic progress
  */
 export function calculateDomainMastery(examId: string, domainId: string): number {
@@ -60,14 +80,17 @@ export function calculateDomainMastery(examId: string, domainId: string): number
 
 /**
  * Calculate overall mastery score weighted by domain exam weights
+ * Uses batch query to avoid N+1 pattern
  */
 export function calculateOverallMastery(examId: string): number {
   const domains = getAllDomains(examId);
+  const masteryScores = getAllDomainMasteryScores(examId);
+
   let weightedSum = 0;
   let totalWeight = 0;
 
   for (const domain of domains) {
-    const mastery = calculateDomainMastery(examId, domain.meta.id);
+    const mastery = masteryScores.get(domain.meta.id) || 0;
     weightedSum += mastery * (domain.meta.weight / 100);
     totalWeight += domain.meta.weight / 100;
   }
@@ -282,14 +305,103 @@ export function getReadinessEstimate(examId: string): ReadinessEstimate {
 }
 
 /**
+ * Batch fetch all domain progress data in optimized queries (reduces N+1)
+ */
+function getAllDomainProgressBatch(examId: string): DomainProgress[] {
+  const domains = getAllDomains(examId);
+  if (domains.length === 0) return [];
+
+  // Batch query 1: Get mastery scores for all domains
+  const masteryScores = getAllDomainMasteryScores(examId);
+
+  // Batch query 2: Get topic stats for all domains
+  const topicStatsResults = db.prepare(`
+    SELECT
+      domain_id,
+      COUNT(*) as topics_with_progress,
+      SUM(CASE WHEN mastery_level >= 0.85 THEN 1 ELSE 0 END) as completed_topics
+    FROM topic_progress
+    WHERE exam_id = ?
+    GROUP BY domain_id
+  `).all(examId) as Array<{ domain_id: string; topics_with_progress: number; completed_topics: number }>;
+
+  const topicStatsMap = new Map<string, { topics_with_progress: number; completed_topics: number }>();
+  for (const stat of topicStatsResults) {
+    topicStatsMap.set(stat.domain_id, {
+      topics_with_progress: stat.topics_with_progress,
+      completed_topics: stat.completed_topics,
+    });
+  }
+
+  // Batch query 3: Get question stats for all domains
+  const questionStatsResults = db.prepare(`
+    SELECT
+      domain_id,
+      COUNT(*) as attempted,
+      SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
+    FROM question_attempts
+    WHERE exam_id = ?
+    GROUP BY domain_id
+  `).all(examId) as Array<{ domain_id: string; attempted: number; correct: number }>;
+
+  const questionStatsMap = new Map<string, { attempted: number; correct: number }>();
+  for (const stat of questionStatsResults) {
+    questionStatsMap.set(stat.domain_id, {
+      attempted: stat.attempted,
+      correct: stat.correct,
+    });
+  }
+
+  // Batch query 4: Get weak areas for all domains
+  const weakAreasResults = db.prepare(`
+    SELECT domain_id, topic_id
+    FROM weak_areas
+    WHERE exam_id = ? AND resolved = 0
+    ORDER BY identified_at DESC
+  `).all(examId) as Array<{ domain_id: string; topic_id: string }>;
+
+  // Group weak areas by domain (limit 5 per domain)
+  const weakAreasMap = new Map<string, WeakAreaDetail[]>();
+  for (const wa of weakAreasResults) {
+    const existing = weakAreasMap.get(wa.domain_id) || [];
+    if (existing.length < 5) {
+      // Validate topic exists in content
+      const topic = getTopicById(examId, wa.domain_id, wa.topic_id);
+      if (topic) {
+        existing.push({ topicId: wa.topic_id });
+        weakAreasMap.set(wa.domain_id, existing);
+      }
+    }
+  }
+
+  // Build domain progress objects
+  return domains.map(domain => {
+    const domainId = domain.meta.id;
+    const topicStats = topicStatsMap.get(domainId) || { topics_with_progress: 0, completed_topics: 0 };
+    const questionStats = questionStatsMap.get(domainId) || { attempted: 0, correct: 0 };
+
+    return {
+      domainId,
+      domainName: domain.meta.shortName,
+      weight: domain.meta.weight,
+      masteryScore: masteryScores.get(domainId) || 0,
+      topicsCompleted: topicStats.completed_topics || 0,
+      totalTopics: domain.topics.length,
+      weakAreas: weakAreasMap.get(domainId) || [],
+      questionsAttempted: questionStats.attempted || 0,
+      questionsCorrect: questionStats.correct || 0,
+    };
+  });
+}
+
+/**
  * Get complete progress summary
+ * Uses batch queries to avoid N+1 pattern
  */
 export function getProgressSummary(examId: string): ProgressSummary {
-  const domains = getAllDomains(examId);
-
   return {
     overall: getOverallProgress(examId),
-    domains: domains.map(d => getDomainProgress(examId, d.meta.id)).filter(Boolean) as DomainProgress[],
+    domains: getAllDomainProgressBatch(examId),
     recentActivity: getRecentActivity(examId, 10),
     readinessEstimate: getReadinessEstimate(examId),
   };

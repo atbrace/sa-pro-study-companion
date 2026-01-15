@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS weak_areas (
 CREATE INDEX IF NOT EXISTS idx_topic_progress_exam_domain ON topic_progress(exam_id, domain_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_exam ON question_attempts(exam_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_question ON question_attempts(question_id);
+CREATE INDEX IF NOT EXISTS idx_question_attempts_exam_question ON question_attempts(exam_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_question_attempts_topic ON question_attempts(domain_id, topic_id);
 CREATE INDEX IF NOT EXISTS idx_assessment_sessions_exam ON assessment_sessions(exam_id);
 CREATE INDEX IF NOT EXISTS idx_assessment_sessions_domain ON assessment_sessions(domain_id);

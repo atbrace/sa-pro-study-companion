@@ -25,6 +25,7 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
   const [answers, setAnswers] = useState<Map<string, string | string[]>>(new Map());
   const [startTime] = useState(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [questionTimes, setQuestionTimes] = useState<Map<string, number>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +44,16 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
   const progress = ((currentIndex + 1) / questions.length) * 100;
   const isLastQuestion = currentIndex === questions.length - 1;
 
+  // Record time spent on current question before leaving it
+  const recordCurrentQuestionTime = () => {
+    if (!currentQuestion) return;
+    const elapsed = Math.floor((Date.now() - questionStartTime) / 1000);
+    const existing = questionTimes.get(currentQuestion.id) || 0;
+    const newTimes = new Map(questionTimes);
+    newTimes.set(currentQuestion.id, existing + elapsed);
+    setQuestionTimes(newTimes);
+  };
+
   const handleAnswer = (answer: string | string[]) => {
     const newAnswers = new Map(answers);
     newAnswers.set(currentQuestion.id, answer);
@@ -51,6 +62,7 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
+      recordCurrentQuestionTime();
       setCurrentIndex(currentIndex + 1);
       setQuestionStartTime(Date.now());
     }
@@ -58,6 +70,7 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
+      recordCurrentQuestionTime();
       setCurrentIndex(currentIndex - 1);
       setQuestionStartTime(Date.now());
     }
@@ -66,9 +79,16 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    // Build answers array with timing
+    // Record time for the current (final) question before submitting
+    const finalElapsed = Math.floor((Date.now() - questionStartTime) / 1000);
+    const finalTimes = new Map(questionTimes);
+    if (currentQuestion) {
+      const existing = finalTimes.get(currentQuestion.id) || 0;
+      finalTimes.set(currentQuestion.id, existing + finalElapsed);
+    }
+
+    // Build answers array with individual question timing
     const answerArray: QuestionAnswer[] = [];
-    const now = Date.now();
 
     for (const question of questions) {
       const answer = answers.get(question.id);
@@ -76,7 +96,7 @@ export default function AssessmentPage({ params, searchParams }: AssessmentPageP
         answerArray.push({
           questionId: question.id,
           selectedAnswer: answer,
-          timeSeconds: Math.floor((now - startTime) / 1000 / questions.length), // Average time per question
+          timeSeconds: finalTimes.get(question.id) || 0,
         });
       }
     }
