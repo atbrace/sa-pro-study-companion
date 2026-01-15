@@ -24,66 +24,34 @@ By completing this lab, you will:
 
 This lab creates the following architecture:
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         RDS VPC (10.2.0.0/16)                        │
-│                                                                       │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │                   Availability Zone 1                          │  │
-│  │                                                                 │  │
-│  │  ┌─────────────────────────────────────┐                       │  │
-│  │  │    Primary RDS Instance             │                       │  │
-│  │  │    db.t3.micro (PostgreSQL 15.4)    │                       │  │
-│  │  │    - Multi-AZ: Enabled              │<───────┐              │  │
-│  │  │    - Storage: 20GB gp3              │        │              │  │
-│  │  │    - Encrypted: Yes                 │        │              │  │
-│  │  │    - Performance Insights: Enabled  │        │              │  │
-│  │  └─────────────────────────────────────┘        │              │  │
-│  │                                                  │              │  │
-│  └─────────────────────────────────────────────────┼──────────────┘  │
-│                                                     │                 │
-│                                           Synchronous Replication    │
-│                                                     │                 │
-│  ┌─────────────────────────────────────────────────┼──────────────┐  │
-│  │                   Availability Zone 2           │              │  │
-│  │                                                  │              │  │
-│  │  ┌─────────────────────────────────────┐        │              │  │
-│  │  │    Standby RDS Instance             │<───────┘              │  │
-│  │  │    (Automatic Failover Target)      │                       │  │
-│  │  │    - Same specs as primary          │                       │  │
-│  │  │    - Not accessible for reads       │                       │  │
-│  │  │    - Auto-promoted on failure       │                       │  │
-│  │  └─────────────────────────────────────┘                       │  │
-│  │                                                                 │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                   Availability Zone 3 (or other)                │  │
-│  │                                                                 │  │
-│  │  ┌─────────────────────────────────────┐                       │  │
-│  │  │    Read Replica                     │                       │  │
-│  │  │    db.t3.micro (PostgreSQL 15.4)    │                       │  │
-│  │  │    - Asynchronous replication       │<──── Async Replication │  │
-│  │  │    - Can be promoted to standalone  │                       │  │
-│  │  │    - Read-only queries              │                       │  │
-│  │  │    - Performance Insights: Enabled  │                       │  │
-│  │  └─────────────────────────────────────┘                       │  │
-│  │                                                                 │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │               Supporting Infrastructure                         │  │
-│  │                                                                 │  │
-│  │  • DB Subnet Group (PRIVATE_ISOLATED subnets)                  │  │
-│  │  • Security Group (PostgreSQL 5432 within VPC)                 │  │
-│  │  • DB Parameter Group (custom settings)                        │  │
-│  │  • Secrets Manager (database credentials)                      │  │
-│  │  • Automated Backups (7-day retention)                         │  │
-│  │  • CloudWatch Metrics & Performance Insights                   │  │
-│  │                                                                 │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph VPC["RDS VPC (10.2.0.0/16)"]
+        subgraph AZ1["Availability Zone 1"]
+            PRIMARY["Primary RDS Instance<br/>db.t3.micro PostgreSQL 15.4<br/>Multi-AZ Enabled | 20GB gp3<br/>Encrypted | Performance Insights"]
+        end
+
+        subgraph AZ2["Availability Zone 2"]
+            STANDBY["Standby RDS Instance<br/>Automatic Failover Target<br/>Same specs as primary<br/>Not accessible for reads"]
+        end
+
+        subgraph AZ3["Availability Zone 3"]
+            REPLICA["Read Replica<br/>db.t3.micro PostgreSQL 15.4<br/>Read-only queries<br/>Can be promoted to standalone"]
+        end
+
+        PRIMARY -->|Synchronous<br/>Replication| STANDBY
+        PRIMARY -.->|Asynchronous<br/>Replication| REPLICA
+
+        subgraph INFRA["Supporting Infrastructure"]
+            direction LR
+            SUBNET["DB Subnet Group"]
+            SG["Security Group<br/>Port 5432"]
+            PARAMS["Parameter Group"]
+            SECRETS["Secrets Manager"]
+            BACKUP["Automated Backups<br/>7-day retention"]
+            CW["CloudWatch &<br/>Performance Insights"]
+        end
+    end
 ```
 
 ## Prerequisites

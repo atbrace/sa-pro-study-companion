@@ -23,84 +23,36 @@ By completing this lab, you will:
 
 This lab creates the following serverless architecture:
 
-```
-                          ┌──────────────────────────────────┐
-                          │         API Client               │
-                          │    (curl/Postman/Browser)        │
-                          └──────────────┬───────────────────┘
-                                         │
-                                         │ HTTPS Requests
-                                         ↓
-                          ┌──────────────────────────────────┐
-                          │       API Gateway (REST)         │
-                          │                                   │
-                          │  Endpoints:                       │
-                          │  • POST   /items                  │
-                          │  • GET    /items                  │
-                          │  • GET    /items/{id}             │
-                          │  • PUT    /items/{id}             │
-                          │  • DELETE /items/{id}             │
-                          │                                   │
-                          │  Features:                        │
-                          │  • Throttling: 100 req/sec        │
-                          │  • Usage Plan: 10K req/day        │
-                          │  • Request Validation             │
-                          │  • CORS Enabled                   │
-                          └──────────────┬───────────────────┘
-                                         │
-                          ┌──────────────┴───────────────────┐
-                          │                                   │
-         ┌────────────────▼───┐  ┌────────────────▼─────┐   │
-         │  Lambda Functions  │  │   Lambda Functions   │   │
-         │                    │  │                      │   │
-         │ • CreateItem       │  │ • GetItems           │  ...
-         │ • GetItem          │  │ • UpdateItem         │
-         │ • DeleteItem       │  │                      │
-         │                    │  │                      │
-         │ Runtime: Node 20.x │  │ Runtime: Node 20.x   │
-         │ Memory: 256 MB     │  │ Memory: 256 MB       │
-         │ Timeout: 10s       │  │ Timeout: 10s         │
-         └────────────────┬───┘  └────────────────┬─────┘
-                          │                       │
-                          │    ┌──────────────────┘
-                          │    │
-                          │    │ Uses Shared Layer
-                          │    │
-                          ↓    ↓
-         ┌────────────────────────────────────────┐
-         │      Lambda Layer (Shared Code)        │
-         │  • validateItem()                      │
-         │  • createResponse()                    │
-         └────────────────────────────────────────┘
-                          │
-                          │ SDK Calls
-                          ↓
-         ┌────────────────────────────────────────┐
-         │         DynamoDB Table                 │
-         │         "sap-study-lab-items"          │
-         │                                         │
-         │  Partition Key: id (String)            │
-         │  Attributes:                           │
-         │  • name, description, status           │
-         │  • createdAt, updatedAt, ttl           │
-         │                                         │
-         │  GSI: status-index                     │
-         │  • Partition: status                   │
-         │  • Sort: createdAt                     │
-         │                                         │
-         │  Billing: On-Demand                    │
-         │  TTL: Enabled (30 days)                │
-         └────────────────┬───────────────────────┘
-                          │
-                          │ Logs/Metrics
-                          ↓
-         ┌────────────────────────────────────────┐
-         │          CloudWatch                    │
-         │  • Lambda execution logs               │
-         │  • API Gateway access logs             │
-         │  • X-Ray traces                        │
-         │  • Custom metrics                      │
-         └────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    CLIENT["API Client<br/>curl/Postman/Browser"] -->|HTTPS| APIGW
+
+    subgraph APIGW["API Gateway (REST)"]
+        ENDPOINTS["POST /items | GET /items<br/>GET /items/{id} | PUT /items/{id}<br/>DELETE /items/{id}"]
+        FEATURES["Throttling: 100 req/sec<br/>Usage Plan: 10K req/day<br/>Request Validation | CORS"]
+    end
+
+    APIGW --> LAMBDA
+
+    subgraph LAMBDA["Lambda Functions"]
+        direction LR
+        CREATE["CreateItem"]
+        GET["GetItem"]
+        LIST["GetItems"]
+        UPDATE["UpdateItem"]
+        DELETE["DeleteItem"]
+    end
+
+    LAMBDA --> LAYER["Lambda Layer<br/>validateItem()<br/>createResponse()"]
+    LAYER --> DDB
+
+    subgraph DDB["DynamoDB Table: sap-study-lab-items"]
+        SCHEMA["PK: id<br/>Attributes: name, description, status<br/>createdAt, updatedAt, ttl"]
+        GSI["GSI: status-index<br/>PK: status | SK: createdAt"]
+        CONFIG["On-Demand | TTL: 30 days"]
+    end
+
+    DDB --> CW["CloudWatch<br/>Lambda logs | API logs<br/>X-Ray traces | Metrics"]
 ```
 
 ## Prerequisites

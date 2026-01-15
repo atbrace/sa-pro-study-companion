@@ -21,40 +21,15 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+
-| Pipeline Start   |
-+--------+---------+
-         |
-         v
-+------------------+
-| Processing Step  |
-| (Data Prep)      |
-+--------+---------+
-         |
-         v
-+------------------+
-| Training Step    |
-| (Model Training) |
-+--------+---------+
-         |
-         v
-+------------------+
-| Evaluation Step  |
-| (Metrics Calc)   |
-+--------+---------+
-         |
-         v
-+------------------+
-| Condition Step   |
-| (Quality Gate)   |
-+--------+---------+
-    |         |
-    v         v
-+--------+ +--------+
-|Register| | Fail   |
-| Model  | | Step   |
-+--------+ +--------+
+```mermaid
+flowchart TB
+    START([Pipeline Start])
+    START --> PROC["Processing Step<br/>(Data Prep)"]
+    PROC --> TRAIN["Training Step<br/>(Model Training)"]
+    TRAIN --> EVAL["Evaluation Step<br/>(Metrics Calc)"]
+    EVAL --> COND{"Condition Step<br/>(Quality Gate)"}
+    COND -->|Pass| REGISTER["Register Model"]
+    COND -->|Fail| FAIL["Fail Step"]
 ```
 
 ## Cost Breakdown

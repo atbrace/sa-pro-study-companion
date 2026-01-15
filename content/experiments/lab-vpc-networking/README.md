@@ -23,32 +23,30 @@ By completing this lab, you will:
 
 This lab creates the following architecture:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Production VPC (10.0.0.0/16)                 │
-│                                                                  │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐      │
-│  │ Public Subnet │  │Private Subnet │  │Isolated Subnet│      │
-│  │  (Web Tier)   │  │  (App Tier)   │  │   (DB Tier)   │      │
-│  │               │  │               │  │               │      │
-│  │   Web SG      │─>│   App SG      │─>│   DB SG       │      │
-│  │ (HTTP/HTTPS)  │  │  (Port 8080)  │  │ (PostgreSQL)  │      │
-│  └───────────────┘  └───────────────┘  └───────────────┘      │
-│         │                                                        │
-│         │ Internet Gateway                                      │
-│         ↓                                                        │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │
-                           │ VPC Peering
-                           │
-┌──────────────────────────┴───────────────────────────────────────┐
-│              Shared Services VPC (10.1.0.0/16)                   │
-│                                                                   │
-│  ┌───────────────┐  ┌───────────────┐                           │
-│  │ Public Subnet │  │Private Subnet │                           │
-│  │               │  │               │                           │
-│  └───────────────┘  └───────────────┘                           │
-└───────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph PROD["Production VPC (10.0.0.0/16)"]
+        subgraph PUB["Public Subnet - Web Tier"]
+            WEB["Web SG<br/>HTTP/HTTPS"]
+        end
+        subgraph PRIV["Private Subnet - App Tier"]
+            APP["App SG<br/>Port 8080"]
+        end
+        subgraph ISO["Isolated Subnet - DB Tier"]
+            DB["DB SG<br/>PostgreSQL"]
+        end
+        WEB --> APP --> DB
+    end
+
+    INET((Internet)) --> IGW[Internet Gateway]
+    IGW --> WEB
+
+    subgraph SHARED["Shared Services VPC (10.1.0.0/16)"]
+        SHARED_PUB["Public Subnet"]
+        SHARED_PRIV["Private Subnet"]
+    end
+
+    PROD <-->|VPC Peering| SHARED
 ```
 
 ## Prerequisites

@@ -21,33 +21,21 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+
-|   Input Data     |
-|   (CSV/Parquet)  |
-+--------+---------+
-         |
-         v
-+------------------+
-|    Autopilot     |
-|  +-----------+   |
-|  | Analyze   |   |
-|  +-----------+   |
-|  | Transform |   |
-|  +-----------+   |
-|  | Tune      |   |
-|  +-----------+   |
-|  | Select    |   |
-|  +-----------+   |
-+--------+---------+
-         |
-    +----+----+
-    |         |
-    v         v
-+--------+ +--------+
-| Best   | | Generated|
-| Model  | | Notebooks|
-+--------+ +--------+
+```mermaid
+flowchart TB
+    INPUT["Input Data<br/>(CSV/Parquet)"]
+
+    INPUT --> AP
+
+    subgraph AP["Autopilot"]
+        ANALYZE["Analyze"]
+        TRANSFORM["Transform"]
+        TUNE["Tune"]
+        SELECT["Select"]
+    end
+
+    AP --> MODEL["Best Model"]
+    AP --> NOTEBOOKS["Generated Notebooks"]
 ```
 
 ## Prerequisites

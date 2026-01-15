@@ -21,29 +21,19 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-          +------------------+
-          |   API Gateway    |
-          | (or Direct SDK)  |
-          +--------+---------+
-                   |
-                   v
-          +------------------+
-          | SageMaker        |
-          | Endpoint         |
-          +------------------+
-          | +------+ +------+|
-          | |Var A | |Var B ||
-          | | 70%  | | 30%  ||
-          | +------+ +------+|
-          +--------+---------+
-                   |
-          +--------+---------+
-          |                  |
-          v                  v
-   +------------+    +------------+
-   | Model v1   |    | Model v2   |
-   +------------+    +------------+
+```mermaid
+flowchart TB
+    API["API Gateway<br/>(or Direct SDK)"]
+
+    API --> EP
+
+    subgraph EP["SageMaker Endpoint"]
+        VARA["Variant A<br/>70% traffic"]
+        VARB["Variant B<br/>30% traffic"]
+    end
+
+    VARA --> V1["Model v1"]
+    VARB --> V2["Model v2"]
 ```
 
 ## Cost Breakdown

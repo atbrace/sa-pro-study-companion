@@ -23,48 +23,22 @@ By completing this lab, you will:
 
 This lab creates the following architecture:
 
-```
-                           ┌─────────────────────────────────────┐
-                           │         CloudFront Edge             │
-                           │      (Global Distribution)          │
-                           │                                     │
-    Users ──HTTPS──>       │  ┌──────────────────────────────┐  │
-    (Global)               │  │   Cache Behaviors:            │  │
-                           │  │   • /         → 24h TTL       │  │
-                           │  │   • /images/* → 30d TTL       │  │
-                           │  │   • /api/*    → No cache      │  │
-                           │  └──────────────────────────────┘  │
-                           │                                     │
-                           │  Custom Error Responses:            │
-                           │   • 404 → /error.html               │
-                           │   • 403 → /error.html               │
-                           │   • 500 → /error.html               │
-                           └─────────────────┬───────────────────┘
-                                             │
-                                             │ Origin Access Control (OAC)
-                                             │ (Signed requests only)
-                                             ↓
-                           ┌─────────────────────────────────────┐
-                           │        S3 Bucket (Origin)           │
-                           │                                     │
-                           │  ┌──────────────────────────────┐  │
-                           │  │  Static Website Content:      │  │
-                           │  │  • index.html                 │  │
-                           │  │  • error.html                 │  │
-                           │  │  • test.html                  │  │
-                           │  │  • /images/* (if added)       │  │
-                           │  └──────────────────────────────┘  │
-                           │                                     │
-                           │  Security:                          │
-                           │  • Block all public access          │
-                           │  • CloudFront-only access via OAC   │
-                           │  • Versioning enabled               │
-                           │  • Encryption at rest               │
-                           │                                     │
-                           │  Logging:                           │
-                           │  • Server access logs               │
-                           │  • CloudFront access logs           │
-                           └─────────────────────────────────────┘
+```mermaid
+flowchart TB
+    USERS((Users<br/>Global)) -->|HTTPS| CF
+
+    subgraph CF["CloudFront Edge (Global Distribution)"]
+        CACHE["Cache Behaviors:<br/>/ → 24h TTL<br/>/images/* → 30d TTL<br/>/api/* → No cache"]
+        ERRORS["Custom Error Responses:<br/>404, 403, 500 → /error.html"]
+    end
+
+    CF -->|Origin Access Control<br/>Signed requests only| S3
+
+    subgraph S3["S3 Bucket (Origin)"]
+        CONTENT["Static Website Content:<br/>index.html | error.html<br/>test.html | /images/*"]
+        SECURITY["Security:<br/>Block public access<br/>CloudFront-only via OAC<br/>Versioning | Encrypted"]
+        LOGS["Logging:<br/>Server access logs<br/>CloudFront access logs"]
+    end
 ```
 
 ## Prerequisites

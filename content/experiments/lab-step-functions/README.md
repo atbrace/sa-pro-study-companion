@@ -23,68 +23,41 @@ By completing this lab, you will:
 
 This lab creates the following workflow architecture:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Step Functions State Machine                     │
-│                                                                      │
-│  ┌──────────────┐        ┌─────────────┐                           │
-│  │   Validate   │───────>│  Is Valid?  │                           │
-│  │    Input     │        │   (Choice)  │                           │
-│  │   (Lambda)   │        └─────┬───┬───┘                           │
-│  └──────────────┘              │   │                               │
-│                          Valid │   │ Invalid                        │
-│                         ┌──────┘   └──────┐                        │
-│                         │                  │                        │
-│              ┌──────────▼──────────┐   ┌──▼──────────┐            │
-│              │  Parallel Processing │   │   Send      │            │
-│              │                      │   │  Failure    │            │
-│              │  ┌────────────────┐ │   │ Notification│            │
-│              │  │ Check Inventory│ │   └─────────────┘            │
-│              │  │    (Lambda)    │ │                               │
-│              │  └────────────────┘ │                               │
-│              │                      │                               │
-│              │  ┌────────────────┐ │                               │
-│              │  │   Calculate    │ │                               │
-│              │  │    Shipping    │ │                               │
-│              │  │    (Lambda)    │ │                               │
-│              │  └────────────────┘ │                               │
-│              └──────────┬───────────┘                               │
-│                         │                                           │
-│                  ┌──────▼──────┐                                   │
-│                  │    Merge    │                                   │
-│                  │   Results   │                                   │
-│                  └──────┬──────┘                                   │
-│                         │                                           │
-│                  ┌──────▼──────┐                                   │
-│                  │ Is In Stock?│                                   │
-│                  │   (Choice)  │                                   │
-│                  └──┬───────┬──┘                                   │
-│              Yes   │       │  No                                    │
-│          ┌─────────┘       └────────┐                             │
-│          │                           │                              │
-│   ┌──────▼───────┐          ┌───────▼────────┐                   │
-│   │   Process    │          │  Send Failure  │                   │
-│   │    Order     │          │  Notification  │                   │
-│   │  (Lambda)    │          └────────────────┘                   │
-│   └──────┬───────┘                                                 │
-│          │                                                          │
-│   ┌──────▼───────┐                                                 │
-│   │Send Success  │                                                 │
-│   │ Notification │                                                 │
-│   │  (Lambda)    │                                                 │
-│   └──────┬───────┘                                                 │
-│          │                                                          │
-│   ┌──────▼───────┐                                                 │
-│   │   Success    │                                                 │
-│   └──────────────┘                                                 │
-└─────────────────────────────────────────────────────────────────────┘
-           │                    │                    │
-           ▼                    ▼                    ▼
-    ┌──────────┐         ┌──────────┐        ┌──────────┐
-    │ Lambda   │────────>│ DynamoDB │        │   SNS    │
-    │Functions │         │  Table   │        │  Topic   │
-    │  (5)     │         │ (State)  │        │(Notify)  │
-    └──────────┘         └──────────┘        └──────────┘
+```mermaid
+flowchart TB
+    subgraph SF["Step Functions State Machine"]
+        VALIDATE["Validate Input<br/>(Lambda)"]
+        VALID{"Is Valid?<br/>(Choice)"}
+
+        VALIDATE --> VALID
+
+        VALID -->|Valid| PARALLEL
+        VALID -->|Invalid| FAIL1["Send Failure<br/>Notification"]
+
+        subgraph PARALLEL["Parallel Processing"]
+            INV["Check Inventory<br/>(Lambda)"]
+            SHIP["Calculate Shipping<br/>(Lambda)"]
+        end
+
+        PARALLEL --> MERGE["Merge Results"]
+        MERGE --> STOCK{"Is In Stock?<br/>(Choice)"}
+
+        STOCK -->|Yes| PROCESS["Process Order<br/>(Lambda)"]
+        STOCK -->|No| FAIL2["Send Failure<br/>Notification"]
+
+        PROCESS --> NOTIFY["Send Success<br/>Notification<br/>(Lambda)"]
+        NOTIFY --> SUCCESS([Success])
+    end
+
+    subgraph SERVICES["AWS Services"]
+        LAMBDA["Lambda Functions<br/>(5 total)"]
+        DDB[(DynamoDB<br/>State Table)]
+        SNS["SNS Topic<br/>Notifications"]
+    end
+
+    SF --> LAMBDA
+    LAMBDA --> DDB
+    LAMBDA --> SNS
 ```
 
 ## Prerequisites

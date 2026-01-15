@@ -23,51 +23,39 @@ By completing this lab, you will:
 
 This lab creates the following architecture:
 
+```mermaid
+flowchart TB
+    INET((Internet)) --> ALB
+
+    subgraph VPC["VPC (10.0.0.0/16)"]
+        subgraph PUBLIC["Public Subnets (2 AZs)"]
+            ALB["Application Load Balancer"]
+            NAT["NAT Gateway"]
+        end
+
+        ALB --> TASK1 & TASK2
+
+        subgraph PRIVATE["Private Subnets (2 AZs)"]
+            subgraph AZ1["AZ-1"]
+                TASK1["Fargate Task<br/>nginx"]
+            end
+            subgraph AZ2["AZ-2"]
+                TASK2["Fargate Task<br/>nginx"]
+            end
+        end
+
+        TASK1 & TASK2 --> CW["CloudWatch Logs<br/>/ecs/nginx-service"]
+    end
+
+    subgraph SCALING["Auto-scaling (2-6 tasks)"]
+        direction LR
+        CPU["CPU > 70%"]
+        MEM["Memory > 80%"]
+        REQ["Requests > 1000/target"]
+    end
 ```
-                             Internet
-                                │
-                                │
-                                ▼
-                    ┌───────────────────────┐
-                    │  Application Load     │
-                    │     Balancer (ALB)    │
-                    │   (Public Subnets)    │
-                    └───────────┬───────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                    ▼                       ▼
-            ┌───────────────┐      ┌───────────────┐
-            │  Fargate Task │      │  Fargate Task │
-            │   (nginx)     │      │   (nginx)     │
-            │  AZ-1         │      │  AZ-2         │
-            │ Private Subnet│      │ Private Subnet│
-            └───────────────┘      └───────────────┘
-                    │                       │
-                    └───────────┬───────────┘
-                                │
-                                ▼
-                    ┌───────────────────────┐
-                    │   CloudWatch Logs     │
-                    │   /ecs/nginx-service  │
-                    └───────────────────────┘
 
-VPC: 10.0.0.0/16
-├── Public Subnets (2 AZs)
-│   └── ALB + NAT Gateway
-└── Private Subnets (2 AZs)
-    └── ECS Fargate Tasks (2-6 tasks with auto-scaling)
-
-Auto-scaling triggers:
-- CPU utilization > 70%
-- Memory utilization > 80%
-- Request count > 1000 per target
-
-Deployment strategy:
-- Rolling updates
-- Min healthy: 50% (1 task can be stopped)
-- Max healthy: 200% (2 extra tasks during deployment)
-```
+**Deployment strategy:** Rolling updates with 50% min healthy, 200% max healthy
 
 ## Prerequisites
 

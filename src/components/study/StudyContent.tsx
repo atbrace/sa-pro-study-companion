@@ -1,7 +1,21 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import dynamic from 'next/dynamic';
 import { Separator } from '@/components/ui/separator';
 import { ClientCodeBlock } from './ClientCodeBlock';
+
+// Dynamic import with SSR disabled to avoid server-side mermaid issues
+const MermaidDiagram = dynamic(
+  () => import('./MermaidDiagram').then((mod) => mod.MermaidDiagram),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="my-6 flex justify-center items-center bg-muted/30 rounded-lg p-8">
+        <div className="text-sm text-muted-foreground">Loading diagram...</div>
+      </div>
+    ),
+  }
+);
 
 interface StudyContentProps {
   content: string;
@@ -83,6 +97,12 @@ export function StudyContent({ content }: StudyContentProps) {
             }
             const language = extractLanguage(className);
             const code = String(children).replace(/\n$/, '');
+
+            // Render mermaid diagrams
+            if (language === 'mermaid') {
+              return <MermaidDiagram code={code} />;
+            }
+
             return <ClientCodeBlock code={code} language={language} />;
           },
           pre: ({ children }: any) => {

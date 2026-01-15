@@ -21,30 +21,19 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+     +------------------+
-|  Training Data   |     |  Validation Data |
-|  (S3 train/)     |     |  (S3 validation/)|
-+--------+---------+     +--------+---------+
-         |                        |
-         +------------------------+
-                    |
-                    v
-         +-------------------+
-         |  Training Job     |
-         |  +-------------+  |
-         |  | Algorithm   |  |
-         |  | Container   |  |
-         |  +-------------+  |
-         |  | ml.m5.large |  |
-         |  +-------------+  |
-         +--------+----------+
-                  |
-                  v
-         +------------------+
-         |  Model Artifacts |
-         |  (S3 models/)    |
-         +------------------+
+```mermaid
+flowchart TB
+    TRAIN_DATA["Training Data<br/>(S3 train/)"]
+    VAL_DATA["Validation Data<br/>(S3 validation/)"]
+
+    TRAIN_DATA & VAL_DATA --> JOB
+
+    subgraph JOB["Training Job"]
+        ALGO["Algorithm Container"]
+        INST["ml.m5.large"]
+    end
+
+    JOB --> MODEL["Model Artifacts<br/>(S3 models/)"]
 ```
 
 ## Prerequisites

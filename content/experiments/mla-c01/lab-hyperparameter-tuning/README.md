@@ -21,31 +21,16 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------------+
-| Tuning Job Definition  |
-| - Objective metric     |
-| - Parameter ranges     |
-| - Resource limits      |
-+----------+-------------+
-           |
-           v
-+------------------------+
-|   Bayesian Optimizer   |
-|   (or Random/Grid)     |
-+----------+-------------+
-           |
-    +------+------+
-    |      |      |
-    v      v      v
-+-----+ +-----+ +-----+
-|Job 1| |Job 2| |Job N|
-+-----+ +-----+ +-----+
-    |      |      |
-    v      v      v
-+------------------------+
-|   Best Model Selected  |
-+------------------------+
+```mermaid
+flowchart TB
+    CONFIG["Tuning Job Definition<br/>Objective metric | Parameter ranges<br/>Resource limits"]
+    CONFIG --> OPT["Bayesian Optimizer<br/>(or Random/Grid)"]
+
+    OPT --> JOB1["Job 1"]
+    OPT --> JOB2["Job 2"]
+    OPT --> JOBN["Job N"]
+
+    JOB1 & JOB2 & JOBN --> BEST["Best Model Selected"]
 ```
 
 ## Cost Breakdown

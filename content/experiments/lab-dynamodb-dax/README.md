@@ -23,54 +23,35 @@ By completing this lab, you will:
 
 This lab creates the following architecture:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Application Layer                        │
-│                      (EC2 or Lambda - not deployed)             │
-│                                                                  │
-│                    DAX Client SDK (Python/Node.js/Java)         │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           │ Port 8111
-                           ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      VPC (10.2.0.0/16)                          │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              DAX Cluster (2 nodes)                       │  │
-│  │                                                            │  │
-│  │  ┌──────────────┐            ┌──────────────┐            │  │
-│  │  │ DAX Primary  │            │ DAX Replica  │            │  │
-│  │  │ (t3.small)   │◄──────────►│ (t3.small)   │            │  │
-│  │  │  AZ-1        │ Replication│  AZ-2        │            │  │
-│  │  └──────┬───────┘            └──────┬───────┘            │  │
-│  │         │                           │                     │  │
-│  │         │         Cache Misses      │                     │  │
-│  │         └───────────┬───────────────┘                     │  │
-│  │                     │                                      │  │
-│  │            Private Subnets (2 AZs)                        │  │
-│  │                   Security Group                          │  │
-│  └─────────────────────┼────────────────────────────────────┘  │
-│                        │                                        │
-└────────────────────────┼────────────────────────────────────────┘
-                         │
-                         │ AWS PrivateLink
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    DynamoDB Service                             │
-│                                                                  │
-│  Table: sap-study-orders                                        │
-│  ├─ Partition Key: customerId                                   │
-│  ├─ Sort Key: orderId                                           │
-│  ├─ GSI: OrderStatusIndex (orderStatus, orderTimestamp)         │
-│  ├─ LSI: ProductCategoryIndex (customerId, productCategory)     │
-│  ├─ TTL: expirationTime                                         │
-│  ├─ Point-in-time Recovery: Enabled                             │
-│  └─ DynamoDB Streams: Enabled                                   │
-│                                                                  │
-│  Billing: On-Demand (Pay per request)                           │
-│  Encryption: AWS Managed (SSE)                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph APP["Application Layer"]
+        CLIENT["DAX Client SDK<br/>Python/Node.js/Java"]
+    end
+
+    CLIENT -->|Port 8111| DAX
+
+    subgraph VPC["VPC (10.2.0.0/16)"]
+        subgraph DAXCLUSTER["DAX Cluster - Private Subnets"]
+            subgraph AZ1["AZ-1"]
+                PRIMARY["DAX Primary<br/>t3.small"]
+            end
+            subgraph AZ2["AZ-2"]
+                REPLICA["DAX Replica<br/>t3.small"]
+            end
+            PRIMARY <-->|Replication| REPLICA
+        end
+        DAX["Security Group"]
+    end
+
+    DAXCLUSTER -->|AWS PrivateLink<br/>Cache Misses| DDB
+
+    subgraph DDB["DynamoDB Service"]
+        TABLE["Table: sap-study-orders<br/>PK: customerId | SK: orderId"]
+        GSI["GSI: OrderStatusIndex"]
+        LSI["LSI: ProductCategoryIndex"]
+        FEATURES["TTL | PITR | Streams<br/>On-Demand | Encrypted"]
+    end
 ```
 
 ## Prerequisites

@@ -21,34 +21,17 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+
-|   Training Data  |
-+--------+---------+
-         |
-    +----+----+
-    |         |
-    v         v
-+--------+ +--------+
-| Pre-   | | Model  |
-|training| | (for   |
-| Bias   | | Post-  |
-| Check  | | training)|
-+--------+ +--------+
-    |         |
-    v         v
-+--------+ +--------+
-| Data   | | Post-  |
-| Bias   | |training|
-| Report | | Bias   |
-+--------+ +--------+
-              |
-              v
-         +--------+
-         | Explain|
-         | ability|
-         | Report |
-         +--------+
+```mermaid
+flowchart TB
+    DATA["Training Data"]
+
+    DATA --> PRE["Pre-training<br/>Bias Check"]
+    DATA --> MODEL["Model<br/>(for Post-training)"]
+
+    PRE --> PRE_RPT["Data Bias<br/>Report"]
+    MODEL --> POST["Post-training<br/>Bias Check"]
+    POST --> POST_RPT["Post-training<br/>Bias Report"]
+    POST_RPT --> EXPLAIN["Explainability<br/>Report"]
 ```
 
 ## Cost Breakdown

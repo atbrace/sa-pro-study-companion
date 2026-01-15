@@ -21,32 +21,18 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+     +------------------+
-|   Endpoint       |     |  Ground Truth    |
-| (with Data       |     |  (Labels)        |
-|  Capture)        |     |                  |
-+--------+---------+     +--------+---------+
-         |                        |
-         v                        v
-+------------------+     +------------------+
-| Data Quality     |     | Model Quality    |
-| Monitor          |     | Monitor          |
-+--------+---------+     +--------+---------+
-         |                        |
-         v                        v
-+------------------+     +------------------+
-| Violation        |     | Accuracy Drift   |
-| Reports (S3)     |     | Reports (S3)     |
-+--------+---------+     +--------+---------+
-         |                        |
-         +------------------------+
-                    |
-                    v
-         +------------------+
-         | CloudWatch Alarms|
-         | SNS Notifications|
-         +------------------+
+```mermaid
+flowchart TB
+    EP["Endpoint<br/>(with Data Capture)"]
+    GT["Ground Truth<br/>(Labels)"]
+
+    EP --> DQ["Data Quality<br/>Monitor"]
+    GT --> MQ["Model Quality<br/>Monitor"]
+
+    DQ --> DQ_RPT["Violation Reports<br/>(S3)"]
+    MQ --> MQ_RPT["Accuracy Drift<br/>Reports (S3)"]
+
+    DQ_RPT & MQ_RPT --> ALERTS["CloudWatch Alarms<br/>SNS Notifications"]
 ```
 
 ## Cost Breakdown

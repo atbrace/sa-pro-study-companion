@@ -21,41 +21,14 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+
-|   Raw Data Zone  |
-|   (S3 raw/)      |
-+--------+---------+
-         |
-         v
-+------------------+
-|   Glue Crawler   |
-| (Schema Discovery)|
-+--------+---------+
-         |
-         v
-+------------------+
-|  Data Catalog    |
-| (Metadata Store) |
-+--------+---------+
-         |
-         v
-+------------------+
-|    ETL Job       |
-| (PySpark on EMR) |
-+--------+---------+
-         |
-         v
-+------------------+
-| Processed Zone   |
-| (S3 processed/)  |
-+--------+---------+
-         |
-         v
-+------------------+
-|  Athena/SageMaker|
-| (Query/Training) |
-+------------------+
+```mermaid
+flowchart TB
+    RAW["Raw Data Zone<br/>(S3 raw/)"]
+    RAW --> CRAWLER["Glue Crawler<br/>(Schema Discovery)"]
+    CRAWLER --> CATALOG["Data Catalog<br/>(Metadata Store)"]
+    CATALOG --> ETL["ETL Job<br/>(PySpark)"]
+    ETL --> PROCESSED["Processed Zone<br/>(S3 processed/)"]
+    PROCESSED --> QUERY["Athena/SageMaker<br/>(Query/Training)"]
 ```
 
 ## Prerequisites

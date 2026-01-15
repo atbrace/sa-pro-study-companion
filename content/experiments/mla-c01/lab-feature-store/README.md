@@ -21,35 +21,19 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+---------------------------+
-|    Feature Ingestion      |
-| (Training/Streaming Data) |
-+-------------+-------------+
-              |
-              v
-+---------------------------+
-|      Feature Group        |
-|  +---------------------+  |
-|  | Feature Definitions |  |
-|  | - customer_id       |  |
-|  | - event_time        |  |
-|  | - features...       |  |
-|  +---------------------+  |
-+-------------+-------------+
-              |
-     +--------+--------+
-     |                 |
-     v                 v
-+----------+    +------------+
-| Online   |    | Offline    |
-| Store    |    | Store      |
-| (DynamoDB)|   | (S3/Glue)  |
-+----------+    +------------+
-     |                 |
-     v                 v
-  Real-time        Training
-  Inference        Queries
+```mermaid
+flowchart TB
+    INGEST["Feature Ingestion<br/>Training/Streaming Data"] --> FG
+
+    subgraph FG["Feature Group"]
+        DEFS["Feature Definitions<br/>customer_id | event_time<br/>features..."]
+    end
+
+    FG --> ONLINE["Online Store<br/>(DynamoDB)"]
+    FG --> OFFLINE["Offline Store<br/>(S3/Glue)"]
+
+    ONLINE --> RT["Real-time<br/>Inference"]
+    OFFLINE --> TRAIN["Training<br/>Queries"]
 ```
 
 ## Prerequisites

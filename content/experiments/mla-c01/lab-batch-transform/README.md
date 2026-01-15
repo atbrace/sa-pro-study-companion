@@ -21,26 +21,18 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+------------------+
-|   Input Data     |
-|   (S3 input/)    |
-+--------+---------+
-         |
-         v
-+------------------+
-| Batch Transform  |
-| +------+ +------+|
-| |Inst 1| |Inst 2||
-| +------+ +------+|
-| (Parallel Proc.) |
-+--------+---------+
-         |
-         v
-+------------------+
-|   Output Data    |
-| (S3 output/*.out)|
-+------------------+
+```mermaid
+flowchart TB
+    INPUT["Input Data<br/>(S3 input/)"]
+
+    INPUT --> BT
+
+    subgraph BT["Batch Transform (Parallel)"]
+        I1["Instance 1"]
+        I2["Instance 2"]
+    end
+
+    BT --> OUTPUT["Output Data<br/>(S3 output/*.out)"]
 ```
 
 ## Cost Breakdown

@@ -21,22 +21,15 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+---------------------------------------------------------+
-|                    SageMaker Studio                      |
-|                                                          |
-|  +------------------+  +------------------+              |
-|  | JupyterServer    |  | KernelGateway    |              |
-|  | (IDE Interface)  |  | (Compute)        |              |
-|  +------------------+  +------------------+              |
-|                                                          |
-+---------------------------------------------------------+
-           |                    |
-           v                    v
-+-------------------+  +-------------------+
-|   S3 Bucket       |  |   VPC             |
-| (Artifacts/Data)  |  | (Private Subnets) |
-+-------------------+  +-------------------+
+```mermaid
+flowchart TB
+    subgraph STUDIO["SageMaker Studio"]
+        JUPYTER["JupyterServer<br/>(IDE Interface)"]
+        KERNEL["KernelGateway<br/>(Compute)"]
+    end
+
+    STUDIO --> S3["S3 Bucket<br/>Artifacts/Data"]
+    STUDIO --> VPC["VPC<br/>Private Subnets"]
 ```
 
 ## Prerequisites

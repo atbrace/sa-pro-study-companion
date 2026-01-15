@@ -21,26 +21,25 @@ By completing this lab, you will:
 
 ## Architecture
 
-```
-+-------------------+     +-------------------+
-|   Data Sources    |     |   Data Wrangler   |
-|   - S3            |---->|   Flow (.flow)    |
-|   - Athena        |     |   +-------------+ |
-|   - Redshift      |     |   | Transform 1 | |
-+-------------------+     |   +-------------+ |
-                          |   | Transform 2 | |
-                          |   +-------------+ |
-                          |   | Analysis    | |
-                          |   +-------------+ |
-                          +---------+---------+
-                                    |
-                    +---------------+---------------+
-                    |               |               |
-                    v               v               v
-              +-----------+  +------------+  +----------+
-              | S3 Export |  | Processing |  | Feature  |
-              |           |  | Job        |  | Store    |
-              +-----------+  +------------+  +----------+
+```mermaid
+flowchart TB
+    subgraph SOURCES["Data Sources"]
+        S3_SRC["S3"]
+        ATHENA["Athena"]
+        REDSHIFT["Redshift"]
+    end
+
+    SOURCES --> DW
+
+    subgraph DW["Data Wrangler Flow (.flow)"]
+        T1["Transform 1"]
+        T2["Transform 2"]
+        ANALYSIS["Analysis"]
+    end
+
+    DW --> S3_OUT["S3 Export"]
+    DW --> PROC["Processing Job"]
+    DW --> FS["Feature Store"]
 ```
 
 ## Prerequisites
