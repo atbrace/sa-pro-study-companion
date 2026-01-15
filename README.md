@@ -5,7 +5,7 @@ A local-first study application for AWS certification preparation. Currently sup
 ## Supported Certifications
 
 - **AWS Solutions Architect Professional (SAP-C02)** - Full support with study content, assessments, and hands-on labs
-- **AWS Machine Learning Specialty (MLA-C01)** - Study content and assessments (labs coming soon)
+- **AWS Machine Learning Specialty (MLA-C01)** - Full support with study content, assessments, and hands-on labs
 
 ## Features
 
@@ -14,7 +14,7 @@ A local-first study application for AWS certification preparation. Currently sup
 - **AI Tutor**: Context-aware tutoring powered by Claude API - ask questions about any AWS topic with section-specific help buttons
 - **Progress Tracking**: Visual dashboards showing mastery levels, weak areas, and assessment history
 - **Study Content**: Comprehensive study guides linked to official AWS docs, whitepapers, and FAQs
-- **Hands-on Labs**: CDK-based experiments to practice with real AWS resources (SAP-C02 only)
+- **Hands-on Labs**: CDK-based experiments to practice with real AWS resources
 
 ## Tech Stack
 
@@ -207,9 +207,11 @@ Visit the Progress page to see:
 
 Target 85%+ mastery across all domains before attempting the real exam.
 
-### 6. Hands-on Labs (SAP-C02 only)
+### 6. Hands-on Labs
 
-Navigate to the Labs page to deploy real AWS infrastructure:
+Navigate to the Labs page to deploy real AWS infrastructure.
+
+**SAP-C02 Labs (7 labs):**
 - **VPC Networking**: Multi-AZ VPC with peering, security groups, and routing
 - **Lambda + API Gateway**: Serverless REST API with DynamoDB backend
 - **ECS Fargate**: Containerized web application with ALB
@@ -217,6 +219,20 @@ Navigate to the Labs page to deploy real AWS infrastructure:
 - **RDS Multi-AZ**: PostgreSQL with read replicas and automated backups
 - **DynamoDB + DAX**: NoSQL database with in-memory caching
 - **Step Functions**: Serverless workflow orchestration
+
+**MLA-C01 Labs (12 labs):**
+- **SageMaker Studio**: ML development environment setup
+- **Feature Store**: Feature engineering and management
+- **Data Wrangler**: Visual data preparation
+- **Glue ETL**: Data transformation pipelines
+- **SageMaker Training**: Model training workflows
+- **Hyperparameter Tuning**: Automated optimization
+- **SageMaker Autopilot**: AutoML experiments
+- **SageMaker Endpoints**: Real-time inference deployment
+- **Batch Transform**: Batch inference processing
+- **SageMaker Pipelines**: ML workflow orchestration
+- **Model Monitor**: Production model monitoring
+- **SageMaker Clarify**: Bias detection and explainability
 
 Each lab includes deployment commands, cost estimates, and cleanup instructions.
 
@@ -328,11 +344,10 @@ This context is passed to Claude to provide relevant, targeted responses.
 - [x] MLA-C01 Content: Study content and assessments for all 4 domains
 - [x] Progress Tracking: Mastery scores, weak area identification
 - [x] AI Tutor: Context-aware tutoring with Claude API
-- [x] Hands-on Labs: 7 CDK-based experiments (SAP-C02)
+- [x] Hands-on Labs: 7 SAP-C02 labs + 12 MLA-C01 labs
 - [x] Dark Mode: Theme switcher with system preference detection
 
 **In Progress:**
-- [ ] MLA-C01 Labs: ML-specific hands-on experiments
 - [ ] Enhanced progress visualizations
 - [ ] Spaced repetition and flashcard system
 
