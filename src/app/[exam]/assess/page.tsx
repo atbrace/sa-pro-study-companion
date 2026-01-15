@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Clock, Target, ArrowRight } from "lucide-react";
-import { getAllDomains } from "@/lib/content/loader";
+import { getAllDomains, getDomainQuestionCount } from "@/lib/content/loader";
 import { getExamById } from "@/lib/content/exam-loader";
 import { db } from "@/lib/db/client";
 import { getDomainBorderColor } from "@/lib/utils/domain-colors";
@@ -96,7 +96,7 @@ export default async function AssessPage({ params }: PageProps) {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             {domains.map((domain) => {
-              const questionCount = domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
+              const questionCount = getDomainQuestionCount(domain);
 
               return (
                 <div

@@ -79,33 +79,17 @@ export function useSidebarState(pathname: string) {
     }
   }, [pathname]);
 
-  // Persist to localStorage
+  // Persist all state to localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !hasHydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY_STUDY, JSON.stringify(isStudyExpanded));
-    } catch {
-      // Fail silently if localStorage is unavailable (e.g., private browsing)
-    }
-  }, [isStudyExpanded]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
       localStorage.setItem(STORAGE_KEY_DOMAINS, JSON.stringify([...expandedDomains]));
-    } catch {
-      // Fail silently if localStorage is unavailable (e.g., private browsing)
-    }
-  }, [expandedDomains]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
       localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify([...expandedTopics]));
     } catch {
-      // Fail silently if localStorage is unavailable (e.g., private browsing)
+      // Fail silently if localStorage is unavailable
     }
-  }, [expandedTopics]);
+  }, [isStudyExpanded, expandedDomains, expandedTopics, hasHydrated]);
 
   // Toggle functions
   const toggleStudy = () => setIsStudyExpanded(prev => !prev);

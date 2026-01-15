@@ -3,22 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Target, Sparkles, BookOpen } from "lucide-react";
 import { getExamById } from "@/lib/content/exam-loader";
+import { getMasteryStatus, getMasteryColorClass } from "@/lib/utils/mastery";
 import type { DomainProgress, OverallProgress } from "@/lib/progress/calculator";
 
 interface DashboardHeroProps {
   overall: OverallProgress;
   domains: DomainProgress[];
   examId: string;
-}
-
-/**
- * Get mastery status label based on score
- */
-function getMasteryStatus(score: number): { label: string; variant: "default" | "secondary" | "destructive" | "outline" } {
-  if (score >= 85) return { label: "Exam Ready", variant: "default" };
-  if (score >= 60) return { label: "Developing", variant: "secondary" };
-  if (score > 0) return { label: "Building Foundation", variant: "outline" };
-  return { label: "Not Started", variant: "outline" };
 }
 
 /**
@@ -79,16 +70,6 @@ function getCTA(examId: string, overall: OverallProgress, domains: DomainProgres
     href: `/${examId}/assess`,
     icon: <ArrowRight className="h-5 w-5" />,
   };
-}
-
-/**
- * Get mastery score color class
- */
-function getMasteryColorClass(score: number): string {
-  if (score >= 85) return "text-green-600";
-  if (score >= 60) return "text-amber-600";
-  if (score > 0) return "text-red-600";
-  return "text-muted-foreground";
 }
 
 export function DashboardHero({ overall, domains, examId }: DashboardHeroProps) {

@@ -203,6 +203,13 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
+ * Get total question count for a domain
+ */
+export function getDomainQuestionCount(domain: Domain): number {
+  return domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
+}
+
+/**
  * Get content statistics for an exam
  */
 export function getContentStats(examId: string) {
@@ -211,15 +218,12 @@ export function getContentStats(examId: string) {
   return {
     totalDomains: domains.length,
     totalTopics: domains.reduce((sum, d) => sum + d.topics.length, 0),
-    totalQuestions: domains.reduce(
-      (sum, d) => sum + d.topics.reduce((s, t) => s + t.questions.length, 0),
-      0
-    ),
+    totalQuestions: domains.reduce((sum, d) => sum + getDomainQuestionCount(d), 0),
     domains: domains.map(d => ({
       id: d.meta.id,
       name: d.meta.name,
       topics: d.topics.length,
-      questions: d.topics.reduce((s, t) => s + t.questions.length, 0),
+      questions: getDomainQuestionCount(d),
     })),
   };
 }

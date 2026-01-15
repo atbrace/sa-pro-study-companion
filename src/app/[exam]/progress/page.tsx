@@ -7,6 +7,7 @@ import { WeakAreasList } from "@/components/progress/WeakAreasList";
 import { StudyStreak } from "@/components/progress/StudyStreak";
 import { getProgressSummary } from "@/lib/progress/calculator";
 import { getExamById } from "@/lib/content/exam-loader";
+import { formatStudyTime } from "@/lib/utils/mastery";
 
 interface PageProps {
   params: Promise<{ exam: string }>;
@@ -18,15 +19,6 @@ export default async function ProgressPage({ params }: PageProps) {
   const examConfig = getExamById(examId);
   const examName = examConfig?.shortName || examId.toUpperCase();
   const masteryThreshold = examConfig?.masteryThreshold || 85;
-
-  const formatStudyTime = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
 
   const getReadinessBadge = () => {
     const { confidence, score } = progress.readinessEstimate;

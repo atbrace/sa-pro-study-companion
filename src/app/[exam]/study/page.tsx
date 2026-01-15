@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowRight } from "lucide-react";
-import { getAllDomains } from "@/lib/content/loader";
+import { getAllDomains, getDomainQuestionCount } from "@/lib/content/loader";
 import { getExamById } from "@/lib/content/exam-loader";
 import { getDomainBorderColor } from "@/lib/utils/domain-colors";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export default async function StudyPage({ params }: PageProps) {
 
       <div className="grid gap-6 md:grid-cols-2">
         {domains.map((domain) => {
-          const questionCount = domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
+          const questionCount = getDomainQuestionCount(domain);
 
           return (
             <Card key={domain.meta.id} className={cn("border-l-4", getDomainBorderColor(domain.meta.color))}>

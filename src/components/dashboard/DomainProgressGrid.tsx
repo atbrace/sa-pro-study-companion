@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { getDomainBorderColor } from "@/lib/utils/domain-colors";
+import { getMasteryLabel } from "@/lib/utils/mastery";
 import { getAllDomains } from "@/lib/content/loader";
 import { getExamById } from "@/lib/content/exam-loader";
 import { PlayCircle } from "lucide-react";
@@ -20,16 +21,6 @@ function getDomainColor(examId: string, domainId: string): string {
   const domains = getAllDomains(examId);
   const domain = domains.find(d => d.meta.id === domainId);
   return domain?.meta.color || "blue";
-}
-
-/**
- * Get mastery label based on score
- */
-function getMasteryLabel(score: number): string {
-  if (score >= 85) return "Mastered";
-  if (score >= 60) return "Developing";
-  if (score > 0) return "In Progress";
-  return "Not Started";
 }
 
 export function DomainProgressGrid({ domains, isNewUser = false, examId }: DomainProgressGridProps) {

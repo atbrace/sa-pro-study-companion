@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BookOpen, Clock, Target, ArrowRight, ExternalLink } from "lucide-react";
-import { getDomainById } from "@/lib/content/loader";
+import { getDomainById, getDomainQuestionCount } from "@/lib/content/loader";
 import { StudyContent } from "@/components/study/StudyContent";
 
 interface PageProps {
@@ -20,7 +20,7 @@ export default async function DomainPage({ params }: PageProps) {
     notFound();
   }
 
-  const totalQuestions = domain.topics.reduce((sum, t) => sum + t.questions.length, 0);
+  const totalQuestions = getDomainQuestionCount(domain);
   const totalStudyTime = domain.topics.reduce((sum, t) => sum + (t.meta.estimatedStudyTime || 0), 0);
 
   return (
