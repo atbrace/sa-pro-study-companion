@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db/client";
 import { getAllDomains, getTopicById } from "@/lib/content/loader";
 
@@ -100,8 +101,9 @@ export function calculateOverallMastery(examId: string): number {
 
 /**
  * Get domain progress details
+ * Cached per-request to avoid duplicate DB queries
  */
-export function getDomainProgress(examId: string, domainId: string): DomainProgress | null {
+export const getDomainProgress = cache((examId: string, domainId: string): DomainProgress | null => {
   const domains = getAllDomains(examId);
   const domain = domains.find(d => d.meta.id === domainId);
 
@@ -153,12 +155,13 @@ export function getDomainProgress(examId: string, domainId: string): DomainProgr
     questionsAttempted: questionStats.attempted || 0,
     questionsCorrect: questionStats.correct || 0,
   };
-}
+});
 
 /**
  * Get overall progress statistics
+ * Cached per-request to avoid duplicate DB queries
  */
-export function getOverallProgress(examId: string): OverallProgress {
+export const getOverallProgress = cache((examId: string): OverallProgress => {
   const questionStats = db.prepare(`
     SELECT
       COUNT(*) as attempted,
@@ -183,12 +186,13 @@ export function getOverallProgress(examId: string): OverallProgress {
     studyTimeMinutes: Math.round((studyTime.total_seconds || 0) / 60),
     experimentsCompleted,
   };
-}
+});
 
 /**
  * Get recent activity
+ * Cached per-request to avoid duplicate DB queries
  */
-export function getRecentActivity(examId: string, limit: number = 10): RecentActivity[] {
+export const getRecentActivity = cache((examId: string, limit: number = 10): RecentActivity[] => {
   const activities: RecentActivity[] = [];
 
   // Get recent assessments
@@ -253,12 +257,13 @@ export function getRecentActivity(examId: string, limit: number = 10): RecentAct
   return activities
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, limit);
-}
+});
 
 /**
  * Calculate exam readiness estimate
+ * Cached per-request to avoid duplicate DB queries
  */
-export function getReadinessEstimate(examId: string): ReadinessEstimate {
+export const getReadinessEstimate = cache((examId: string): ReadinessEstimate => {
   const overall = getOverallProgress(examId);
   const domains = getAllDomains(examId);
 
@@ -302,7 +307,7 @@ export function getReadinessEstimate(examId: string): ReadinessEstimate {
     confidence,
     recommendation,
   };
-}
+});
 
 /**
  * Batch fetch all domain progress data in optimized queries (reduces N+1)
@@ -397,12 +402,13 @@ function getAllDomainProgressBatch(examId: string): DomainProgress[] {
 /**
  * Get complete progress summary
  * Uses batch queries to avoid N+1 pattern
+ * Cached per-request to deduplicate calls across components
  */
-export function getProgressSummary(examId: string): ProgressSummary {
+export const getProgressSummary = cache((examId: string): ProgressSummary => {
   return {
     overall: getOverallProgress(examId),
     domains: getAllDomainProgressBatch(examId),
     recentActivity: getRecentActivity(examId, 10),
     readinessEstimate: getReadinessEstimate(examId),
   };
-}
+});

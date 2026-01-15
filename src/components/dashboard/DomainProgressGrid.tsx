@@ -14,18 +14,15 @@ interface DomainProgressGridProps {
   examId: string;
 }
 
-/**
- * Get domain color from content loader
- */
-function getDomainColor(examId: string, domainId: string): string {
-  const domains = getAllDomains(examId);
-  const domain = domains.find(d => d.meta.id === domainId);
-  return domain?.meta.color || "blue";
-}
-
 export function DomainProgressGrid({ domains, isNewUser = false, examId }: DomainProgressGridProps) {
   const examConfig = getExamById(examId);
   const examName = examConfig?.shortName || examId.toUpperCase();
+
+  // Load all domain metadata once, create color lookup map (avoids N+1 pattern)
+  const allDomains = getAllDomains(examId);
+  const domainColorMap = new Map<string, string>(
+    allDomains.map(d => [d.meta.id, d.meta.color || "blue"])
+  );
 
   return (
     <div className="space-y-4">
@@ -41,7 +38,7 @@ export function DomainProgressGrid({ domains, isNewUser = false, examId }: Domai
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {domains.map(domain => {
-          const color = getDomainColor(examId, domain.domainId);
+          const color = domainColorMap.get(domain.domainId) || "blue";
           const borderClass = getDomainBorderColor(color);
           const masteryLabel = getMasteryLabel(domain.masteryScore);
 

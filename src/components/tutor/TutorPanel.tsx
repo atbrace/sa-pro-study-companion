@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,39 @@ import remarkGfm from 'remark-gfm';
 import type { TutorContext } from '@/lib/claude/prompts';
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
 }
+
+// Generate unique message ID
+let messageCounter = 0;
+function generateMessageId(): string {
+  return `msg-${Date.now()}-${++messageCounter}`;
+}
+
+// Memoized message component to prevent re-renders when new messages arrive
+const MessageItem = memo(function MessageItem({ message }: { message: Message }) {
+  return (
+    <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`max-w-[85%] rounded-lg px-4 py-2 ${
+          message.role === 'user'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted'
+        }`}
+      >
+        {message.role === 'assistant' ? (
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className="text-sm">{message.content}</p>
+        )}
+      </div>
+    </div>
+  );
+});
 
 interface TutorPanelProps {
   open: boolean;
@@ -42,7 +72,7 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim()) return;
 
-    const userMessage: Message = { role: 'user', content: messageText };
+    const userMessage: Message = { id: generateMessageId(), role: 'user', content: messageText };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -66,6 +96,7 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
       const data = await response.json();
 
       const assistantMessage: Message = {
+        id: generateMessageId(),
         role: 'assistant',
         content: data.response,
       };
@@ -76,6 +107,7 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
     } catch (error) {
       console.error('Tutor error:', error);
       const errorMessage: Message = {
+        id: generateMessageId(),
         role: 'assistant',
         content: 'I apologize, but I encountered an error. Please try again.',
       };
@@ -139,27 +171,8 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
               </div>
             )}
 
-            {messages.map((message, idx) => (
-              <div
-                key={idx}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-lg px-4 py-2 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  {message.role === 'assistant' ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-sm">{message.content}</p>
-                  )}
-                </div>
-              </div>
+            {messages.map((message) => (
+              <MessageItem key={message.id} message={message} />
             ))}
 
             {isLoading && (
