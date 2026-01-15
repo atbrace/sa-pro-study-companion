@@ -29,7 +29,7 @@ export function QuestionSection({ topic, examId, examName, domainId, topicId }: 
             Ready to test what you've learned? These questions cover all concepts from this topic and will help you prepare for the {examName} exam.
           </p>
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href={`/${examId}/assess?domain=${domainId}&topic=${topicId}`}>
+            <Link href={`/${examId}/assess/${domainId}?topic=${topicId}`}>
               <Target className="mr-2 h-5 w-5" />
               Start Practice Quiz ({questionCount} questions)
             </Link>
