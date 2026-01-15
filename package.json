@@ -14,7 +14,9 @@
     "content:stats": "tsx scripts/content-stats.ts",
     "cdk:deploy": "cd cdk && cdk deploy",
     "cdk:destroy": "cd cdk && cdk destroy",
-    "cdk:cleanup": "tsx scripts/cleanup-aws.ts"
+    "cdk:cleanup": "tsx scripts/cleanup-aws.ts",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "vitest": "^3.2.0",
     "@types/better-sqlite3": "^7.6.11",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
