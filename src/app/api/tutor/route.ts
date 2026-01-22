@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic, CLAUDE_MODEL } from "@/lib/claude/client";
-import { buildTutorSystemPrompt, buildContextPrompt, generateSuggestedQuestions, type TutorContext } from "@/lib/claude/prompts";
-import { TUTOR_TOOLS, type TutorToolName } from "@/lib/claude/tools";
+import {
+  getProvider,
+  buildTutorSystemPrompt,
+  buildContextPrompt,
+  generateSuggestedQuestions,
+  TUTOR_TOOLS,
+  LLMError,
+  type TutorContext,
+  type TutorToolName,
+  type LLMMessage,
+  type LLMToolCall,
+  type LLMToolResult,
+} from "@/lib/llm";
 import { serializeIndexForPrompt } from "@/lib/content/index";
 import { getExamById } from "@/lib/content/exam-loader";
 import { getTutorProgressContext } from "@/lib/progress/tutor-context";
 import { db } from "@/lib/db/client";
-import type { MessageParam, ContentBlock, ToolUseBlock, ToolResultBlockParam } from "@anthropic-ai/sdk/resources/messages";
 
 // Cache navigation indices by exam (static content, doesn't change at runtime)
 const cachedNavigationIndices: Map<string, string> = new Map();
@@ -61,6 +70,27 @@ function validateTutorBody(body: unknown): { valid: true; data: TutorRequest } |
   return { valid: true, data: body as TutorRequest };
 }
 
+/**
+ * Execute a tool call and return the result
+ */
+function executeTool(toolCall: LLMToolCall, examId: string): LLMToolResult {
+  const toolName = toolCall.name as TutorToolName;
+
+  if (toolName === 'get_study_progress') {
+    const progressContext = getTutorProgressContext(examId);
+    return {
+      toolCallId: toolCall.id,
+      result: progressContext,
+    };
+  }
+
+  return {
+    toolCallId: toolCall.id,
+    result: 'Unknown tool',
+    isError: true,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.json();
@@ -103,7 +133,10 @@ export async function POST(request: NextRequest) {
           messages = JSON.parse(conversation.messages_json);
         } catch (parseError) {
           console.error('Failed to parse conversation messages:', parseError);
-          messages = []; // Reset to empty conversation on malformed JSON
+          return NextResponse.json(
+            { error: 'Conversation data corrupted. Please start a new conversation.' },
+            { status: 422 }
+          );
         }
       }
     }
@@ -124,87 +157,61 @@ export async function POST(request: NextRequest) {
       contextPrompt,
     ].filter(Boolean).join('\n\n');
 
-    // Build API messages from conversation history
-    let apiMessages: MessageParam[] = messages.map(msg => ({
+    // Convert to LLM messages
+    const llmMessages: LLMMessage[] = messages.map(msg => ({
       role: msg.role,
       content: msg.content,
     }));
 
-    // Call Claude API with tool support, looping until we get a final text response
-    let assistantMessage = '';
+    // Get provider and call API with tool support
+    const provider = getProvider();
+    const chatOptions = {
+      systemPrompt,
+      tools: TUTOR_TOOLS,
+      maxTokens: 2048,
+    };
+
+    let response = await provider.chat(llmMessages, chatOptions);
+
+    // Tool loop - continue until we get a final text response
     const maxToolIterations = 5;
     let iterations = 0;
+    let lastToolCalls: LLMToolCall[] = [];
 
-    while (iterations < maxToolIterations) {
+    while (response.type === 'tool_calls' && iterations < maxToolIterations) {
       iterations++;
+      lastToolCalls = response.calls;
 
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: apiMessages,
-        tools: TUTOR_TOOLS,
-      });
-
-      // Check if we need to handle tool use
-      if (response.stop_reason === 'tool_use') {
-        // Find tool use blocks
-        const toolUseBlocks = response.content.filter(
-          (block): block is ToolUseBlock => block.type === 'tool_use'
-        );
-
-        // Add assistant's response (including tool use) to messages
-        apiMessages.push({
-          role: 'assistant',
-          content: response.content,
-        });
-
-        // Process each tool call and build tool results
-        const toolResults: ToolResultBlockParam[] = [];
-
-        for (const toolUse of toolUseBlocks) {
-          const toolName = toolUse.name as TutorToolName;
-
-          if (toolName === 'get_study_progress') {
-            const progressContext = getTutorProgressContext(examId);
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: progressContext,
-            });
-          } else {
-            // Unknown tool
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: 'Unknown tool',
-              is_error: true,
-            });
-          }
-        }
-
-        // Add tool results to messages
-        apiMessages.push({
-          role: 'user',
-          content: toolResults,
-        });
-
-        // Continue loop to get Claude's response with tool results
-        continue;
-      }
-
-      // Got a final response (end_turn or max_tokens)
-      const textBlock = response.content.find(
-        (block): block is ContentBlock & { type: 'text' } => block.type === 'text'
+      // Execute all tool calls
+      const toolResults: LLMToolResult[] = response.calls.map(call =>
+        executeTool(call, examId)
       );
 
-      assistantMessage = textBlock?.text || 'I apologize, but I encountered an error processing your request.';
-      break;
+      // Continue with tool results
+      response = await provider.continueWithToolResults(
+        llmMessages,
+        lastToolCalls,
+        toolResults,
+        chatOptions
+      );
     }
 
-    if (!assistantMessage) {
-      assistantMessage = 'I apologize, but I was unable to complete the response.';
+    // Handle tool iteration limit reached
+    if (response.type === 'tool_calls') {
+      console.warn(
+        `Tool iteration limit (${maxToolIterations}) reached. Last tool calls:`,
+        lastToolCalls.map(tc => tc.name)
+      );
+      // Return a user-friendly message instead of exposing internal state
+      return NextResponse.json({
+        conversationId: conversationId || 'unsaved',
+        response: 'I encountered an issue while processing your request. Please try rephrasing your question or asking something simpler.',
+        suggestedQuestions: generateSuggestedQuestions(context || {}),
+        warning: 'Response generation limit reached',
+      } as TutorResponse & { warning?: string });
     }
+
+    const assistantMessage = response.content;
 
     // Add assistant response to conversation
     messages.push({
@@ -213,33 +220,45 @@ export async function POST(request: NextRequest) {
     });
 
     // Save conversation to database
-    if (!dbConversationId) {
-      const result = db.prepare(`
-        INSERT INTO tutor_conversations (
-          context_exam,
-          context_domain,
-          context_topic,
-          context_question_id,
-          context_lab_id,
-          messages_json
-        ) VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        examId,
-        context?.domainId || null,
-        context?.topicId || null,
-        context?.questionId || null,
-        context?.labId || null,
-        JSON.stringify(messages)
-      );
+    try {
+      if (!dbConversationId) {
+        const result = db.prepare(`
+          INSERT INTO tutor_conversations (
+            context_exam,
+            context_domain,
+            context_topic,
+            context_question_id,
+            context_lab_id,
+            messages_json
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          examId,
+          context?.domainId || null,
+          context?.topicId || null,
+          context?.questionId || null,
+          context?.labId || null,
+          JSON.stringify(messages)
+        );
 
-      dbConversationId = result.lastInsertRowid.toString();
-    } else {
-      db.prepare(`
-        UPDATE tutor_conversations
-        SET messages_json = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(JSON.stringify(messages), dbConversationId);
+        dbConversationId = result.lastInsertRowid.toString();
+      } else {
+        db.prepare(`
+          UPDATE tutor_conversations
+          SET messages_json = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(JSON.stringify(messages), dbConversationId);
+      }
+    } catch (dbError) {
+      console.error('Database error saving conversation:', dbError);
+      // Return the response anyway - the AI response was successful, just couldn't persist
+      // Better UX to show the response than to fail completely
+      return NextResponse.json({
+        conversationId: dbConversationId || 'unsaved',
+        response: assistantMessage,
+        suggestedQuestions: generateSuggestedQuestions(context || {}),
+        warning: 'Conversation could not be saved',
+      } as TutorResponse & { warning?: string });
     }
 
     // Generate suggested questions
@@ -252,6 +271,18 @@ export async function POST(request: NextRequest) {
     } as TutorResponse);
 
   } catch (error) {
+    if (error instanceof LLMError) {
+      console.error(`LLM error (${error.provider}):`, error.message, error.statusCode);
+      // Return generic message to client, don't expose internal details
+      const clientMessage = error.statusCode === 429
+        ? 'AI service is busy. Please try again in a moment.'
+        : 'The AI service is temporarily unavailable. Please try again.';
+      return NextResponse.json(
+        { error: clientMessage },
+        { status: error.statusCode || 503 }
+      );
+    }
+
     console.error('Tutor API error:', error);
     return NextResponse.json(
       { error: 'Failed to process tutor request' },

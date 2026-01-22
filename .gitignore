@@ -59,6 +59,9 @@ cdk.out/
 # OS
 Thumbs.db
 
+# Worktrees
+.worktrees/
+
 # Misc
 .turbo
 .vercel

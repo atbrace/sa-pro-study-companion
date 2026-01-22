@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import type { TutorContext } from '@/lib/claude/prompts';
+import type { TutorContext } from '@/lib/llm';
 
 export function useTutor() {
   const [isOpen, setIsOpen] = useState(false);

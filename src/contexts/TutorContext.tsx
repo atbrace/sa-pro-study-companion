@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { TutorContext as TutorContextType } from '@/lib/claude/prompts';
+import type { TutorContext as TutorContextType } from '@/lib/llm';
 
 interface TutorContextValue {
   openTutor: (context?: TutorContextType) => void;
