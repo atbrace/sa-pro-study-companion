@@ -38,7 +38,7 @@ vi.mock('@anthropic-ai/sdk', () => {
 
 // Import after mocking
 import Anthropic from '@anthropic-ai/sdk';
-import { claudeProvider } from '../claude';
+import { claudeProvider, resetClient } from '../claude';
 
 const sampleTool: LLMTool = {
   name: 'get_study_progress',
@@ -54,11 +54,13 @@ const defaultOptions: LLMChatOptions = {
 describe('claudeProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetClient(); // Reset cached client between tests
     process.env.ANTHROPIC_API_KEY = 'test-key';
   });
 
   afterEach(() => {
     delete process.env.ANTHROPIC_API_KEY;
+    resetClient();
   });
 
   describe('chat', () => {
@@ -202,6 +204,25 @@ describe('claudeProvider', () => {
           ],
         })
       );
+    });
+
+    it('throws LLMError when API key is missing', async () => {
+      delete process.env.ANTHROPIC_API_KEY;
+      resetClient();
+
+      await expect(
+        claudeProvider.chat([{ role: 'user', content: 'test' }], defaultOptions)
+      ).rejects.toThrow(LLMError);
+
+      try {
+        await claudeProvider.chat([{ role: 'user', content: 'test' }], defaultOptions);
+      } catch (error) {
+        expect(error).toBeInstanceOf(LLMError);
+        const llmError = error as LLMError;
+        expect(llmError.provider).toBe('claude');
+        expect(llmError.message).toContain('ANTHROPIC_API_KEY');
+        expect(llmError.isRetryable).toBe(false);
+      }
     });
   });
 

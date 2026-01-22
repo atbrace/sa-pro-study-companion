@@ -196,9 +196,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const assistantMessage = response.type === 'text'
-      ? response.content
-      : 'I apologize, but I was unable to complete the response.';
+    // Handle tool iteration limit reached
+    if (response.type === 'tool_calls') {
+      console.warn(
+        `Tool iteration limit (${maxToolIterations}) reached. Last tool calls:`,
+        lastToolCalls.map(tc => tc.name)
+      );
+      // Return a user-friendly message instead of exposing internal state
+      return NextResponse.json({
+        conversationId: conversationId || 'unsaved',
+        response: 'I encountered an issue while processing your request. Please try rephrasing your question or asking something simpler.',
+        suggestedQuestions: generateSuggestedQuestions(context || {}),
+        warning: 'Response generation limit reached',
+      } as TutorResponse & { warning?: string });
+    }
+
+    const assistantMessage = response.content;
 
     // Add assistant response to conversation
     messages.push({

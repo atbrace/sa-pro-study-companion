@@ -23,7 +23,7 @@ vi.mock('@google/generative-ai', () => ({
 }));
 
 // Import after mocking
-import { geminiProvider } from '../gemini';
+import { geminiProvider, resetClient } from '../gemini';
 
 const sampleTool: LLMTool = {
   name: 'get_study_progress',
@@ -39,11 +39,13 @@ const defaultOptions: LLMChatOptions = {
 describe('geminiProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetClient(); // Reset cached client between tests
     process.env.GOOGLE_AI_API_KEY = 'test-key';
   });
 
   afterEach(() => {
     delete process.env.GOOGLE_AI_API_KEY;
+    resetClient();
   });
 
   describe('chat', () => {
@@ -275,6 +277,25 @@ describe('geminiProvider', () => {
       );
 
       expect(response).toEqual({ type: 'text', content: '' });
+    });
+
+    it('throws LLMError when API key is missing', async () => {
+      delete process.env.GOOGLE_AI_API_KEY;
+      resetClient();
+
+      await expect(
+        geminiProvider.chat([{ role: 'user', content: 'test' }], defaultOptions)
+      ).rejects.toThrow(LLMError);
+
+      try {
+        await geminiProvider.chat([{ role: 'user', content: 'test' }], defaultOptions);
+      } catch (error) {
+        expect(error).toBeInstanceOf(LLMError);
+        const llmError = error as LLMError;
+        expect(llmError.provider).toBe('gemini');
+        expect(llmError.message).toContain('GOOGLE_AI_API_KEY');
+        expect(llmError.isRetryable).toBe(false);
+      }
     });
   });
 

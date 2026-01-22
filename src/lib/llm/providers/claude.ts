@@ -17,8 +17,32 @@ import type {
 import { LLMError } from '../types';
 import { withRetry } from '../retry';
 
-function createClient(): Anthropic {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Cache the client instance to avoid re-instantiation overhead
+let cachedClient: Anthropic | null = null;
+
+function getClient(): Anthropic {
+  // Defensive check: validate API key exists before creating client
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new LLMError(
+      'ANTHROPIC_API_KEY environment variable is not set',
+      'claude',
+      500,
+      false
+    );
+  }
+
+  if (!cachedClient) {
+    cachedClient = new Anthropic({ apiKey });
+  }
+  return cachedClient;
+}
+
+/**
+ * Reset the cached client (for testing only)
+ */
+export function resetClient(): void {
+  cachedClient = null;
 }
 
 function getModel(): string {
@@ -79,7 +103,7 @@ export const claudeProvider: LLMProvider = {
   async chat(messages, options) {
     return withRetry(async () => {
       try {
-        const client = createClient();
+        const client = getClient();
         const model = getModel();
         const response = await client.messages.create({
           model,
@@ -109,7 +133,7 @@ export const claudeProvider: LLMProvider = {
   async continueWithToolResults(messages, toolCalls, toolResults, options) {
     return withRetry(async () => {
       try {
-        const client = createClient();
+        const client = getClient();
         const model = getModel();
         const claudeMessages: MessageParam[] = [
           ...toClaudeMessages(messages),

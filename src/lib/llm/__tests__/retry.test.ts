@@ -122,4 +122,38 @@ describe('withRetry', () => {
     await expect(promise).rejects.toThrow('Rate limit');
     expect(fn).toHaveBeenCalledTimes(2); // Initial + 1 retry
   });
+
+  it('caps delay at maxDelayMs to prevent indefinite blocking', async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
+      .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
+      .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
+      .mockResolvedValue('success');
+
+    // With baseDelay=10000 and maxDelay=15000, the delays should be:
+    // Attempt 1: min(10000 * 2^0, 15000) = min(10000, 15000) = 10000
+    // Attempt 2: min(10000 * 2^1, 15000) = min(20000, 15000) = 15000 (capped!)
+    // Attempt 3: min(10000 * 2^2, 15000) = min(40000, 15000) = 15000 (capped!)
+    const promise = withRetry(fn, {
+      maxRetries: 5,
+      baseDelayMs: 10000,
+      maxDelayMs: 15000,
+    });
+
+    // First retry after 10s (uncapped)
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(fn).toHaveBeenCalledTimes(2);
+
+    // Second retry after 15s (capped from 20s)
+    await vi.advanceTimersByTimeAsync(15000);
+    expect(fn).toHaveBeenCalledTimes(3);
+
+    // Third retry after 15s (capped from 40s)
+    await vi.advanceTimersByTimeAsync(15000);
+    expect(fn).toHaveBeenCalledTimes(4);
+
+    const result = await promise;
+    expect(result).toBe('success');
+  });
 });
