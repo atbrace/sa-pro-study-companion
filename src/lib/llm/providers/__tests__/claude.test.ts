@@ -9,15 +9,35 @@ vi.mock('../../retry', () => ({
 
 // Mock the Anthropic SDK
 const mockCreate = vi.fn();
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation(() => ({
+
+vi.mock('@anthropic-ai/sdk', () => {
+  // Create mock APIError inside the factory function
+  class APIError extends Error {
+    status: number;
+    constructor(status: number, _body: unknown, message: string, _headers: unknown) {
+      super(message);
+      this.status = status;
+      this.name = 'APIError';
+    }
+  }
+
+  const MockAnthropic = vi.fn().mockImplementation(() => ({
     messages: {
       create: mockCreate,
     },
-  })),
-}));
+  }));
+
+  // Attach APIError to the default export like the real SDK
+  MockAnthropic.APIError = APIError;
+
+  return {
+    default: MockAnthropic,
+    APIError,
+  };
+});
 
 // Import after mocking
+import Anthropic from '@anthropic-ai/sdk';
 import { claudeProvider } from '../claude';
 
 const sampleTool: LLMTool = {
@@ -129,7 +149,7 @@ describe('claudeProvider', () => {
     });
 
     it('wraps rate limit errors as retryable', async () => {
-      mockCreate.mockRejectedValue({ status: 429, message: 'Too many requests' });
+      mockCreate.mockRejectedValue(new Anthropic.APIError(429, undefined, 'Too many requests', undefined));
 
       await expect(
         claudeProvider.chat([{ role: 'user', content: 'test' }], defaultOptions)
@@ -147,7 +167,7 @@ describe('claudeProvider', () => {
     });
 
     it('wraps auth errors as non-retryable', async () => {
-      mockCreate.mockRejectedValue({ status: 401, message: 'Invalid API key' });
+      mockCreate.mockRejectedValue(new Anthropic.APIError(401, undefined, 'Invalid API key', undefined));
 
       try {
         await claudeProvider.chat([{ role: 'user', content: 'test' }], defaultOptions);

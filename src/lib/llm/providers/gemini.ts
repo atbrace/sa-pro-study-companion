@@ -61,22 +61,48 @@ function toGeminiFunctionResponsePart(
   };
 }
 
+/**
+ * Generate a deterministic ID for a tool call based on function name and arguments.
+ * This ensures consistent IDs when matching tool results back to their calls.
+ */
+function generateToolCallId(name: string, args: Record<string, unknown>, index: number): string {
+  const argsStr = JSON.stringify(args);
+  // Use a simple hash based on name + args + index for deterministic ID
+  let hash = 0;
+  const str = `${name}:${argsStr}:${index}`;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return `gemini-tc-${Math.abs(hash).toString(16)}-${index}`;
+}
+
+function isGeminiResponse(response: unknown): response is {
+  candidates?: Array<{ content?: { parts?: Part[] } }>;
+} {
+  if (typeof response !== 'object' || response === null) return false;
+  const r = response as Record<string, unknown>;
+  if (r.candidates !== undefined && !Array.isArray(r.candidates)) return false;
+  return true;
+}
+
 function parseGeminiResponse(response: unknown): LLMChatResponse {
-  const resp = response as {
-    candidates?: Array<{ content?: { parts?: Part[] } }>;
-  };
-  const parts = resp.candidates?.[0]?.content?.parts || [];
+  if (!isGeminiResponse(response)) {
+    throw new LLMError('Invalid response format from Gemini', 'gemini', 500, false);
+  }
+  const parts = response.candidates?.[0]?.content?.parts || [];
 
   const functionCalls = parts.filter(p => 'functionCall' in p && p.functionCall);
   if (functionCalls.length > 0) {
     return {
       type: 'tool_calls',
-      calls: functionCalls.map(p => {
+      calls: functionCalls.map((p, index) => {
         const fc = (
           p as { functionCall: { name: string; args: Record<string, unknown> } }
         ).functionCall;
         return {
-          id: crypto.randomUUID(),
+          id: generateToolCallId(fc.name, fc.args, index),
           name: fc.name,
           arguments: fc.args,
         };
@@ -120,14 +146,15 @@ export const geminiProvider: LLMProvider = {
         return parseGeminiResponse(result.response);
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
-        const err = error as { status?: number; message?: string };
-        if (err.status === 429) {
+        const statusCode = extractStatusCode(error);
+        const message = extractErrorMessage(error);
+        if (statusCode === 429) {
           throw new LLMError('Rate limit exceeded', 'gemini', 429, true);
         }
-        if (err.status === 401 || err.status === 403) {
-          throw new LLMError('Invalid API key', 'gemini', err.status, false);
+        if (statusCode === 401 || statusCode === 403) {
+          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
         }
-        throw new LLMError(err.message || 'Unknown error', 'gemini', err.status, false);
+        throw new LLMError(message, 'gemini', statusCode, false);
       }
     });
   },
@@ -169,15 +196,45 @@ export const geminiProvider: LLMProvider = {
         return parseGeminiResponse(result.response);
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
-        const err = error as { status?: number; message?: string };
-        if (err.status === 429) {
+        const statusCode = extractStatusCode(error);
+        const message = extractErrorMessage(error);
+        if (statusCode === 429) {
           throw new LLMError('Rate limit exceeded', 'gemini', 429, true);
         }
-        if (err.status === 401 || err.status === 403) {
-          throw new LLMError('Invalid API key', 'gemini', err.status, false);
+        if (statusCode === 401 || statusCode === 403) {
+          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
         }
-        throw new LLMError(err.message || 'Unknown error', 'gemini', err.status, false);
+        throw new LLMError(message, 'gemini', statusCode, false);
       }
     });
   },
 };
+
+/**
+ * Safely extract status code from an unknown error
+ */
+function extractStatusCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const e = error as Record<string, unknown>;
+  if (typeof e.status === 'number') return e.status;
+  if (typeof e.statusCode === 'number') return e.statusCode;
+  // Check for nested error structure
+  if (typeof e.error === 'object' && e.error !== null) {
+    const nested = e.error as Record<string, unknown>;
+    if (typeof nested.status === 'number') return nested.status;
+  }
+  return undefined;
+}
+
+/**
+ * Safely extract error message from an unknown error
+ */
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (typeof error !== 'object' || error === null) return 'Unknown error';
+  const e = error as Record<string, unknown>;
+  if (typeof e.message === 'string') return e.message;
+  if (typeof e.error === 'string') return e.error;
+  return 'Unknown error';
+}

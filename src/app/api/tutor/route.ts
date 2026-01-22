@@ -133,7 +133,10 @@ export async function POST(request: NextRequest) {
           messages = JSON.parse(conversation.messages_json);
         } catch (parseError) {
           console.error('Failed to parse conversation messages:', parseError);
-          messages = []; // Reset to empty conversation on malformed JSON
+          return NextResponse.json(
+            { error: 'Conversation data corrupted. Please start a new conversation.' },
+            { status: 422 }
+          );
         }
       }
     }
@@ -204,33 +207,45 @@ export async function POST(request: NextRequest) {
     });
 
     // Save conversation to database
-    if (!dbConversationId) {
-      const result = db.prepare(`
-        INSERT INTO tutor_conversations (
-          context_exam,
-          context_domain,
-          context_topic,
-          context_question_id,
-          context_lab_id,
-          messages_json
-        ) VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        examId,
-        context?.domainId || null,
-        context?.topicId || null,
-        context?.questionId || null,
-        context?.labId || null,
-        JSON.stringify(messages)
-      );
+    try {
+      if (!dbConversationId) {
+        const result = db.prepare(`
+          INSERT INTO tutor_conversations (
+            context_exam,
+            context_domain,
+            context_topic,
+            context_question_id,
+            context_lab_id,
+            messages_json
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          examId,
+          context?.domainId || null,
+          context?.topicId || null,
+          context?.questionId || null,
+          context?.labId || null,
+          JSON.stringify(messages)
+        );
 
-      dbConversationId = result.lastInsertRowid.toString();
-    } else {
-      db.prepare(`
-        UPDATE tutor_conversations
-        SET messages_json = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(JSON.stringify(messages), dbConversationId);
+        dbConversationId = result.lastInsertRowid.toString();
+      } else {
+        db.prepare(`
+          UPDATE tutor_conversations
+          SET messages_json = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(JSON.stringify(messages), dbConversationId);
+      }
+    } catch (dbError) {
+      console.error('Database error saving conversation:', dbError);
+      // Return the response anyway - the AI response was successful, just couldn't persist
+      // Better UX to show the response than to fail completely
+      return NextResponse.json({
+        conversationId: dbConversationId || 'unsaved',
+        response: assistantMessage,
+        suggestedQuestions: generateSuggestedQuestions(context || {}),
+        warning: 'Conversation could not be saved',
+      } as TutorResponse & { warning?: string });
     }
 
     // Generate suggested questions
@@ -244,10 +259,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof LLMError) {
-      console.error(`LLM error (${error.provider}):`, error.message);
+      console.error(`LLM error (${error.provider}):`, error.message, error.statusCode);
+      // Return generic message to client, don't expose internal details
+      const clientMessage = error.statusCode === 429
+        ? 'AI service is busy. Please try again in a moment.'
+        : 'The AI service is temporarily unavailable. Please try again.';
       return NextResponse.json(
-        { error: `AI service error: ${error.message}` },
-        { status: error.statusCode || 500 }
+        { error: clientMessage },
+        { status: error.statusCode || 503 }
       );
     }
 

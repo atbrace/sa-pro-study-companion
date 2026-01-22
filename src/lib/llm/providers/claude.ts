@@ -90,14 +90,18 @@ export const claudeProvider: LLMProvider = {
         });
         return parseClaudeResponse(response);
       } catch (error: unknown) {
-        const err = error as { status?: number; message?: string };
-        if (err.status === 429) {
-          throw new LLMError('Rate limit exceeded', 'claude', 429, true);
+        if (error instanceof Anthropic.APIError) {
+          if (error.status === 429) {
+            throw new LLMError('Rate limit exceeded', 'claude', 429, true);
+          }
+          if (error.status === 401) {
+            throw new LLMError('Invalid API key', 'claude', 401, false);
+          }
+          throw new LLMError(error.message, 'claude', error.status, false);
         }
-        if (err.status === 401) {
-          throw new LLMError('Invalid API key', 'claude', 401, false);
-        }
-        throw new LLMError(err.message || 'Unknown error', 'claude', err.status, false);
+        // Handle non-Anthropic errors
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new LLMError(message, 'claude', undefined, false);
       }
     });
   },
@@ -122,14 +126,18 @@ export const claudeProvider: LLMProvider = {
         });
         return parseClaudeResponse(response);
       } catch (error: unknown) {
-        const err = error as { status?: number; message?: string };
-        if (err.status === 429) {
-          throw new LLMError('Rate limit exceeded', 'claude', 429, true);
+        if (error instanceof Anthropic.APIError) {
+          if (error.status === 429) {
+            throw new LLMError('Rate limit exceeded', 'claude', 429, true);
+          }
+          if (error.status === 401) {
+            throw new LLMError('Invalid API key', 'claude', 401, false);
+          }
+          throw new LLMError(error.message, 'claude', error.status, false);
         }
-        if (err.status === 401) {
-          throw new LLMError('Invalid API key', 'claude', 401, false);
-        }
-        throw new LLMError(err.message || 'Unknown error', 'claude', err.status, false);
+        // Handle non-Anthropic errors
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new LLMError(message, 'claude', undefined, false);
       }
     });
   },

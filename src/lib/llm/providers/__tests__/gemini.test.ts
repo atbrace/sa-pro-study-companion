@@ -7,11 +7,6 @@ vi.mock('../../retry', () => ({
   withRetry: vi.fn((fn) => fn()),
 }));
 
-// Mock crypto.randomUUID for consistent test IDs
-vi.stubGlobal('crypto', {
-  randomUUID: vi.fn().mockReturnValue('test-uuid-123'),
-});
-
 // Mock the Google AI SDK
 const mockSendMessage = vi.fn();
 const mockStartChat = vi.fn().mockReturnValue({
@@ -107,15 +102,14 @@ describe('geminiProvider', () => {
       expect(response.type).toBe('tool_calls');
       if (response.type === 'tool_calls') {
         expect(response.calls).toHaveLength(1);
-        expect(response.calls[0]).toEqual({
-          id: 'test-uuid-123',
-          name: 'get_study_progress',
-          arguments: { foo: 'bar' },
-        });
+        expect(response.calls[0].name).toBe('get_study_progress');
+        expect(response.calls[0].arguments).toEqual({ foo: 'bar' });
+        // IDs are deterministic based on name, args, and index
+        expect(response.calls[0].id).toMatch(/^gemini-tc-[a-f0-9]+-0$/);
       }
     });
 
-    it('generates UUIDs for tool call IDs', async () => {
+    it('generates deterministic IDs for tool calls', async () => {
       mockSendMessage.mockResolvedValue({
         response: {
           candidates: [
@@ -139,10 +133,44 @@ describe('geminiProvider', () => {
       expect(response.type).toBe('tool_calls');
       if (response.type === 'tool_calls') {
         expect(response.calls).toHaveLength(2);
-        // All calls get UUIDs
-        response.calls.forEach(call => {
-          expect(call.id).toBe('test-uuid-123');
-        });
+        // Each call gets a unique deterministic ID
+        expect(response.calls[0].id).toMatch(/^gemini-tc-[a-f0-9]+-0$/);
+        expect(response.calls[1].id).toMatch(/^gemini-tc-[a-f0-9]+-1$/);
+        // IDs should be different for different function calls
+        expect(response.calls[0].id).not.toBe(response.calls[1].id);
+      }
+    });
+
+    it('generates consistent IDs for same function call', async () => {
+      const mockResponse = {
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  { functionCall: { name: 'tool_a', args: { x: 1 } } },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockSendMessage.mockResolvedValue(mockResponse);
+      const response1 = await geminiProvider.chat(
+        [{ role: 'user', content: 'test' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      mockSendMessage.mockResolvedValue(mockResponse);
+      const response2 = await geminiProvider.chat(
+        [{ role: 'user', content: 'test' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      // Same input should produce same ID
+      if (response1.type === 'tool_calls' && response2.type === 'tool_calls') {
+        expect(response1.calls[0].id).toBe(response2.calls[0].id);
       }
     });
 
