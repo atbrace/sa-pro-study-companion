@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Send, Sparkles, MessageCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { TutorContext } from '@/lib/claude/prompts';
+import type { TutorContext } from '@/lib/llm';
 
 interface Message {
   id: string;
@@ -60,7 +60,16 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [providerDisplayName, setProviderDisplayName] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Fetch provider info on mount
+  useEffect(() => {
+    fetch('/api/tutor/provider')
+      .then(res => res.json())
+      .then(data => setProviderDisplayName(data.displayName))
+      .catch(() => setProviderDisplayName(null));
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -232,6 +241,11 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
             >
               Clear conversation
             </Button>
+          )}
+          {providerDisplayName && (
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              Powered by {providerDisplayName}
+            </p>
           )}
         </div>
       </SheetContent>

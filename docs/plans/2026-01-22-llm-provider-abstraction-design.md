@@ -926,3 +926,61 @@ Not in scope, but possible future enhancements:
 - Automatic fallback on provider errors
 - Cost tracking and reporting
 - Additional providers (OpenAI, Mistral, etc.)
+
+---
+
+## Implementation Progress
+
+### Session 1: 2026-01-22
+
+**Status:** Implementation complete, pending code review and manual testing.
+
+**Completed steps:**
+
+1. Created `src/lib/llm/` directory structure with:
+   - `types.ts` - LLMMessage, LLMTool, LLMToolCall, LLMToolResult, LLMChatOptions, LLMChatResponse, LLMProvider interface, LLMError class
+   - `retry.ts` - withRetry utility with exponential backoff
+   - `tools.ts` - Provider-agnostic TUTOR_TOOLS definition
+   - `prompts.ts` - Copied from src/lib/claude/prompts.ts (unchanged)
+   - `provider.ts` - Factory with getProvider, getProviderName, resetProvider
+   - `index.ts` - Barrel export for easy imports
+   - `providers/claude.ts` - Claude provider implementation
+   - `providers/gemini.ts` - Gemini provider implementation
+
+2. Added @google/generative-ai dependency (v0.24.1)
+
+3. Updated `src/app/api/tutor/route.ts` to use new LLM interface
+
+4. Updated client-side imports:
+   - `src/components/tutor/TutorPanel.tsx`
+   - `src/contexts/TutorContext.tsx`
+   - `src/hooks/useTutor.ts`
+
+5. Deleted old `src/lib/claude/` directory
+
+6. Added unit tests:
+   - `src/lib/llm/__tests__/types.test.ts` (4 tests)
+   - `src/lib/llm/__tests__/retry.test.ts` (8 tests)
+   - `src/lib/llm/__tests__/tools.test.ts` (4 tests)
+   - `src/lib/llm/__tests__/provider.test.ts` (9 tests)
+   - `src/lib/llm/providers/__tests__/claude.test.ts` (10 tests) - added after code review
+   - `src/lib/llm/providers/__tests__/gemini.test.ts` (13 tests) - added after code review
+
+7. Fixed Gemini tool result mapping bug (code review feedback):
+   - Now throws `LLMError` if tool call ID not found instead of falling back to index
+
+**Test results:** 136 tests passing (88 existing + 48 new)
+
+**TypeScript:** Compiles without errors
+
+**Notes:**
+- Changed default Gemini model from `gemini-3.0-flash` (in design) to `gemini-2.0-flash` (current latest)
+- FunctionDeclarationSchema type cast needed for Gemini SDK type compatibility
+- Provider implementations create fresh SDK clients on each call (no global client caching)
+- Prompts moved from `src/lib/claude/` to `src/lib/llm/` (plan mentioned preserving but moving is correct)
+
+**Code review completed:** All critical and important issues addressed.
+
+**Remaining work:**
+- Manual testing with both Claude and Gemini providers
+- Update .env.example with new variables (if one exists)
