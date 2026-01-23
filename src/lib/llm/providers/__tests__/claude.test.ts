@@ -77,7 +77,7 @@ describe('claudeProvider', () => {
 
       expect(response).toEqual({ type: 'text', content: 'Hello!' });
       expect(mockCreate).toHaveBeenCalledWith({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 100,
         system: 'You are helpful',
         messages: [{ role: 'user', content: 'Hi' }],

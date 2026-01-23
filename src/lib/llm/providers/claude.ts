@@ -46,7 +46,7 @@ export function resetClient(): void {
 }
 
 function getModel(): string {
-  return process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+  return process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929';
 }
 
 function toClaudeMessages(messages: LLMMessage[]): MessageParam[] {

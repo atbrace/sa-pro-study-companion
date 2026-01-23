@@ -5,7 +5,15 @@ export const runtime = 'nodejs';
 
 /** Model ID to display name mapping */
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  // Claude models
+  // Claude 4.5 models (latest)
+  'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+  'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+  'claude-opus-4-5-20251101': 'Claude Opus 4.5',
+  // Claude 4.5 aliases
+  'claude-sonnet-4-5': 'Claude Sonnet 4.5',
+  'claude-haiku-4-5': 'Claude Haiku 4.5',
+  'claude-opus-4-5': 'Claude Opus 4.5',
+  // Claude 4 models (legacy)
   'claude-sonnet-4-20250514': 'Claude Sonnet 4',
   'claude-opus-4-20250514': 'Claude Opus 4',
   // Gemini 3 models
@@ -26,7 +34,7 @@ function getCurrentModelId(): string {
   const provider = getProviderName();
 
   if (provider === 'claude') {
-    return process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+    return process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929';
   }
 
   if (provider === 'gemini') {

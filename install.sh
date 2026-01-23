@@ -134,28 +134,35 @@ select_model() {
     if [ "$LLM_PROVIDER" = "claude" ]; then
         echo "Select Claude model:"
         echo ""
-        echo "  1) Claude Sonnet 4 (claude-sonnet-4-20250514) - Recommended"
-        echo "     Best balance of capability and cost"
-        echo ""
-        echo "  2) Claude Opus 4 (claude-opus-4-20250514)"
-        echo "     Most capable, higher cost"
+        echo "  Claude 4.5 (Latest)"
+        echo "  1) Claude Sonnet 4.5 (claude-sonnet-4-5-20250929) - Recommended"
+        echo "     Best balance of capability, speed, and cost"
+        echo "  2) Claude Haiku 4.5 (claude-haiku-4-5-20251001)"
+        echo "     Fastest, near-frontier intelligence"
+        echo "  3) Claude Opus 4.5 (claude-opus-4-5-20251101)"
+        echo "     Maximum intelligence, higher cost"
         echo ""
 
         while true; do
-            read -p "Enter choice [1-2]: " model_choice
+            read -p "Enter choice [1-3]: " model_choice
             case $model_choice in
                 1)
-                    SELECTED_MODEL="claude-sonnet-4-20250514"
-                    print_success "Selected Claude Sonnet 4"
+                    SELECTED_MODEL="claude-sonnet-4-5-20250929"
+                    print_success "Selected Claude Sonnet 4.5"
                     break
                     ;;
                 2)
-                    SELECTED_MODEL="claude-opus-4-20250514"
-                    print_success "Selected Claude Opus 4"
+                    SELECTED_MODEL="claude-haiku-4-5-20251001"
+                    print_success "Selected Claude Haiku 4.5"
+                    break
+                    ;;
+                3)
+                    SELECTED_MODEL="claude-opus-4-5-20251101"
+                    print_success "Selected Claude Opus 4.5"
                     break
                     ;;
                 *)
-                    print_warning "Invalid choice. Please enter 1 or 2."
+                    print_warning "Invalid choice. Please enter 1, 2, or 3."
                     ;;
             esac
         done
