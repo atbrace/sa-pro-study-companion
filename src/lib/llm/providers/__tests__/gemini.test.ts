@@ -320,13 +320,17 @@ describe('geminiProvider', () => {
 
       expect(response).toEqual({ type: 'text', content: 'Based on your progress...' });
 
-      // Verify history includes the function call
+      // Verify history includes the function call with fallback thought_signature (Gemini 3+ requirement)
       expect(mockStartChat).toHaveBeenCalledWith({
         history: [
           { role: 'user', parts: [{ text: 'How am I doing?' }] },
           {
             role: 'model',
-            parts: [{ functionCall: { name: 'get_study_progress', args: {} } }],
+            parts: [{
+              functionCall: { name: 'get_study_progress', args: {} },
+              thought_signature: 'context_engineering_is_the_way_to_go',
+              thoughtSignature: 'context_engineering_is_the_way_to_go',
+            }],
           },
         ],
       });
@@ -398,6 +402,184 @@ describe('geminiProvider', () => {
       expect(response.type).toBe('tool_calls');
       if (response.type === 'tool_calls') {
         expect(response.calls[0].name).toBe('another_tool');
+      }
+    });
+  });
+
+  describe('thought_signature handling (Gemini 3+)', () => {
+    it('extracts thought_signature from function call response', async () => {
+      mockSendMessage.mockResolvedValue({
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: {
+                      name: 'get_study_progress',
+                      args: { examId: 'sap-c02' },
+                    },
+                    thought_signature: 'encrypted-signature-token-abc123',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const response = await geminiProvider.chat(
+        [{ role: 'user', content: 'How am I doing?' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      expect(response.type).toBe('tool_calls');
+      if (response.type === 'tool_calls') {
+        expect(response.calls[0].name).toBe('get_study_progress');
+        expect(response.calls[0].thoughtSignature).toBe('encrypted-signature-token-abc123');
+      }
+    });
+
+    it('includes thought_signature in history when continuing with tool results', async () => {
+      mockSendMessage.mockResolvedValue({
+        response: {
+          candidates: [{ content: { parts: [{ text: 'Based on your progress...' }] } }],
+        },
+      });
+
+      const messages = [{ role: 'user' as const, content: 'How am I doing?' }];
+      const toolCalls = [
+        {
+          id: 'call-123',
+          name: 'get_study_progress',
+          arguments: { examId: 'sap-c02' },
+          thoughtSignature: 'encrypted-signature-token-abc123',
+        },
+      ];
+      const toolResults = [{ toolCallId: 'call-123', result: '{"mastery": 0.75}' }];
+
+      await geminiProvider.continueWithToolResults(
+        messages,
+        toolCalls,
+        toolResults,
+        defaultOptions
+      );
+
+      // Verify history includes the function call WITH thought_signature (both formats)
+      expect(mockStartChat).toHaveBeenCalledWith({
+        history: [
+          { role: 'user', parts: [{ text: 'How am I doing?' }] },
+          {
+            role: 'model',
+            parts: [
+              {
+                functionCall: { name: 'get_study_progress', args: { examId: 'sap-c02' } },
+                thought_signature: 'encrypted-signature-token-abc123',
+                thoughtSignature: 'encrypted-signature-token-abc123',
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('handles multiple function calls with only first having thought_signature', async () => {
+      // Per Gemini docs: for parallel function calls, only the first gets a signature
+      mockSendMessage.mockResolvedValue({
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: { name: 'tool_a', args: {} },
+                    thought_signature: 'signature-for-first-call',
+                  },
+                  {
+                    functionCall: { name: 'tool_b', args: {} },
+                    // No thought_signature for subsequent parallel calls
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const response = await geminiProvider.chat(
+        [{ role: 'user', content: 'test' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      expect(response.type).toBe('tool_calls');
+      if (response.type === 'tool_calls') {
+        expect(response.calls).toHaveLength(2);
+        expect(response.calls[0].thoughtSignature).toBe('signature-for-first-call');
+        expect(response.calls[1].thoughtSignature).toBeUndefined();
+      }
+    });
+
+    it('works without thought_signature for Gemini 2.x models', async () => {
+      // Gemini 2.x doesn't require thought_signature
+      mockSendMessage.mockResolvedValue({
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: {
+                      name: 'get_study_progress',
+                      args: {},
+                    },
+                    // No thought_signature field at all
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const response = await geminiProvider.chat(
+        [{ role: 'user', content: 'test' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      expect(response.type).toBe('tool_calls');
+      if (response.type === 'tool_calls') {
+        expect(response.calls[0].thoughtSignature).toBeUndefined();
+      }
+    });
+
+    it('preserves thought_signature exactly as received without modification', async () => {
+      const originalSignature = 'ABCdef123!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+      mockSendMessage.mockResolvedValue({
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: { name: 'test_tool', args: {} },
+                    thought_signature: originalSignature,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const response = await geminiProvider.chat(
+        [{ role: 'user', content: 'test' }],
+        { ...defaultOptions, tools: [sampleTool] }
+      );
+
+      if (response.type === 'tool_calls') {
+        // Signature must be preserved exactly - no encoding, decoding, or modification
+        expect(response.calls[0].thoughtSignature).toBe(originalSignature);
       }
     });
   });

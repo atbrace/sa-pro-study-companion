@@ -64,13 +64,29 @@ function toGeminiFunctionDeclaration(tool: LLMTool): FunctionDeclaration {
   };
 }
 
-function toGeminiFunctionCallPart(call: LLMToolCall): Part {
-  return {
+// Fallback signature for Gemini 3+ when SDK doesn't provide one
+// See: https://ai.google.dev/gemini-api/docs/gemini-3
+const FALLBACK_THOUGHT_SIGNATURE = 'context_engineering_is_the_way_to_go';
+
+function toGeminiFunctionCallPart(call: LLMToolCall, index: number): Part {
+  // Gemini 3 requires thought_signature for function calls
+  // Only the first function call in parallel calls needs the signature
+  const signature = call.thoughtSignature || (index === 0 ? FALLBACK_THOUGHT_SIGNATURE : undefined);
+
+  // Use both snake_case and camelCase to maximize compatibility
+  const part: Part & { thought_signature?: string; thoughtSignature?: string } = {
     functionCall: {
       name: call.name,
       args: call.arguments,
     },
   };
+
+  if (signature) {
+    part.thought_signature = signature;
+    part.thoughtSignature = signature;
+  }
+
+  return part as Part;
 }
 
 function toGeminiFunctionResponsePart(
@@ -122,14 +138,23 @@ function parseGeminiResponse(response: unknown): LLMChatResponse {
     return {
       type: 'tool_calls',
       calls: functionCalls.map((p, index) => {
-        const fc = (
-          p as { functionCall: { name: string; args: Record<string, unknown> } }
-        ).functionCall;
-        return {
+        const partWithSig = p as {
+          functionCall: { name: string; args: Record<string, unknown> };
+          thought_signature?: string;
+          thoughtSignature?: string;
+        };
+        const fc = partWithSig.functionCall;
+        const call: LLMToolCall = {
           id: generateToolCallId(fc.name, fc.args, index),
           name: fc.name,
           arguments: fc.args,
         };
+        // Check both snake_case and camelCase variants
+        const signature = partWithSig.thought_signature || partWithSig.thoughtSignature;
+        if (signature) {
+          call.thoughtSignature = signature;
+        }
+        return call;
       }),
     };
   }
@@ -199,7 +224,7 @@ export const geminiProvider: LLMProvider = {
         const chat = model.startChat({
           history: [
             ...toGeminiHistory(messages),
-            { role: 'model', parts: toolCalls.map(toGeminiFunctionCallPart) },
+            { role: 'model', parts: toolCalls.map((tc, idx) => toGeminiFunctionCallPart(tc, idx)) },
           ],
         });
 

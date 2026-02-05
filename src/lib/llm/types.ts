@@ -20,6 +20,8 @@ export interface LLMToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
+  /** Gemini 3+ thought signature for function calls - must be preserved exactly */
+  thoughtSignature?: string;
 }
 
 /** Result of a tool execution */
