@@ -54,6 +54,17 @@ vi.mock('@/lib/progress/tutor-context', () => ({
   getTutorProgressContext: vi.fn().mockReturnValue('## Progress\nOverall: 75%'),
 }));
 
+// Mock tool handlers (route.ts imports these from @/lib/llm/tool-handlers)
+vi.mock('@/lib/llm/tool-handlers', () => ({
+  handleGetStudyProgress: vi.fn().mockReturnValue('## Progress\nOverall: 75%'),
+  handleGetQuestionDetails: vi.fn().mockReturnValue('## Question: net-001\nDetails here'),
+  handleSearchStudyContent: vi.fn().mockReturnValue('## Search Results\nFound topic'),
+  handleGetTopicMetadata: vi.fn().mockReturnValue('## Topic\nMetadata here'),
+  handleGetAssessmentHistory: vi.fn().mockReturnValue('## History\n80% score'),
+  handleGetWeakAreaQuestions: vi.fn().mockReturnValue('## Weak\nQuestions here'),
+  handleSuggestNextStudyTopic: vi.fn().mockReturnValue('## Recommendations\nStudy this'),
+}));
+
 import { POST } from '../route';
 import { LLMError } from '@/lib/llm';
 
@@ -279,6 +290,43 @@ describe('POST /api/tutor', () => {
       expect(mockContinueWithToolResults).toHaveBeenCalledTimes(5);
       expect(body.response).toContain('encountered an issue');
       expect(body.warning).toContain('limit reached');
+    });
+
+    it('dispatches get_question_details tool', async () => {
+      mockChat.mockResolvedValue({
+        type: 'tool_calls',
+        calls: [{ id: 'call-1', name: 'get_question_details', arguments: { questionId: 'net-001' } }],
+      });
+      mockContinueWithToolResults.mockResolvedValue({
+        type: 'text',
+        content: 'Here is the explanation.',
+      });
+
+      const req = createPOSTRequest('/api/tutor', { message: 'Explain question net-001' });
+      const res = await POST(req);
+      const body = await res.json();
+
+      expect(body.response).toBe('Here is the explanation.');
+      const toolResults = mockContinueWithToolResults.mock.calls[0][2];
+      expect(toolResults[0].result).toContain('net-001');
+      expect(toolResults[0].isError).toBeUndefined();
+    });
+
+    it('dispatches suggest_next_study_topic tool', async () => {
+      mockChat.mockResolvedValue({
+        type: 'tool_calls',
+        calls: [{ id: 'call-1', name: 'suggest_next_study_topic', arguments: {} }],
+      });
+      mockContinueWithToolResults.mockResolvedValue({
+        type: 'text',
+        content: 'I recommend studying...',
+      });
+
+      const req = createPOSTRequest('/api/tutor', { message: 'What should I study?' });
+      const res = await POST(req);
+
+      const toolResults = mockContinueWithToolResults.mock.calls[0][2];
+      expect(toolResults[0].result).toContain('Recommendations');
     });
   });
 
