@@ -170,7 +170,7 @@ sa-pro-study-companion/
 | `/api/assess` | POST | Submit assessment, grade answers, store results |
 | `/api/progress` | GET | Get progress summary for exam |
 | `/api/questions` | GET | Fetch questions (domain or topic-specific) |
-| `/api/tutor` | POST | AI chat with tool support and conversation persistence |
+| `/api/tutor` | POST | AI chat with 7-tool support and conversation persistence |
 | `/api/tutor/provider` | GET | Get current LLM provider and model info |
 
 **Key patterns**:
@@ -254,9 +254,22 @@ sa-pro-study-companion/
 | `claudeProvider` | Claude API implementation |
 | `geminiProvider` | Gemini API implementation |
 | `withRetry()` | Exponential backoff retry wrapper |
-| `TUTOR_TOOLS` | Tool definitions for tutor |
+| `TUTOR_TOOLS` | Tool definitions for tutor (7 tools) |
 | `buildTutorSystemPrompt()` | Exam-specific tutor prompt |
 | `buildContextPrompt()` | Context section from user location |
+
+#### Tutor Tool Handlers (`src/lib/llm/tool-handlers.ts`)
+| Export | Purpose |
+|--------|---------|
+| `handleGetStudyProgress()` | Returns formatted progress summary via progress calculator |
+| `handleGetQuestionDetails()` | Looks up question by ID, returns answer/explanation/doc link |
+| `handleSearchStudyContent()` | Keyword search across topic names, services, concepts |
+| `handleGetTopicMetadata()` | Returns topic difficulty, study time, docs, related labs |
+| `handleGetAssessmentHistory()` | Queries recent assessment sessions and missed questions |
+| `handleGetWeakAreaQuestions()` | Returns questions sorted by miss rate from DB |
+| `handleSuggestNextStudyTopic()` | Prioritized recommendations based on progress + domain weights |
+
+**Dispatch**: Route uses a `Record<string, ToolHandler>` map - tool name maps to handler function. Each handler is a pure function: `(params, examId) => string`.
 
 **Provider selection**: Via `LLM_PROVIDER` env var (defaults to 'claude')
 
@@ -264,6 +277,7 @@ sa-pro-study-companion/
 - Tool call IDs generated for Gemini (doesn't provide them)
 - Retry only for `LLMError` with `isRetryable: true`
 - Max delay capped at 60 seconds
+- Content tools call `loader.ts` (filesystem); progress tools query SQLite directly
 
 #### Content Loading (`src/lib/content/`)
 | Export | Purpose |
@@ -440,7 +454,8 @@ sequenceDiagram
     participant API as /api/tutor
     participant Provider as LLM Provider
     participant LLM as Claude/Gemini
-    participant Tools as Tool Executor
+    participant Handlers as Tool Handlers (7)
+    participant Content as Content Loader
     participant DB as SQLite
 
     Browser->>API: POST {message, context, conversationId}
@@ -450,12 +465,15 @@ sequenceDiagram
 
     loop Tool Loop (max 5)
         alt Tool Call
-            LLM-->>Provider: tool_use: get_study_progress
+            LLM-->>Provider: tool_use (any of 7 tools)
             Provider-->>API: {type: 'tool_calls'}
-            API->>Tools: getTutorProgressContext()
-            Tools->>DB: Query progress data
-            DB-->>Tools: Progress summary
-            Tools-->>API: Formatted markdown
+            API->>Handlers: toolHandlers[toolName](params, examId)
+            alt Content Tools
+                Handlers->>Content: getAllDomains/getTopicById/getTopicQuestions
+            else DB Tools
+                Handlers->>DB: Query progress/assessments/weak areas
+            end
+            Handlers-->>API: Formatted markdown string
             API->>Provider: continueWithToolResults()
             Provider->>LLM: messages + tool_result
         end
@@ -567,7 +585,7 @@ sequenceDiagram
 **To update the AI tutor**:
 1. Modify exam's `tutorPrompt` in `content/exams/{exam}/exam.yaml`
 2. Or update `buildContextPrompt()` in `src/lib/llm/prompts.ts`
-3. Add new tools to `TUTOR_TOOLS` in `src/lib/llm/tools.ts`
+3. Add new tools: define in `src/lib/llm/tools.ts`, implement handler in `src/lib/llm/tool-handlers.ts`, add to handler map in `src/app/api/tutor/route.ts`
 
 **To add a new component**:
 1. Create in appropriate `src/components/` subdirectory
@@ -619,6 +637,8 @@ pnpm cdk:cleanup                  # List active deployments
 | Lab stacks | `cdk/lib/stacks/lab-*.ts` |
 | Lab metadata | `src/lib/content/labs.ts` |
 | LLM providers | `src/lib/llm/providers/` |
+| Tool handlers | `src/lib/llm/tool-handlers.ts` |
+| Tool definitions | `src/lib/llm/tools.ts` |
 | Migrations | `src/lib/db/migrations/*.sql` |
 | shadcn/ui config | `components.json` |
 | Tailwind config | `tailwind.config.ts` |
