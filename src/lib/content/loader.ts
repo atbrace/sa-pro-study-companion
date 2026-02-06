@@ -76,7 +76,7 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
 /**
  * Get all topics for a domain
  */
-export function getTopicsForDomain(examId: string, domainId: string): Topic[] {
+function getTopicsForDomain(examId: string, domainId: string): Topic[] {
   const contentDir = getExamContentDir(examId);
   const topicsPath = path.join(contentDir, domainId, 'topics');
 

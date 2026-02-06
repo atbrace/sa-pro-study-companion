@@ -16,31 +16,3 @@ export function getDomainBorderColor(color: string): string {
   };
   return colorMap[color] || 'border-l-primary';
 }
-
-export function getDomainTextColor(color: string): string {
-  const colorMap: Record<string, string> = {
-    'blue': 'text-blue-600',
-    'green': 'text-green-600',
-    'amber': 'text-amber-600',
-    'purple': 'text-purple-600',
-    'orange': 'text-orange-600',
-    'red': 'text-red-600',
-    'cyan': 'text-cyan-600',
-    'pink': 'text-pink-600',
-  };
-  return colorMap[color] || 'text-primary';
-}
-
-export function getDomainBgColor(color: string): string {
-  const colorMap: Record<string, string> = {
-    'blue': 'bg-blue-50',
-    'green': 'bg-green-50',
-    'amber': 'bg-amber-50',
-    'purple': 'bg-purple-50',
-    'orange': 'bg-orange-50',
-    'red': 'bg-red-50',
-    'cyan': 'bg-cyan-50',
-    'pink': 'bg-pink-50',
-  };
-  return colorMap[color] || 'bg-muted';
-}

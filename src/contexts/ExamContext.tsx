@@ -33,7 +33,3 @@ export function useExam() {
   }
   return context;
 }
-
-export function useExamOptional() {
-  return useContext(ExamContext);
-}

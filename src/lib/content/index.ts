@@ -31,7 +31,7 @@ function normalizeServiceName(name: string): string {
 /**
  * Build the content index from all domains and topics for a specific exam
  */
-export function buildContentIndex(examId: string): ContentIndex {
+function buildContentIndex(examId: string): ContentIndex {
   if (cachedIndices.has(examId)) {
     return cachedIndices.get(examId)!;
   }
@@ -133,15 +133,4 @@ export function serializeIndexForPrompt(examId: string): string {
   }
 
   return lines.join('\n');
-}
-
-/**
- * Clear the cached indices (useful for testing or if content changes)
- */
-export function clearIndexCache(examId?: string): void {
-  if (examId) {
-    cachedIndices.delete(examId);
-  } else {
-    cachedIndices.clear();
-  }
 }
