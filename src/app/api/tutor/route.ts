@@ -7,14 +7,21 @@ import {
   TUTOR_TOOLS,
   LLMError,
   type TutorContext,
-  type TutorToolName,
   type LLMMessage,
   type LLMToolCall,
   type LLMToolResult,
 } from "@/lib/llm";
+import {
+  handleGetStudyProgress,
+  handleGetQuestionDetails,
+  handleSearchStudyContent,
+  handleGetTopicMetadata,
+  handleGetAssessmentHistory,
+  handleGetWeakAreaQuestions,
+  handleSuggestNextStudyTopic,
+} from "@/lib/llm/tool-handlers";
 import { serializeIndexForPrompt } from "@/lib/content/index";
 import { getExamById } from "@/lib/content/exam-loader";
-import { getTutorProgressContext } from "@/lib/progress/tutor-context";
 import { db } from "@/lib/db/client";
 
 // Cache navigation indices by exam (static content, doesn't change at runtime)
@@ -70,24 +77,34 @@ function validateTutorBody(body: unknown): { valid: true; data: TutorRequest } |
   return { valid: true, data: body as TutorRequest };
 }
 
+type ToolHandler = (params: Record<string, unknown>, examId: string) => string;
+
+const toolHandlers: Record<string, ToolHandler> = {
+  get_study_progress: handleGetStudyProgress,
+  get_question_details: handleGetQuestionDetails,
+  search_study_content: handleSearchStudyContent,
+  get_topic_metadata: handleGetTopicMetadata,
+  get_assessment_history: handleGetAssessmentHistory,
+  get_weak_area_questions: handleGetWeakAreaQuestions,
+  suggest_next_study_topic: handleSuggestNextStudyTopic,
+};
+
 /**
  * Execute a tool call and return the result
  */
 function executeTool(toolCall: LLMToolCall, examId: string): LLMToolResult {
-  const toolName = toolCall.name as TutorToolName;
-
-  if (toolName === 'get_study_progress') {
-    const progressContext = getTutorProgressContext(examId);
+  const handler = toolHandlers[toolCall.name];
+  if (!handler) {
     return {
       toolCallId: toolCall.id,
-      result: progressContext,
+      result: `Unknown tool: ${toolCall.name}`,
+      isError: true,
     };
   }
 
   return {
     toolCallId: toolCall.id,
-    result: 'Unknown tool',
-    isError: true,
+    result: handler(toolCall.arguments, examId),
   };
 }
 

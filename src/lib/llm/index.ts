@@ -27,5 +27,16 @@ export {
   type TutorContext,
 } from './prompts';
 
+// Tool handlers
+export {
+  handleGetStudyProgress,
+  handleGetQuestionDetails,
+  handleSearchStudyContent,
+  handleGetTopicMetadata,
+  handleGetAssessmentHistory,
+  handleGetWeakAreaQuestions,
+  handleSuggestNextStudyTopic,
+} from './tool-handlers';
+
 // Retry utility
 export { withRetry, type RetryOptions } from './retry';
