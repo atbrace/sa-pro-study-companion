@@ -5,7 +5,7 @@ A local-first study application for AWS certification preparation. Currently sup
 ## Supported Certifications
 
 - **AWS Solutions Architect Professional (SAP-C02)** - Full support with study content, assessments, and hands-on labs
-- **AWS Machine Learning Specialty (MLA-C01)** - Full support with study content, assessments, and hands-on labs
+- **AWS Machine Learning Engineer - Associate (MLA-C01)** - Full support with study content, assessments, and hands-on labs
 
 ## Features
 
@@ -194,7 +194,7 @@ pnpm cdk:cleanup           # Destroy all lab stacks
 
 Open [http://localhost:3000](http://localhost:3000) to see the exam picker. Choose from:
 - **SAP-C02**: AWS Solutions Architect Professional
-- **MLA-C01**: AWS Machine Learning Specialty
+- **MLA-C01**: AWS Machine Learning Engineer - Associate
 
 Each certification has its own study content, assessments, and progress tracking.
 
@@ -293,7 +293,7 @@ sa-pro-study-companion/
 │   │   ├── sap-c02/           # Solutions Architect Professional
 │   │   │   ├── exam.yaml      # Exam configuration
 │   │   │   └── domains/       # Domain content
-│   │   └── mla-c01/           # Machine Learning Specialty
+│   │   └── mla-c01/           # Machine Learning Engineer - Associate
 │   │       ├── exam.yaml
 │   │       └── domains/
 │   └── experiments/           # CDK lab definitions
