@@ -59,6 +59,15 @@ export class LLMError extends Error {
   }
 }
 
+/** A single chunk from a streaming LLM response */
+export type LLMStreamChunk =
+  | { type: 'text_delta'; delta: string }
+  | { type: 'tool_calls'; calls: LLMToolCall[] }
+  | { type: 'done'; fullText: string };
+
+/** Async generator yielding stream chunks */
+export type LLMStreamResponse = AsyncGenerator<LLMStreamChunk, void, unknown>;
+
 /** The provider interface */
 export interface LLMProvider {
   /** Send messages and get a response (text or tool calls) */
@@ -71,4 +80,15 @@ export interface LLMProvider {
     toolResults: LLMToolResult[],
     options: LLMChatOptions
   ): Promise<LLMChatResponse>;
+
+  /** Stream a chat response. Optional — callers must check existence. */
+  chatStream?(messages: LLMMessage[], options: LLMChatOptions): LLMStreamResponse;
+
+  /** Stream a continuation after tool results. Optional. */
+  continueWithToolResultsStream?(
+    messages: LLMMessage[],
+    toolCalls: LLMToolCall[],
+    toolResults: LLMToolResult[],
+    options: LLMChatOptions
+  ): LLMStreamResponse;
 }

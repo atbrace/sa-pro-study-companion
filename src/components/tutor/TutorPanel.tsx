@@ -23,6 +23,16 @@ function generateMessageId(): string {
   return `msg-${Date.now()}-${++messageCounter}`;
 }
 
+const FRIENDLY_TOOL_NAMES: Record<string, string> = {
+  get_study_progress: 'your study progress',
+  get_question_details: 'question details',
+  search_study_content: 'study content',
+  get_topic_metadata: 'topic information',
+  get_assessment_history: 'your assessment history',
+  get_weak_area_questions: 'your weak areas',
+  suggest_next_study_topic: 'study recommendations',
+};
+
 // Memoized message component to prevent re-renders when new messages arrive
 const MessageItem = memo(function MessageItem({ message }: { message: Message }) {
   return (
@@ -61,6 +71,7 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [providerDisplayName, setProviderDisplayName] = useState<string | null>(null);
+  const [toolStatus, setToolStatus] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch provider info on mount
@@ -71,25 +82,30 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
       .catch(() => setProviderDisplayName(null));
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or content streams
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, toolStatus]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim()) return;
 
     const userMessage: Message = { id: generateMessageId(), role: 'user', content: messageText };
-    setMessages(prev => [...prev, userMessage]);
+    const assistantId = generateMessageId();
+    setMessages(prev => [...prev, userMessage, { id: assistantId, role: 'assistant', content: '' }]);
     setInput('');
     setIsLoading(true);
+    setToolStatus(null);
 
     try {
       const response = await fetch('/api/tutor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
         body: JSON.stringify({
           message: messageText,
           examId,
@@ -98,31 +114,106 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
+      if (!response.ok || !response.body) {
+        // Non-streaming error response — read as JSON
+        const errorData = await response.json().catch(() => null);
+        const errorText = errorData?.error || 'I apologize, but I encountered an error. Please try again.';
+        setMessages(prev =>
+          prev.map(m => m.id === assistantId ? { ...m, content: errorText } : m)
+        );
+        return;
       }
 
-      const data = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      const assistantMessage: Message = {
-        id: generateMessageId(),
-        role: 'assistant',
-        content: data.response,
-      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      setMessages(prev => [...prev, assistantMessage]);
-      setConversationId(data.conversationId);
-      setSuggestedQuestions(data.suggestedQuestions || []);
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';
+
+        for (const eventBlock of events) {
+          const lines = eventBlock.split('\n');
+          let eventType = '';
+          let eventData = '';
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7);
+            } else if (line.startsWith('data: ')) {
+              eventData = line.slice(6);
+            }
+          }
+
+          if (!eventType || !eventData) continue;
+
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(eventData);
+          } catch {
+            continue;
+          }
+
+          switch (eventType) {
+            case 'stream_start':
+              if (data.conversationId) {
+                setConversationId(data.conversationId as string);
+              }
+              break;
+
+            case 'tool_start':
+              setToolStatus(
+                `Looking up ${FRIENDLY_TOOL_NAMES[data.toolName as string] || data.toolName}...`
+              );
+              break;
+
+            case 'tool_end':
+              setToolStatus(null);
+              break;
+
+            case 'text_delta':
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === assistantId
+                    ? { ...m, content: m.content + (data.delta as string) }
+                    : m
+                )
+              );
+              break;
+
+            case 'stream_end':
+              setConversationId(data.conversationId as string);
+              setSuggestedQuestions((data.suggestedQuestions as string[]) || []);
+              break;
+
+            case 'error':
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === assistantId
+                    ? { ...m, content: data.error as string }
+                    : m
+                )
+              );
+              break;
+          }
+        }
+      }
     } catch (error) {
       console.error('Tutor error:', error);
-      const errorMessage: Message = {
-        id: generateMessageId(),
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: 'I apologize, but I encountered an error. Please try again.' }
+            : m
+        )
+      );
     } finally {
       setIsLoading(false);
+      setToolStatus(null);
     }
   };
 
@@ -186,8 +277,11 @@ export function TutorPanel({ open, onOpenChange, context, examId, examName }: Tu
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-muted rounded-lg px-4 py-2">
+                <div className="bg-muted rounded-lg px-4 py-2 flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
+                  {toolStatus && (
+                    <span className="text-sm text-muted-foreground">{toolStatus}</span>
+                  )}
                 </div>
               </div>
             )}

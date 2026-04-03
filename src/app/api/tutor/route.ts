@@ -88,6 +88,15 @@ class RequestTimer {
     console.log(`[tutor] ${total.toFixed(0)}ms total\n${breakdown}`);
   }
 
+  getTimingsObject(): Record<string, number> {
+    const obj: Record<string, number> = {};
+    for (const m of this.marks) {
+      obj[m.stage] = Math.round(m.durationMs);
+    }
+    obj.total = Math.round(performance.now() - this.requestStart);
+    return obj;
+  }
+
   applyTo(response: Response): Response {
     this.logIfDev();
     response.headers.set('Server-Timing', this.toServerTimingHeader());
@@ -165,6 +174,216 @@ function executeTool(toolCall: LLMToolCall, examId: string): LLMToolResult {
     toolCallId: toolCall.id,
     result: handler(toolCall.arguments, examId),
   };
+}
+
+function getClientErrorMessage(error: LLMError): string {
+  const providerLabel = error.provider === 'gemini' ? 'Gemini' : 'Claude';
+  if (error.statusCode === 429) {
+    return `${providerLabel} is rate-limited. Please wait a moment and try again.`;
+  } else if (error.statusCode === 503 || error.statusCode === 529) {
+    return `${providerLabel} is experiencing high demand. Your request was retried but the service is still busy. Please try again shortly.`;
+  } else if (error.statusCode === 401) {
+    return `${providerLabel} API key is invalid or missing. Check your .env.local configuration.`;
+  }
+  return `${providerLabel} returned an error (${error.statusCode || 'unknown'}). Please try again.`;
+}
+
+function handleStreamingResponse(
+  provider: ReturnType<typeof getProvider>,
+  llmMessages: LLMMessage[],
+  chatOptions: { systemPrompt: string; tools: typeof TUTOR_TOOLS; maxTokens: number },
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  examId: string,
+  dbConversationId: string | undefined,
+  context: TutorContext | undefined,
+  timer: RequestTimer,
+): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: unknown) => {
+        try {
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          // Client disconnected
+        }
+      };
+
+      try {
+        send('stream_start', { conversationId: dbConversationId || null });
+
+        const maxToolIterations = 5;
+        let iterations = 0;
+        let lastToolCalls: LLMToolCall[] = [];
+        let fullText = '';
+        let toolCallsReceived = false;
+
+        // First LLM call — streaming
+        timer.startStage();
+        if (!provider.chatStream) {
+          // Fallback to non-streaming
+          const response = await provider.chat(llmMessages, chatOptions);
+          timer.endStage('llm_initial');
+          if (response.type === 'tool_calls') {
+            toolCallsReceived = true;
+            lastToolCalls = response.calls;
+          } else {
+            fullText = response.content;
+            send('text_delta', { delta: response.content });
+          }
+        } else {
+          const gen = provider.chatStream(llmMessages, chatOptions);
+          for await (const chunk of gen) {
+            if (chunk.type === 'text_delta') {
+              fullText += chunk.delta;
+              send('text_delta', { delta: chunk.delta });
+            } else if (chunk.type === 'tool_calls') {
+              toolCallsReceived = true;
+              lastToolCalls = chunk.calls;
+            } else if (chunk.type === 'done') {
+              fullText = chunk.fullText;
+            }
+          }
+          timer.endStage('llm_initial');
+        }
+
+        // Tool loop
+        while (toolCallsReceived && iterations < maxToolIterations) {
+          iterations++;
+          toolCallsReceived = false;
+          fullText = '';
+
+          for (const call of lastToolCalls) {
+            send('tool_start', { toolName: call.name, toolIndex: iterations });
+          }
+
+          timer.startStage();
+          const toolResults: LLMToolResult[] = lastToolCalls.map(call =>
+            executeTool(call, examId)
+          );
+          timer.endStage(`tool_exec_${iterations}`);
+
+          for (const call of lastToolCalls) {
+            send('tool_end', { toolName: call.name, toolIndex: iterations });
+          }
+
+          // Continue — streaming if available
+          timer.startStage();
+          if (!provider.continueWithToolResultsStream) {
+            const response = await provider.continueWithToolResults(
+              llmMessages, lastToolCalls, toolResults, chatOptions
+            );
+            timer.endStage(`llm_continue_${iterations}`);
+            if (response.type === 'tool_calls') {
+              toolCallsReceived = true;
+              lastToolCalls = response.calls;
+            } else {
+              fullText = response.content;
+              send('text_delta', { delta: response.content });
+            }
+          } else {
+            const gen = provider.continueWithToolResultsStream(
+              llmMessages, lastToolCalls, toolResults, chatOptions
+            );
+            for await (const chunk of gen) {
+              if (chunk.type === 'text_delta') {
+                fullText += chunk.delta;
+                send('text_delta', { delta: chunk.delta });
+              } else if (chunk.type === 'tool_calls') {
+                toolCallsReceived = true;
+                lastToolCalls = chunk.calls;
+              } else if (chunk.type === 'done') {
+                fullText = chunk.fullText;
+              }
+            }
+            timer.endStage(`llm_continue_${iterations}`);
+          }
+        }
+
+        // Tool limit exceeded
+        if (toolCallsReceived) {
+          console.error('[tutor] error=tool_limit', { iterations, tools: lastToolCalls.map(tc => tc.name) });
+          send('error', {
+            error: 'I encountered an issue while processing your request. Please try rephrasing.',
+            errorCategory: 'tool_limit',
+          });
+          controller.close();
+          return;
+        }
+
+        // Save conversation
+        messages.push({ role: 'assistant', content: fullText });
+        timer.startStage();
+        try {
+          if (!dbConversationId) {
+            const result = db.prepare(`
+              INSERT INTO tutor_conversations (
+                context_exam, context_domain, context_topic,
+                context_question_id, context_lab_id, messages_json
+              ) VALUES (?, ?, ?, ?, ?, ?)
+            `).run(
+              examId,
+              context?.domainId || null,
+              context?.topicId || null,
+              context?.questionId || null,
+              context?.labId || null,
+              JSON.stringify(messages)
+            );
+            dbConversationId = result.lastInsertRowid.toString();
+          } else {
+            db.prepare(`
+              UPDATE tutor_conversations SET messages_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+            `).run(JSON.stringify(messages), dbConversationId);
+          }
+        } catch (dbError) {
+          console.error('[tutor] error=db_save', dbError);
+        }
+        timer.endStage('conversation_save');
+        timer.logIfDev();
+
+        send('stream_end', {
+          conversationId: dbConversationId || 'unsaved',
+          suggestedQuestions: generateSuggestedQuestions(context || {}),
+          timings: timer.getTimingsObject(),
+        });
+        controller.close();
+      } catch (error) {
+        let category = categorizeError(error);
+        let errorMessage: string;
+
+        if (error instanceof LLMError) {
+          errorMessage = getClientErrorMessage(error);
+          console.error(`[tutor] error=${category} provider=${error.provider} status=${error.statusCode}`, error.message);
+        } else {
+          // Try to extract status from raw SDK errors (GoogleGenerativeAIFetchError, Anthropic.APIError)
+          const rawStatus = (error as { status?: number })?.status;
+          if (rawStatus === 429) {
+            category = 'llm_rate_limit';
+            errorMessage = 'AI service is rate-limited. Please wait a moment and try again.';
+          } else if (rawStatus && rawStatus >= 500) {
+            category = 'llm_provider';
+            errorMessage = 'AI service is experiencing issues. Please try again shortly.';
+          } else {
+            errorMessage = 'Failed to process tutor request';
+          }
+          console.error(`[tutor] error=${category}`, error);
+        }
+
+        send('error', { error: errorMessage, errorCategory: category });
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Server-Timing': timer.toServerTimingHeader(),
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -254,6 +473,15 @@ export async function POST(request: NextRequest) {
       tools: TUTOR_TOOLS,
       maxTokens: 2048,
     };
+
+    // Branch: streaming vs non-streaming based on Accept header
+    const wantsStream = request.headers.get('accept')?.includes('text/event-stream');
+    if (wantsStream) {
+      return handleStreamingResponse(
+        provider, llmMessages, chatOptions, messages,
+        examId, dbConversationId, context, timer
+      );
+    }
 
     timer.startStage();
     let response = await provider.chat(llmMessages, chatOptions);
@@ -363,19 +591,8 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof LLMError) {
       console.error(`[tutor] error=${category} provider=${error.provider} status=${error.statusCode}`, error.message);
-      const providerLabel = error.provider === 'gemini' ? 'Gemini' : 'Claude';
-      let clientMessage: string;
-      if (error.statusCode === 429) {
-        clientMessage = `${providerLabel} is rate-limited. Please wait a moment and try again.`;
-      } else if (error.statusCode === 503 || error.statusCode === 529) {
-        clientMessage = `${providerLabel} is experiencing high demand. Your request was retried but the service is still busy. Please try again shortly.`;
-      } else if (error.statusCode === 401) {
-        clientMessage = `${providerLabel} API key is invalid or missing. Check your .env.local configuration.`;
-      } else {
-        clientMessage = `${providerLabel} returned an error (${error.statusCode || 'unknown'}). Please try again.`;
-      }
       return timer.applyTo(NextResponse.json(
-        { error: clientMessage, provider: error.provider, errorCategory: category },
+        { error: getClientErrorMessage(error), provider: error.provider, errorCategory: category },
         { status: error.statusCode || 503 }
       ));
     }

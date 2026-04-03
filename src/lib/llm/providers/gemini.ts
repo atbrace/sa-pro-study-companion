@@ -4,6 +4,7 @@ import {
   type FunctionDeclarationSchema,
   type Part,
   type Content,
+  type GenerateContentStreamResult,
 } from '@google/generative-ai';
 import type {
   LLMProvider,
@@ -13,6 +14,7 @@ import type {
   LLMToolCall,
   LLMToolResult,
   LLMTool,
+  LLMStreamChunk,
 } from '../types';
 import { LLMError } from '../types';
 import { withRetry } from '../retry';
@@ -166,6 +168,70 @@ function parseGeminiResponse(response: unknown): LLMChatResponse {
   return { type: 'text', content: text };
 }
 
+/**
+ * Async generator that yields LLMStreamChunks from a Gemini streaming result.
+ *
+ * Text deltas are yielded as they arrive from the stream. Function calls are
+ * collected from the final aggregated response (not from individual chunks)
+ * to ensure we get the complete call data including thought_signature.
+ */
+async function* streamGeminiResult(
+  result: GenerateContentStreamResult
+): AsyncGenerator<LLMStreamChunk, void, unknown> {
+  let fullText = '';
+
+  try {
+    for await (const chunk of result.stream) {
+      // chunk.text() throws if the response was blocked by safety filters
+      try {
+        const text = chunk.text();
+        if (text) {
+          fullText += text;
+          yield { type: 'text_delta', delta: text };
+        }
+      } catch {
+        // Safety filter block or no text content — skip this chunk
+      }
+    }
+
+    // After the stream completes, check the aggregated response for function calls
+    const response = await result.response;
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    const functionCalls = parts.filter(p => 'functionCall' in p && p.functionCall);
+
+    if (functionCalls.length > 0) {
+      const calls: LLMToolCall[] = functionCalls.map((p, index) => {
+        const partWithSig = p as {
+          functionCall: { name: string; args: Record<string, unknown> };
+          thought_signature?: string;
+          thoughtSignature?: string;
+        };
+        const fc = partWithSig.functionCall;
+        const call: LLMToolCall = {
+          id: generateToolCallId(fc.name, fc.args, index),
+          name: fc.name,
+          arguments: fc.args,
+        };
+        const signature = partWithSig.thought_signature || partWithSig.thoughtSignature;
+        if (signature) {
+          call.thoughtSignature = signature;
+        }
+        return call;
+      });
+      yield { type: 'tool_calls', calls };
+    } else {
+      yield { type: 'done', fullText };
+    }
+  } catch (error) {
+    // Convert stream-iteration errors to LLMError for proper categorization
+    if (error instanceof LLMError) throw error;
+    const statusCode = extractStatusCode(error);
+    const message = extractErrorMessage(error);
+    const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
+    throw new LLMError(message, 'gemini', statusCode, isRetryable);
+  }
+}
+
 export const geminiProvider: LLMProvider = {
   async chat(messages, options) {
     return withRetry(async () => {
@@ -252,6 +318,94 @@ export const geminiProvider: LLMProvider = {
         throw new LLMError(message, 'gemini', statusCode, isRetryable);
       }
     });
+  },
+
+  async *chatStream(messages, options) {
+    const result = await withRetry(async () => {
+      try {
+        const client = getClient();
+        const modelName = getModelName();
+        const model = client.getGenerativeModel({
+          model: modelName,
+          systemInstruction: options.systemPrompt,
+          tools: options.tools
+            ? [{ functionDeclarations: options.tools.map(toGeminiFunctionDeclaration) }]
+            : undefined,
+        });
+
+        const history = messages.slice(0, -1);
+        const lastMessage = messages.at(-1);
+
+        if (!lastMessage) {
+          throw new LLMError('No messages provided', 'gemini', 400, false);
+        }
+
+        const chat = model.startChat({
+          history: toGeminiHistory(history),
+        });
+
+        return chat.sendMessageStream(lastMessage.content);
+      } catch (error: unknown) {
+        if (error instanceof LLMError) throw error;
+        const statusCode = extractStatusCode(error);
+        const message = extractErrorMessage(error);
+        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
+        if (statusCode === 401 || statusCode === 403) {
+          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
+        }
+        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+      }
+    });
+    yield* streamGeminiResult(result);
+  },
+
+  async *continueWithToolResultsStream(messages, toolCalls, toolResults, options) {
+    const result = await withRetry(async () => {
+      try {
+        const client = getClient();
+        const modelName = getModelName();
+        const model = client.getGenerativeModel({
+          model: modelName,
+          systemInstruction: options.systemPrompt,
+          tools: options.tools
+            ? [{ functionDeclarations: options.tools.map(toGeminiFunctionDeclaration) }]
+            : undefined,
+        });
+
+        const chat = model.startChat({
+          history: [
+            ...toGeminiHistory(messages),
+            { role: 'model', parts: toolCalls.map((tc, idx) => toGeminiFunctionCallPart(tc, idx)) },
+          ],
+        });
+
+        // Map tool results with their corresponding tool calls to get function names
+        const functionResponses = toolResults.map(result => {
+          const toolCall = toolCalls.find(tc => tc.id === result.toolCallId);
+          if (!toolCall) {
+            throw new LLMError(
+              `Tool result references unknown tool call ID: ${result.toolCallId}`,
+              'gemini',
+              400,
+              false
+            );
+          }
+          return toGeminiFunctionResponsePart(toolCall, result);
+        });
+
+        return chat.sendMessageStream(functionResponses);
+      } catch (error: unknown) {
+        if (error instanceof LLMError) throw error;
+        const statusCode = extractStatusCode(error);
+        const message = extractErrorMessage(error);
+        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
+        if (statusCode === 401 || statusCode === 403) {
+          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
+        }
+        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+      }
+    });
+    yield* streamGeminiResult(result);
   },
 };
 

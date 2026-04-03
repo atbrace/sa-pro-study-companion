@@ -5,6 +5,7 @@ import type {
   ToolUseBlock,
   ToolResultBlockParam,
 } from '@anthropic-ai/sdk/resources/messages';
+import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
 import type {
   LLMProvider,
   LLMMessage,
@@ -13,6 +14,7 @@ import type {
   LLMToolCall,
   LLMToolResult,
   LLMTool,
+  LLMStreamChunk,
 } from '../types';
 import { LLMError } from '../types';
 import { withRetry } from '../retry';
@@ -99,6 +101,40 @@ function parseClaudeResponse(response: Anthropic.Message): LLMChatResponse {
   return { type: 'text', content };
 }
 
+/**
+ * Async generator that iterates over a MessageStream, yielding LLMStreamChunks.
+ * Text deltas are yielded as they arrive. After the stream completes, either a
+ * tool_calls chunk or a done chunk is yielded based on the final message.
+ */
+async function* streamClaudeMessages(stream: MessageStream): AsyncGenerator<LLMStreamChunk, void, unknown> {
+  let fullText = '';
+
+  for await (const event of stream) {
+    if (
+      event.type === 'content_block_delta' &&
+      event.delta.type === 'text_delta'
+    ) {
+      fullText += event.delta.text;
+      yield { type: 'text_delta', delta: event.delta.text };
+    }
+  }
+
+  const finalMessage = await stream.finalMessage();
+
+  if (finalMessage.stop_reason === 'tool_use') {
+    const toolCalls = finalMessage.content
+      .filter((block): block is ToolUseBlock => block.type === 'tool_use')
+      .map(block => ({
+        id: block.id,
+        name: block.name,
+        arguments: block.input as Record<string, unknown>,
+      }));
+    yield { type: 'tool_calls', calls: toolCalls };
+  } else {
+    yield { type: 'done', fullText };
+  }
+}
+
 export const claudeProvider: LLMProvider = {
   async chat(messages, options) {
     return withRetry(async () => {
@@ -160,5 +196,64 @@ export const claudeProvider: LLMProvider = {
         throw new LLMError(message, 'claude', undefined, false);
       }
     });
+  },
+
+  async *chatStream(messages, options) {
+    const stream = await withRetry(async () => {
+      try {
+        const client = getClient();
+        const model = getModel();
+        return client.messages.stream({
+          model,
+          max_tokens: options.maxTokens || 2048,
+          system: options.systemPrompt,
+          messages: toClaudeMessages(messages),
+          tools: options.tools?.map(toClaudeTool),
+        });
+      } catch (error: unknown) {
+        if (error instanceof Anthropic.APIError) {
+          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          if (error.status === 401) {
+            throw new LLMError('Invalid API key', 'claude', 401, false);
+          }
+          throw new LLMError(error.message, 'claude', error.status, isRetryable);
+        }
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new LLMError(message, 'claude', undefined, false);
+      }
+    });
+    yield* streamClaudeMessages(stream);
+  },
+
+  async *continueWithToolResultsStream(messages, toolCalls, toolResults, options) {
+    const stream = await withRetry(async () => {
+      try {
+        const client = getClient();
+        const model = getModel();
+        const claudeMessages: MessageParam[] = [
+          ...toClaudeMessages(messages),
+          { role: 'assistant', content: toolCalls.map(toClaudeToolUseBlock) },
+          { role: 'user', content: toolResults.map(toClaudeToolResultBlock) },
+        ];
+        return client.messages.stream({
+          model,
+          max_tokens: options.maxTokens || 2048,
+          system: options.systemPrompt,
+          messages: claudeMessages,
+          tools: options.tools?.map(toClaudeTool),
+        });
+      } catch (error: unknown) {
+        if (error instanceof Anthropic.APIError) {
+          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          if (error.status === 401) {
+            throw new LLMError('Invalid API key', 'claude', 401, false);
+          }
+          throw new LLMError(error.message, 'claude', error.status, isRetryable);
+        }
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new LLMError(message, 'claude', undefined, false);
+      }
+    });
+    yield* streamClaudeMessages(stream);
   },
 };

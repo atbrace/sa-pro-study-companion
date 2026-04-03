@@ -43,6 +43,9 @@ describe('withRetry', () => {
   });
 
   it('uses exponential backoff delays', async () => {
+    // Pin jitter to max so delay = ceiling (deterministic for timing assertions)
+    vi.spyOn(Math, 'random').mockReturnValue(1.0);
+
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
@@ -51,15 +54,17 @@ describe('withRetry', () => {
 
     const promise = withRetry(fn);
 
-    // First retry after 1s
+    // First retry after 1s (ceiling = 1000 * 2^0 = 1000)
     await vi.advanceTimersByTimeAsync(1000);
     expect(fn).toHaveBeenCalledTimes(2);
 
-    // Second retry after 2s (exponential)
+    // Second retry after 2s (ceiling = 1000 * 2^1 = 2000)
     await vi.advanceTimersByTimeAsync(2000);
     expect(fn).toHaveBeenCalledTimes(3);
 
     await expect(promise).resolves.toBe('success');
+
+    vi.restoreAllMocks();
   });
 
   it('stops after max retries', async () => {

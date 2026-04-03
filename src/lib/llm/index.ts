@@ -6,6 +6,8 @@ export type {
   LLMToolResult,
   LLMChatOptions,
   LLMChatResponse,
+  LLMStreamChunk,
+  LLMStreamResponse,
   LLMProvider,
   ProviderName,
 } from './types';
