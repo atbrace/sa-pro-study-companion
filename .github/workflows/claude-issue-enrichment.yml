@@ -20,6 +20,13 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: React with eyes emoji
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions \
+            -f content=eyes
+
       - name: Enrich issue
         id: enrich
         uses: anthropics/claude-code-action@v1
