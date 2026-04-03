@@ -11,7 +11,9 @@ export interface RetryOptions {
 }
 
 /**
- * Retry a function with exponential backoff for retryable LLMErrors
+ * Retry a function with exponential backoff and full jitter for retryable LLMErrors.
+ * Jitter prevents thundering herd when multiple requests retry simultaneously.
+ * See: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -31,11 +33,9 @@ export async function withRetry<T>(
 
       // Only retry if it's a retryable LLMError
       if (error instanceof LLMError && error.isRetryable && attempt < maxRetries) {
-        // Exponential backoff with cap to prevent indefinite blocking
-        const delayMs = Math.min(
-          baseDelayMs * Math.pow(2, attempt), // 1s, 2s, 4s, 8s, ...
-          maxDelayMs
-        );
+        // Full jitter: random value between 0 and the exponential ceiling
+        const ceiling = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
+        const delayMs = Math.random() * ceiling;
         await new Promise(resolve => setTimeout(resolve, delayMs));
         continue;
       }

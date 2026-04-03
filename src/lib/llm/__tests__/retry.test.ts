@@ -89,6 +89,9 @@ describe('withRetry', () => {
   });
 
   it('respects custom baseDelayMs', async () => {
+    // Pin jitter to max so delay = ceiling = baseDelayMs for attempt 0
+    vi.spyOn(Math, 'random').mockReturnValue(1.0);
+
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new LLMError('Rate limit', 'gemini', 429, true))
@@ -96,7 +99,7 @@ describe('withRetry', () => {
 
     const promise = withRetry(fn, { baseDelayMs: 500 });
 
-    // Should not resolve after 400ms
+    // Should not resolve after 400ms (jitter pinned to max = 500ms)
     await vi.advanceTimersByTimeAsync(400);
     expect(fn).toHaveBeenCalledTimes(1);
 
@@ -105,6 +108,8 @@ describe('withRetry', () => {
     const result = await promise;
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(2);
+
+    vi.restoreAllMocks();
   });
 
   it('respects custom maxRetries', async () => {
@@ -124,6 +129,9 @@ describe('withRetry', () => {
   });
 
   it('caps delay at maxDelayMs to prevent indefinite blocking', async () => {
+    // Pin jitter to max so delay = ceiling (deterministic for timing assertions)
+    vi.spyOn(Math, 'random').mockReturnValue(1.0);
+
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
@@ -131,10 +139,10 @@ describe('withRetry', () => {
       .mockRejectedValueOnce(new LLMError('Rate limit', 'claude', 429, true))
       .mockResolvedValue('success');
 
-    // With baseDelay=10000 and maxDelay=15000, the delays should be:
-    // Attempt 1: min(10000 * 2^0, 15000) = min(10000, 15000) = 10000
-    // Attempt 2: min(10000 * 2^1, 15000) = min(20000, 15000) = 15000 (capped!)
-    // Attempt 3: min(10000 * 2^2, 15000) = min(40000, 15000) = 15000 (capped!)
+    // With baseDelay=10000, maxDelay=15000, and jitter pinned to max:
+    // Attempt 1: min(10000 * 2^0, 15000) = 10000
+    // Attempt 2: min(10000 * 2^1, 15000) = 15000 (capped!)
+    // Attempt 3: min(10000 * 2^2, 15000) = 15000 (capped!)
     const promise = withRetry(fn, {
       maxRetries: 5,
       baseDelayMs: 10000,
@@ -155,5 +163,7 @@ describe('withRetry', () => {
 
     const result = await promise;
     expect(result).toBe('success');
+
+    vi.restoreAllMocks();
   });
 });

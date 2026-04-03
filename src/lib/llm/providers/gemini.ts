@@ -197,13 +197,11 @@ export const geminiProvider: LLMProvider = {
         if (error instanceof LLMError) throw error;
         const statusCode = extractStatusCode(error);
         const message = extractErrorMessage(error);
-        if (statusCode === 429) {
-          throw new LLMError('Rate limit exceeded', 'gemini', 429, true);
-        }
+        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
         if (statusCode === 401 || statusCode === 403) {
           throw new LLMError('Invalid API key', 'gemini', statusCode, false);
         }
-        throw new LLMError(message, 'gemini', statusCode, false);
+        throw new LLMError(message, 'gemini', statusCode, isRetryable);
       }
     });
   },
@@ -247,13 +245,11 @@ export const geminiProvider: LLMProvider = {
         if (error instanceof LLMError) throw error;
         const statusCode = extractStatusCode(error);
         const message = extractErrorMessage(error);
-        if (statusCode === 429) {
-          throw new LLMError('Rate limit exceeded', 'gemini', 429, true);
-        }
+        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
         if (statusCode === 401 || statusCode === 403) {
           throw new LLMError('Invalid API key', 'gemini', statusCode, false);
         }
-        throw new LLMError(message, 'gemini', statusCode, false);
+        throw new LLMError(message, 'gemini', statusCode, isRetryable);
       }
     });
   },

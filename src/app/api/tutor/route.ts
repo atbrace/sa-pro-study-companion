@@ -363,11 +363,19 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof LLMError) {
       console.error(`[tutor] error=${category} provider=${error.provider} status=${error.statusCode}`, error.message);
-      const clientMessage = error.statusCode === 429
-        ? 'AI service is busy. Please try again in a moment.'
-        : 'The AI service is temporarily unavailable. Please try again.';
+      const providerLabel = error.provider === 'gemini' ? 'Gemini' : 'Claude';
+      let clientMessage: string;
+      if (error.statusCode === 429) {
+        clientMessage = `${providerLabel} is rate-limited. Please wait a moment and try again.`;
+      } else if (error.statusCode === 503 || error.statusCode === 529) {
+        clientMessage = `${providerLabel} is experiencing high demand. Your request was retried but the service is still busy. Please try again shortly.`;
+      } else if (error.statusCode === 401) {
+        clientMessage = `${providerLabel} API key is invalid or missing. Check your .env.local configuration.`;
+      } else {
+        clientMessage = `${providerLabel} returned an error (${error.statusCode || 'unknown'}). Please try again.`;
+      }
       return timer.applyTo(NextResponse.json(
-        { error: clientMessage },
+        { error: clientMessage, provider: error.provider, errorCategory: category },
         { status: error.statusCode || 503 }
       ));
     }

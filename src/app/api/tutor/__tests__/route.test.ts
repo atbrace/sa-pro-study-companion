@@ -380,7 +380,7 @@ describe('POST /api/tutor', () => {
       const body = await res.json();
 
       expect(res.status).toBe(429);
-      expect(body.error).toContain('busy');
+      expect(body.error).toContain('rate-limited');
     });
 
     it('returns 503 for LLM service errors', async () => {
@@ -391,7 +391,7 @@ describe('POST /api/tutor', () => {
 
       expect(res.status).toBe(500);
       const body = await res.json();
-      expect(body.error).toContain('unavailable');
+      expect(body.error).toContain('returned an error');
     });
 
     it('returns 500 for unexpected errors', async () => {

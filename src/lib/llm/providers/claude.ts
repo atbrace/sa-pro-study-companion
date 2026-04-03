@@ -115,13 +115,11 @@ export const claudeProvider: LLMProvider = {
         return parseClaudeResponse(response);
       } catch (error: unknown) {
         if (error instanceof Anthropic.APIError) {
-          if (error.status === 429) {
-            throw new LLMError('Rate limit exceeded', 'claude', 429, true);
-          }
+          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }
-          throw new LLMError(error.message, 'claude', error.status, false);
+          throw new LLMError(error.message, 'claude', error.status, isRetryable);
         }
         // Handle non-Anthropic errors
         const message = error instanceof Error ? error.message : 'Unknown error';
@@ -151,13 +149,11 @@ export const claudeProvider: LLMProvider = {
         return parseClaudeResponse(response);
       } catch (error: unknown) {
         if (error instanceof Anthropic.APIError) {
-          if (error.status === 429) {
-            throw new LLMError('Rate limit exceeded', 'claude', 429, true);
-          }
+          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }
-          throw new LLMError(error.message, 'claude', error.status, false);
+          throw new LLMError(error.message, 'claude', error.status, isRetryable);
         }
         // Handle non-Anthropic errors
         const message = error instanceof Error ? error.message : 'Unknown error';
