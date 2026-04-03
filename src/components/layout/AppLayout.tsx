@@ -1,6 +1,7 @@
 'use client';
 
-import { TutorPanel } from '@/components/tutor/TutorPanel';
+import dynamic from 'next/dynamic';
+const TutorPanel = dynamic(() => import('@/components/tutor/TutorPanel').then(mod => ({ default: mod.TutorPanel })), { ssr: false });
 import { useTutor } from '@/hooks/useTutor';
 import { TutorProvider } from '@/contexts/TutorContext';
 import { useExam } from '@/contexts/ExamContext';

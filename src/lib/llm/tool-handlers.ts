@@ -22,11 +22,12 @@ export function handleGetStudyProgress(_params: Record<string, unknown>, examId:
  */
 export function handleGetQuestionDetails(params: Record<string, unknown>, examId: string): string {
   try {
-    const questionId = params.questionId as string;
-    const domainId = params.domainId as string | undefined;
-    const topicId = params.topicId as string | undefined;
-
-    if (!questionId) return 'Error: questionId is required.';
+    if (typeof params.questionId !== 'string' || !params.questionId) {
+      return 'Error: questionId parameter is required and must be a string';
+    }
+    const questionId = params.questionId;
+    const domainId = typeof params.domainId === 'string' ? params.domainId : undefined;
+    const topicId = typeof params.topicId === 'string' ? params.topicId : undefined;
 
     let question: Question | undefined;
 
@@ -63,8 +64,10 @@ export function handleGetQuestionDetails(params: Record<string, unknown>, examId
  */
 export function handleSearchStudyContent(params: Record<string, unknown>, examId: string): string {
   try {
-    const query = (params.query as string || '').toLowerCase().trim();
-    if (!query) return 'Error: query is required.';
+    if (typeof params.query !== 'string' || !params.query.trim()) {
+      return 'Error: query parameter is required and must be a non-empty string';
+    }
+    const query = params.query.toLowerCase().trim();
 
     const domains = getAllDomains(examId);
 
@@ -157,10 +160,14 @@ export function handleSearchStudyContent(params: Record<string, unknown>, examId
  */
 export function handleGetTopicMetadata(params: Record<string, unknown>, examId: string): string {
   try {
-    const domainId = params.domainId as string;
-    const topicId = params.topicId as string;
-
-    if (!domainId || !topicId) return 'Error: domainId and topicId are required.';
+    if (typeof params.domainId !== 'string' || !params.domainId) {
+      return 'Error: domainId parameter is required and must be a string';
+    }
+    if (typeof params.topicId !== 'string' || !params.topicId) {
+      return 'Error: topicId parameter is required and must be a string';
+    }
+    const domainId = params.domainId;
+    const topicId = params.topicId;
 
     const topic = getTopicById(examId, domainId, topicId);
     if (!topic) return `Topic "${topicId}" not found in domain "${domainId}".`;
@@ -219,8 +226,8 @@ export function handleGetTopicMetadata(params: Record<string, unknown>, examId: 
  */
 export function handleGetAssessmentHistory(params: Record<string, unknown>, examId: string): string {
   try {
-    const domainId = params.domainId as string | undefined;
-    const limit = (params.limit as number) || 3;
+    const domainId = typeof params.domainId === 'string' ? params.domainId : undefined;
+    const limit = typeof params.limit === 'number' ? params.limit : 3;
 
     let sessions: Array<{
       id: number;
@@ -298,9 +305,9 @@ export function handleGetAssessmentHistory(params: Record<string, unknown>, exam
  */
 export function handleGetWeakAreaQuestions(params: Record<string, unknown>, examId: string): string {
   try {
-    const domainId = params.domainId as string | undefined;
-    const topicId = params.topicId as string | undefined;
-    const limit = (params.limit as number) || 10;
+    const domainId = typeof params.domainId === 'string' ? params.domainId : undefined;
+    const topicId = typeof params.topicId === 'string' ? params.topicId : undefined;
+    const limit = typeof params.limit === 'number' ? params.limit : 10;
 
     let whereClause = 'exam_id = ?';
     const queryParams: unknown[] = [examId];

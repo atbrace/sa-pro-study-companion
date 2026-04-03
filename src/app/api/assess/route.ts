@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Wrap all database operations in a transaction for atomicity
     const submitAssessment = db.transaction(() => {
-      // Store assessment session in database
+      // Step 1: Store assessment session
       const sessionResult = db.prepare(`
         INSERT INTO assessment_sessions (
           exam_id,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
 
       const sessionId = sessionResult.lastInsertRowid;
 
-      // Store individual question attempts
+      // Step 2: Store individual question attempts
       for (const answer of body.answers) {
         const questionResult = result.results.find(r => r.questionId === answer.questionId);
         if (!questionResult) continue;
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Update topic progress
+      // Step 3: Update topic progress
       for (const [topicId, { domainId, correct, total }] of topicGroups.entries()) {
         db.prepare(`
           INSERT INTO topic_progress (
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
         `).run(examId, domainId, topicId, total, correct, correct / total);
       }
 
-      // Store weak areas (topics where user performed below threshold)
+      // Step 4: Store weak areas (topics where user performed below threshold)
       for (const weakArea of result.weakAreas) {
         db.prepare(`
           INSERT INTO weak_areas (exam_id, domain_id, topic_id, identified_at)
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
         `).run(examId, weakArea.domainId, weakArea.topicId);
       }
 
-      // Auto-resolve weak areas: if topic mastery is now >= 80%, mark as resolved
+      // Step 5: Auto-resolve weak areas if topic mastery is now >= 80%
       for (const [topicId, { domainId }] of topicGroups.entries()) {
         const progress = db.prepare(`
           SELECT mastery_level FROM topic_progress
@@ -225,13 +225,33 @@ export async function POST(request: NextRequest) {
       return sessionId;
     });
 
-    // Execute the transaction
-    const sessionId = submitAssessment();
-
-    return NextResponse.json({
-      ...result,
-      databaseSessionId: sessionId,
-    });
+    // Execute the transaction - if it fails, still return computed results with a warning
+    try {
+      const sessionId = submitAssessment();
+      return NextResponse.json({
+        ...result,
+        databaseSessionId: sessionId,
+      });
+    } catch (dbError) {
+      console.error('Assessment transaction failed:', {
+        error: dbError instanceof Error ? dbError.message : dbError,
+        examId,
+        domainId: body.domainId,
+        topicId: body.topicId,
+        totalQuestions: result.totalCount,
+        answersCount: body.answers.length,
+        topicGroupCount: topicGroups.size,
+        weakAreaCount: result.weakAreas.length,
+      });
+      return NextResponse.json(
+        {
+          ...result,
+          databaseSessionId: null,
+          warning: 'Assessment results could not be saved',
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Assessment error:', error);
     return NextResponse.json(
