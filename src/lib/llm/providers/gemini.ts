@@ -321,7 +321,9 @@ export const geminiProvider: LLMProvider = {
   },
 
   async *chatStream(messages, options) {
-    const result = await withRetry(async () => {
+    // Wrap creation + iteration in withRetry so errors during stream
+    // iteration (e.g., 429/503 from Gemini) are retried
+    const chunks = await withRetry(async () => {
       try {
         const client = getClient();
         const modelName = getModelName();
@@ -344,7 +346,12 @@ export const geminiProvider: LLMProvider = {
           history: toGeminiHistory(history),
         });
 
-        return chat.sendMessageStream(lastMessage.content);
+        const result = await chat.sendMessageStream(lastMessage.content);
+        const collected: LLMStreamChunk[] = [];
+        for await (const chunk of streamGeminiResult(result)) {
+          collected.push(chunk);
+        }
+        return collected;
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
         const statusCode = extractStatusCode(error);
@@ -356,11 +363,11 @@ export const geminiProvider: LLMProvider = {
         throw new LLMError(message, 'gemini', statusCode, isRetryable);
       }
     });
-    yield* streamGeminiResult(result);
+    yield* chunks;
   },
 
   async *continueWithToolResultsStream(messages, toolCalls, toolResults, options) {
-    const result = await withRetry(async () => {
+    const chunks = await withRetry(async () => {
       try {
         const client = getClient();
         const modelName = getModelName();
@@ -393,7 +400,12 @@ export const geminiProvider: LLMProvider = {
           return toGeminiFunctionResponsePart(toolCall, result);
         });
 
-        return chat.sendMessageStream(functionResponses);
+        const streamResult = await chat.sendMessageStream(functionResponses);
+        const collected: LLMStreamChunk[] = [];
+        for await (const chunk of streamGeminiResult(streamResult)) {
+          collected.push(chunk);
+        }
+        return collected;
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
         const statusCode = extractStatusCode(error);

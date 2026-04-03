@@ -33,9 +33,11 @@ export async function withRetry<T>(
 
       // Only retry if it's a retryable LLMError
       if (error instanceof LLMError && error.isRetryable && attempt < maxRetries) {
-        // Full jitter: random value between 0 and the exponential ceiling
+        // Equal jitter: half fixed + half random, guarantees a minimum delay
+        // while still spreading retries to avoid thundering herd
         const ceiling = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
-        const delayMs = Math.random() * ceiling;
+        const half = ceiling / 2;
+        const delayMs = half + Math.random() * half;
         await new Promise(resolve => setTimeout(resolve, delayMs));
         continue;
       }

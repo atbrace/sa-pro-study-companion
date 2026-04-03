@@ -199,18 +199,26 @@ export const claudeProvider: LLMProvider = {
   },
 
   async *chatStream(messages, options) {
-    const stream = await withRetry(async () => {
+    // Wrap creation + iteration in withRetry so errors during stream
+    // iteration (e.g., mid-stream disconnects) are retried
+    const chunks = await withRetry(async () => {
       try {
         const client = getClient();
         const model = getModel();
-        return client.messages.stream({
+        const stream = client.messages.stream({
           model,
           max_tokens: options.maxTokens || 2048,
           system: options.systemPrompt,
           messages: toClaudeMessages(messages),
           tools: options.tools?.map(toClaudeTool),
         });
+        const collected: LLMStreamChunk[] = [];
+        for await (const chunk of streamClaudeMessages(stream)) {
+          collected.push(chunk);
+        }
+        return collected;
       } catch (error: unknown) {
+        if (error instanceof LLMError) throw error;
         if (error instanceof Anthropic.APIError) {
           const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
           if (error.status === 401) {
@@ -222,11 +230,11 @@ export const claudeProvider: LLMProvider = {
         throw new LLMError(message, 'claude', undefined, false);
       }
     });
-    yield* streamClaudeMessages(stream);
+    yield* chunks;
   },
 
   async *continueWithToolResultsStream(messages, toolCalls, toolResults, options) {
-    const stream = await withRetry(async () => {
+    const chunks = await withRetry(async () => {
       try {
         const client = getClient();
         const model = getModel();
@@ -235,14 +243,20 @@ export const claudeProvider: LLMProvider = {
           { role: 'assistant', content: toolCalls.map(toClaudeToolUseBlock) },
           { role: 'user', content: toolResults.map(toClaudeToolResultBlock) },
         ];
-        return client.messages.stream({
+        const stream = client.messages.stream({
           model,
           max_tokens: options.maxTokens || 2048,
           system: options.systemPrompt,
           messages: claudeMessages,
           tools: options.tools?.map(toClaudeTool),
         });
+        const collected: LLMStreamChunk[] = [];
+        for await (const chunk of streamClaudeMessages(stream)) {
+          collected.push(chunk);
+        }
+        return collected;
       } catch (error: unknown) {
+        if (error instanceof LLMError) throw error;
         if (error instanceof Anthropic.APIError) {
           const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
           if (error.status === 401) {
@@ -254,6 +268,6 @@ export const claudeProvider: LLMProvider = {
         throw new LLMError(message, 'claude', undefined, false);
       }
     });
-    yield* streamClaudeMessages(stream);
+    yield* chunks;
   },
 };
