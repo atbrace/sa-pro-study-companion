@@ -25,9 +25,8 @@ export function getTutorProgressContext(examId: string): string {
     `**Questions:** ${summary.overall.questionsCorrect}/${summary.overall.questionsAttempted} correct (${accuracy}% accuracy)`
   );
   lines.push(
-    `**Exam Readiness:** ${summary.readinessEstimate.score}/1000 (${summary.readinessEstimate.confidence} confidence)`
+    `**Exam Readiness:** ${summary.readinessEstimate.score}/1000 (${summary.readinessEstimate.level})`
   );
-  lines.push(`**Recommendation:** ${summary.readinessEstimate.recommendation}`);
   lines.push('');
 
   // Domain breakdown

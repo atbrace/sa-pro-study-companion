@@ -1,10 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Award, BookOpen, Target, Clock } from "lucide-react";
+import { BookOpen, Target, Clock } from "lucide-react";
 import { DomainRadarChart, DomainBarChart } from "@/components/progress/DomainChart";
 import { WeakAreasList } from "@/components/progress/WeakAreasList";
 import { StudyStreak } from "@/components/progress/StudyStreak";
+import { ReadinessCard } from "@/components/progress/ReadinessCard";
 import { getProgressSummary } from "@/lib/progress/calculator";
 import { getExamById } from "@/lib/content/exam-loader";
 import { formatStudyTime } from "@/lib/utils/mastery";
@@ -20,18 +21,6 @@ export default async function ProgressPage({ params }: PageProps) {
   const examName = examConfig?.shortName || examId.toUpperCase();
   const masteryThreshold = examConfig?.masteryThreshold || 85;
 
-  const getReadinessBadge = () => {
-    const { confidence, score } = progress.readinessEstimate;
-
-    if (confidence === 'high') {
-      return <Badge className="bg-green-500">Ready ({score})</Badge>;
-    } else if (confidence === 'medium') {
-      return <Badge className="bg-amber-500">Preparing ({score})</Badge>;
-    } else {
-      return <Badge variant="outline">Not Ready</Badge>;
-    }
-  };
-
   return (
     <div className="container py-8 max-w-6xl mx-auto">
       <div className="mb-8">
@@ -42,7 +31,7 @@ export default async function ProgressPage({ params }: PageProps) {
       </div>
 
       {/* Overall Stats */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overall Mastery</CardTitle>
@@ -91,36 +80,12 @@ export default async function ProgressPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Exam Readiness</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {progress.readinessEstimate.score > 0 ? progress.readinessEstimate.score : '-'}
-            </div>
-            <div className="mt-2">
-              {getReadinessBadge()}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Readiness Recommendation */}
-      {progress.readinessEstimate.score > 0 && (
-        <Card className="mb-8 border-primary/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Exam Readiness Assessment
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{progress.readinessEstimate.recommendation}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Readiness Card */}
+      <section className="mb-8">
+        <ReadinessCard estimate={progress.readinessEstimate} examId={examId} />
+      </section>
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2 mb-8">
