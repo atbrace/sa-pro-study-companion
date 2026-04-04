@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db/client";
 import { getAllDomains, getTopicById } from "@/lib/content/loader";
+import { getAllTopicWindowedMasteries } from './mastery';
 import type { TopicMasteryResult } from './mastery';
 
 export interface WeakAreaDetail {
@@ -33,10 +34,38 @@ export interface RecentActivity {
   timestamp: string;
 }
 
+export interface TopicReadiness {
+  topicId: string;
+  topicName: string;
+  mastery: number;     // adjusted, 0-100
+  attempts: number;    // in window
+}
+
+export interface DomainReadiness {
+  domainId: string;
+  domainName: string;
+  weight: number;              // exam weight %
+  mastery: number;             // coverage-aware adjusted
+  topicsCovered: number;
+  totalTopics: number;
+  weakTopics: TopicReadiness[]; // below 85%, sorted ascending
+}
+
+export interface FocusArea {
+  domainId: string;
+  domainName: string;
+  mastery: number;
+  weight: number;
+  impact: number;              // (100 - mastery) * weight/100
+}
+
 export interface ReadinessEstimate {
-  score: number;
-  confidence: 'low' | 'medium' | 'high';
-  recommendation: string;
+  score: number;                        // 0-1000
+  level: 'ready' | 'approaching' | 'building';
+  overallMastery: number;               // 0-100 weighted
+  domainBreakdown: DomainReadiness[];
+  focusAreas: FocusArea[];              // ordered by impact desc
+  totalAttempts: number;
 }
 
 export interface ProgressSummary {
@@ -307,48 +336,116 @@ export const getRecentActivity = cache((examId: string, limit: number = 10): Rec
  * Cached per-request to avoid duplicate DB queries
  */
 export const getReadinessEstimate = cache((examId: string): ReadinessEstimate => {
-  const overall = getOverallProgress(examId);
+  // Query total attempts
+  const { total_attempts: totalAttempts } = db.prepare(
+    'SELECT COUNT(*) as total_attempts FROM question_attempts WHERE exam_id = ?'
+  ).get(examId) as { total_attempts: number };
+
+  const emptyResult: ReadinessEstimate = {
+    score: 0,
+    level: 'building',
+    overallMastery: 0,
+    domainBreakdown: [],
+    focusAreas: [],
+    totalAttempts,
+  };
+
+  // Minimum data gate
+  if (totalAttempts < 5) {
+    return emptyResult;
+  }
+
   const domains = getAllDomains(examId);
-
-  // Check if user has attempted enough questions
-  const minQuestionsPerDomain = 10;
-  const totalMinQuestions = domains.length * minQuestionsPerDomain;
-
-  if (overall.questionsAttempted < totalMinQuestions) {
-    return {
-      score: 0,
-      confidence: 'low',
-      recommendation: `Complete more assessments (${overall.questionsAttempted}/${totalMinQuestions} questions attempted)`,
-    };
+  if (domains.length === 0) {
+    return emptyResult;
   }
 
-  const masteryScore = overall.masteryScore;
+  const topicMasteries = getAllTopicWindowedMasteries(examId);
 
-  // Estimate exam score based on mastery
-  // SAP-C02 passing score is ~750/1000 (75%)
-  const estimatedScore = Math.round(masteryScore * 10); // Convert to 0-1000 scale
+  // Build domain breakdown
+  const domainBreakdown: DomainReadiness[] = [];
+  let weightedSum = 0;
+  let totalWeight = 0;
 
-  let confidence: 'low' | 'medium' | 'high';
-  let recommendation: string;
+  for (const domain of domains) {
+    const domainId = domain.meta.id;
+    const totalTopics = domain.topics.length;
+    const domainMastery = calculateCoverageAwareDomainMastery(topicMasteries, domainId, totalTopics);
 
-  if (masteryScore >= 85) {
-    confidence = 'high';
-    recommendation = 'You\'re ready! Consider scheduling your exam.';
-  } else if (masteryScore >= 75) {
-    confidence = 'medium';
-    recommendation = 'Close to ready. Review weak areas and take more practice exams.';
-  } else if (masteryScore >= 60) {
-    confidence = 'medium';
-    recommendation = 'Continue studying. Focus on weak domains and complete more assessments.';
+    // Count covered topics (those with attempts)
+    let topicsCovered = 0;
+    const weakTopics: TopicReadiness[] = [];
+
+    for (const topic of domain.topics) {
+      const key = `${domainId}/${topic.meta.id}`;
+      const topicResult = topicMasteries.get(key);
+      const mastery = topicResult ? topicResult.mastery : 0;
+      const attempts = topicResult ? topicResult.attempts : 0;
+
+      if (attempts > 0) {
+        topicsCovered++;
+      }
+
+      // Topics below 85% are weak (including unstudied ones)
+      if (mastery < 85) {
+        weakTopics.push({
+          topicId: topic.meta.id,
+          topicName: topic.meta.shortName,
+          mastery,
+          attempts,
+        });
+      }
+    }
+
+    // Sort weak topics ascending by mastery
+    weakTopics.sort((a, b) => a.mastery - b.mastery);
+
+    domainBreakdown.push({
+      domainId,
+      domainName: domain.meta.shortName,
+      weight: domain.meta.weight,
+      mastery: domainMastery,
+      topicsCovered,
+      totalTopics,
+      weakTopics,
+    });
+
+    weightedSum += domainMastery * (domain.meta.weight / 100);
+    totalWeight += domain.meta.weight / 100;
+  }
+
+  const overallMastery = totalWeight > 0 ? weightedSum / totalWeight : 0;
+
+  // Build focus areas ordered by impact descending
+  const focusAreas: FocusArea[] = domainBreakdown
+    .map(d => ({
+      domainId: d.domainId,
+      domainName: d.domainName,
+      mastery: d.mastery,
+      weight: d.weight,
+      impact: (100 - d.mastery) * (d.weight / 100),
+    }))
+    .sort((a, b) => b.impact - a.impact);
+
+  // Determine level
+  let level: 'ready' | 'approaching' | 'building';
+  if (overallMastery >= 85) {
+    level = 'ready';
+  } else if (overallMastery >= 65) {
+    level = 'approaching';
   } else {
-    confidence = 'low';
-    recommendation = 'More preparation needed. Complete assessments for all domains and review fundamentals.';
+    level = 'building';
   }
+
+  const score = Math.round(overallMastery * 10);
 
   return {
-    score: estimatedScore,
-    confidence,
-    recommendation,
+    score,
+    level,
+    overallMastery,
+    domainBreakdown,
+    focusAreas,
+    totalAttempts,
   };
 });
 

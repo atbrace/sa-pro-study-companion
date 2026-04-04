@@ -35,6 +35,13 @@ vi.mock('@/lib/content/loader', () => ({
   getTopicById: (...args: unknown[]) => mockGetTopicById(...args),
 }));
 
+// Mock mastery module
+vi.mock('../mastery', () => ({
+  getAllTopicWindowedMasteries: vi.fn().mockReturnValue(new Map()),
+}));
+
+import { getAllTopicWindowedMasteries } from '../mastery';
+
 import {
   calculateDomainMastery,
   calculateOverallMastery,
@@ -411,95 +418,229 @@ describe('getRecentActivity', () => {
 });
 
 describe('getReadinessEstimate', () => {
-  function setupOverallProgress(mastery: number, attempted: number) {
-    // getOverallProgress calls:
-    // 1. questionStats query
-    mockStatement.get
-      .mockReturnValueOnce({ attempted, correct: Math.round(attempted * 0.8) })
-      // 2. studyTime query
-      .mockReturnValueOnce({ total_seconds: 3600 });
-    // calculateOverallMastery calls getAllDomainMasteryScores
-    mockStatement.all.mockReturnValueOnce(
-      mastery > 0
-        ? [{ domain_id: 'domain-1', avg_mastery: mastery / 100 }]
-        : []
-    );
+  function setupTotalAttempts(count: number) {
+    mockStatement.get.mockReturnValueOnce({ total_attempts: count });
   }
 
-  it('returns low confidence when too few questions attempted', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1' }) }),
-      createDomain({ meta: createDomainMeta({ id: 'domain-2' }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
-
-    setupOverallProgress(0, 5); // need 20 (2 domains * 10)
+  it('returns building level with empty state when fewer than 5 attempts', () => {
+    setupTotalAttempts(3);
 
     const result = getReadinessEstimate('sap-c02');
-    expect(result.confidence).toBe('low');
+    expect(result.level).toBe('building');
     expect(result.score).toBe(0);
-    expect(result.recommendation).toContain('5/20');
+    expect(result.totalAttempts).toBe(3);
+    expect(result.domainBreakdown).toEqual([]);
+    expect(result.focusAreas).toEqual([]);
   });
 
-  it('returns high confidence for mastery >= 85', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
-
-    setupOverallProgress(90, 50);
+  it('returns building level with score 0 when exactly 0 attempts', () => {
+    setupTotalAttempts(0);
 
     const result = getReadinessEstimate('sap-c02');
-    expect(result.confidence).toBe('high');
+    expect(result.level).toBe('building');
+    expect(result.score).toBe(0);
+    expect(result.totalAttempts).toBe(0);
+  });
+
+  it('returns ready level when overall mastery >= 85', () => {
+    setupTotalAttempts(50);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 20, correct: 18 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('ready');
     expect(result.score).toBe(900);
+    expect(result.overallMastery).toBe(90);
   });
 
-  it('returns medium confidence for mastery 75-84', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
+  it('returns approaching level when overall mastery 65-84', () => {
+    setupTotalAttempts(30);
 
-    setupOverallProgress(80, 50);
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 75, attempts: 15, correct: 11 }],
+    ]));
 
     const result = getReadinessEstimate('sap-c02');
-    expect(result.confidence).toBe('medium');
+    expect(result.level).toBe('approaching');
+    expect(result.overallMastery).toBe(75);
   });
 
-  it('returns medium confidence for mastery 60-74', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
+  it('returns building level when overall mastery < 65', () => {
+    setupTotalAttempts(10);
 
-    setupOverallProgress(65, 50);
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 50, attempts: 10, correct: 5 }],
+    ]));
 
     const result = getReadinessEstimate('sap-c02');
-    expect(result.confidence).toBe('medium');
+    expect(result.level).toBe('building');
+    expect(result.overallMastery).toBe(50);
   });
 
-  it('returns low confidence for mastery < 60', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
+  it('calculates score as overallMastery * 10', () => {
+    setupTotalAttempts(20);
 
-    setupOverallProgress(50, 50);
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
 
-    const result = getReadinessEstimate('sap-c02');
-    expect(result.confidence).toBe('low');
-  });
-
-  it('calculates estimatedScore as mastery * 10', () => {
-    const domains = [
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
-    ];
-    mockGetAllDomains.mockReturnValue(domains);
-
-    setupOverallProgress(75, 50);
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 75, attempts: 15, correct: 11 }],
+    ]));
 
     const result = getReadinessEstimate('sap-c02');
     expect(result.score).toBe(750);
+  });
+
+  it('builds domain breakdown with weak topics sorted ascending', () => {
+    setupTotalAttempts(30);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'VPC' }) });
+    const topic2 = createTopic({ meta: createTopicMeta({ id: 'topic-2', shortName: 'IAM' }) });
+    const topic3 = createTopic({ meta: createTopicMeta({ id: 'topic-3', shortName: 'S3' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1, topic2, topic3],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 20, correct: 18 }],  // not weak
+      ['domain-1/topic-2', { mastery: 60, attempts: 15, correct: 9 }],   // weak
+      ['domain-1/topic-3', { mastery: 40, attempts: 10, correct: 4 }],   // weakest
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.domainBreakdown).toHaveLength(1);
+
+    const breakdown = result.domainBreakdown[0];
+    expect(breakdown.domainId).toBe('domain-1');
+    expect(breakdown.topicsCovered).toBe(3);
+    expect(breakdown.totalTopics).toBe(3);
+    expect(breakdown.weakTopics).toHaveLength(2);
+    // Sorted ascending by mastery
+    expect(breakdown.weakTopics[0].topicId).toBe('topic-3');
+    expect(breakdown.weakTopics[0].mastery).toBe(40);
+    expect(breakdown.weakTopics[1].topicId).toBe('topic-2');
+    expect(breakdown.weakTopics[1].mastery).toBe(60);
+  });
+
+  it('includes unstudied topics as weak with 0 mastery and 0 attempts', () => {
+    setupTotalAttempts(10);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'VPC' }) });
+    const topic2 = createTopic({ meta: createTopicMeta({ id: 'topic-2', shortName: 'IAM' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1, topic2],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    // Only topic-1 has attempts
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 10, correct: 9 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    const breakdown = result.domainBreakdown[0];
+    expect(breakdown.topicsCovered).toBe(1);
+    expect(breakdown.weakTopics).toHaveLength(1);
+    expect(breakdown.weakTopics[0].topicId).toBe('topic-2');
+    expect(breakdown.weakTopics[0].mastery).toBe(0);
+    expect(breakdown.weakTopics[0].attempts).toBe(0);
+  });
+
+  it('builds focus areas ordered by impact descending', () => {
+    setupTotalAttempts(50);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const topic2 = createTopic({ meta: createTopicMeta({ id: 'topic-2', shortName: 'T2' }) });
+
+    const domain1 = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 60 }),
+      topics: [topic1],
+    });
+    const domain2 = createDomain({
+      meta: createDomainMeta({ id: 'domain-2', shortName: 'D2', weight: 40 }),
+      topics: [topic2],
+    });
+    mockGetAllDomains.mockReturnValue([domain1, domain2]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 80, attempts: 20, correct: 16 }],
+      ['domain-2/topic-2', { mastery: 40, attempts: 15, correct: 6 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.focusAreas).toHaveLength(2);
+    // domain-2: impact = (100-40) * 40/100 = 24
+    // domain-1: impact = (100-80) * 60/100 = 12
+    expect(result.focusAreas[0].domainId).toBe('domain-2');
+    expect(result.focusAreas[0].impact).toBe(24);
+    expect(result.focusAreas[1].domainId).toBe('domain-1');
+    expect(result.focusAreas[1].impact).toBe(12);
+  });
+
+  it('calculates weighted overall mastery across multiple domains', () => {
+    setupTotalAttempts(50);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const topic2 = createTopic({ meta: createTopicMeta({ id: 'topic-2', shortName: 'T2' }) });
+
+    const domain1 = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 60 }),
+      topics: [topic1],
+    });
+    const domain2 = createDomain({
+      meta: createDomainMeta({ id: 'domain-2', shortName: 'D2', weight: 40 }),
+      topics: [topic2],
+    });
+    mockGetAllDomains.mockReturnValue([domain1, domain2]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 80, attempts: 20, correct: 16 }],
+      ['domain-2/topic-2', { mastery: 60, attempts: 15, correct: 9 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    // weighted: (80 * 0.6 + 60 * 0.4) / (0.6 + 0.4) = (48 + 24) / 1.0 = 72
+    expect(result.overallMastery).toBe(72);
+  });
+
+  it('returns empty state when no domains exist', () => {
+    setupTotalAttempts(10);
+    mockGetAllDomains.mockReturnValue([]);
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('building');
+    expect(result.score).toBe(0);
+    expect(result.domainBreakdown).toEqual([]);
   });
 });
 
@@ -540,7 +681,7 @@ describe('calculateCoverageAwareDomainMastery', () => {
 describe('getProgressSummary', () => {
   it('composes overall, domains, recentActivity, readinessEstimate', () => {
     const domain = createDomain({
-      meta: createDomainMeta({ id: 'domain-1', weight: 100 }),
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
     });
     mockGetAllDomains.mockReturnValue([domain]);
 
@@ -569,13 +710,12 @@ describe('getProgressSummary', () => {
       .mockReturnValueOnce([])
       .mockReturnValueOnce([]);
 
-    // getReadinessEstimate -> getOverallProgress (again):
+    // getReadinessEstimate: total_attempts query
     mockStatement.get
-      .mockReturnValueOnce({ attempted: 10, correct: 8 })
-      .mockReturnValueOnce({ total_seconds: 600 });
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', avg_mastery: 0.8 },
-    ]);
+      .mockReturnValueOnce({ total_attempts: 10 });
+
+    // getAllTopicWindowedMasteries is already mocked (returns empty Map by default)
+    // With empty masteries and 10 attempts, it will compute domain breakdown
 
     const result = getProgressSummary('sap-c02');
     expect(result).toHaveProperty('overall');
@@ -584,5 +724,8 @@ describe('getProgressSummary', () => {
     expect(result).toHaveProperty('readinessEstimate');
     expect(result.domains).toHaveLength(1);
     expect(result.overall.questionsAttempted).toBe(10);
+    expect(result.readinessEstimate).toHaveProperty('level');
+    expect(result.readinessEstimate).toHaveProperty('domainBreakdown');
+    expect(result.readinessEstimate).toHaveProperty('focusAreas');
   });
 });
