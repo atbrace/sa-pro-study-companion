@@ -55,22 +55,21 @@ jobs:
 
       - name: Enrich issue
         uses: anthropics/claude-code-action@v1
-        env:
-          ISSUE_NUMBER: ${{ matrix.issue }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           show_full_output: true
           prompt: |
             You are an issue enrichment agent for a GitHub repository. Your job is to
-            research an existing issue and post a structured analysis comment that
+            research issue #${{ matrix.issue }} and post a structured analysis comment that
             helps the team make faster decisions when they pick it up for implementation.
+
+            CRITICAL: The issue number is ${{ matrix.issue }}. Use this number in ALL
+            gh commands below. Do NOT use environment variables for the issue number.
 
             ## Issue Context
 
             Read the issue details by running:
-            gh issue view "$ISSUE_NUMBER" --json number,title,body,labels,author
-
-            The issue number is in the ISSUE_NUMBER environment variable.
+            gh issue view ${{ matrix.issue }} --json number,title,body,labels,author
 
             ## Instructions
 
@@ -145,8 +144,8 @@ jobs:
 
             ## Output
 
-            Post a SINGLE comment on the issue using:
-            gh issue comment "$ISSUE_NUMBER" --body "<your report>"
+            Post a SINGLE comment on issue #${{ matrix.issue }} using:
+            gh issue comment ${{ matrix.issue }} --body "<your report>"
 
             Format the comment exactly like this:
 
@@ -189,8 +188,8 @@ jobs:
 
             ## Labels
 
-            After posting the comment, apply labels to the issue using:
-            gh issue edit "$ISSUE_NUMBER" --add-label "<label1>" --add-label "<label2>"
+            After posting the comment, apply labels to issue #${{ matrix.issue }} using:
+            gh issue edit ${{ matrix.issue }} --add-label "<label1>" --add-label "<label2>"
 
             Apply these labels based on your analysis:
 
@@ -216,6 +215,7 @@ jobs:
             - Do not speculate. If you can't determine something from the code, say so.
             - Do not start implementing the issue. Research and report only.
             - Post exactly one comment. Do not edit the issue body.
+            - The issue number is ${{ matrix.issue }}. Do NOT enrich any other issue.
 
           claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
 
@@ -284,15 +284,16 @@ jobs:
           show_full_output: true
           prompt: |
             You are an issue enrichment agent for a GitHub repository. Your job is to
-            research a newly opened issue and post a structured analysis comment that
+            research issue #${{ github.event.issue.number }} and post a structured analysis comment that
             helps the team make faster decisions when they pick it up for implementation.
+
+            CRITICAL: The issue number is ${{ github.event.issue.number }}. Use this number in ALL
+            gh commands below. Do NOT use environment variables for the issue number.
 
             ## Issue Context
 
             Read the issue details by running:
-            gh issue view "$ISSUE_NUMBER" --json number,title,body,labels,author
-
-            The issue number is in the ISSUE_NUMBER environment variable.
+            gh issue view ${{ github.event.issue.number }} --json number,title,body,labels,author
 
             ## Instructions
 
@@ -367,8 +368,8 @@ jobs:
 
             ## Output
 
-            Post a SINGLE comment on the issue using:
-            gh issue comment "$ISSUE_NUMBER" --body "<your report>"
+            Post a SINGLE comment on issue #${{ github.event.issue.number }} using:
+            gh issue comment ${{ github.event.issue.number }} --body "<your report>"
 
             Format the comment exactly like this:
 
@@ -411,8 +412,8 @@ jobs:
 
             ## Labels
 
-            After posting the comment, apply labels to the issue using:
-            gh issue edit "$ISSUE_NUMBER" --add-label "<label1>" --add-label "<label2>"
+            After posting the comment, apply labels to issue #${{ github.event.issue.number }} using:
+            gh issue edit ${{ github.event.issue.number }} --add-label "<label1>" --add-label "<label2>"
 
             Apply these labels based on your analysis:
 
@@ -438,6 +439,7 @@ jobs:
             - Do not speculate. If you can't determine something from the code, say so.
             - Do not start implementing the issue. Research and report only.
             - Post exactly one comment. Do not edit the issue body.
+            - The issue number is ${{ github.event.issue.number }}. Do NOT enrich any other issue.
 
           claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
 
