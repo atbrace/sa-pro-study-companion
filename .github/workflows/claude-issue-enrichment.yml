@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         issue: ${{ fromJSON(needs.prepare-matrix.outputs.issues) }}
-      max-parallel: 2
+      max-parallel: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -186,13 +186,37 @@ jobs:
             ---
             *Automated enrichment by Claude — verify findings before implementation*
 
+            ## Labels
+
+            After posting the comment, apply labels to the issue using:
+            gh issue edit "$ISSUE_NUMBER" --add-label "<label1>" --add-label "<label2>"
+
+            Apply these labels based on your analysis:
+
+            **Effort** (exactly one):
+            - `effort/small` — <30 min implementation
+            - `effort/medium` — 30min-2hr implementation
+            - `effort/large` — >2hr implementation
+
+            **Criteria status** (exactly one):
+            - `has-criteria` — issue has objectively testable acceptance criteria
+            - `needs-criteria` — criteria are missing or vague
+
+            Do NOT modify existing type or priority labels. Only add effort and criteria labels.
+            If the labels don't exist yet, create them first:
+            gh label create "effort/small" --color "0E8A16" --description "< 30min" 2>/dev/null || true
+            gh label create "effort/medium" --color "FBCA04" --description "30min - 2hr" 2>/dev/null || true
+            gh label create "effort/large" --color "D93F0B" --description "> 2hr" 2>/dev/null || true
+            gh label create "has-criteria" --color "0075CA" --description "Has testable acceptance criteria" 2>/dev/null || true
+            gh label create "needs-criteria" --color "E4E669" --description "Needs acceptance criteria defined" 2>/dev/null || true
+
             IMPORTANT:
             - Be concise. Each section should be 1-3 sentences unless detail is needed.
             - Do not speculate. If you can't determine something from the code, say so.
             - Do not start implementing the issue. Research and report only.
-            - Post exactly one comment. Do not edit the issue body or labels.
+            - Post exactly one comment. Do not edit the issue body.
 
-          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
+          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
 
   # Runs automatically when a new issue is opened
   enrich-single:
@@ -353,10 +377,34 @@ jobs:
             ---
             *Automated enrichment by Claude — verify findings before implementation*
 
+            ## Labels
+
+            After posting the comment, apply labels to the issue using:
+            gh issue edit "$ISSUE_NUMBER" --add-label "<label1>" --add-label "<label2>"
+
+            Apply these labels based on your analysis:
+
+            **Effort** (exactly one):
+            - `effort/small` — <30 min implementation
+            - `effort/medium` — 30min-2hr implementation
+            - `effort/large` — >2hr implementation
+
+            **Criteria status** (exactly one):
+            - `has-criteria` — issue has objectively testable acceptance criteria
+            - `needs-criteria` — criteria are missing or vague
+
+            Do NOT modify existing type or priority labels. Only add effort and criteria labels.
+            If the labels don't exist yet, create them first:
+            gh label create "effort/small" --color "0E8A16" --description "< 30min" 2>/dev/null || true
+            gh label create "effort/medium" --color "FBCA04" --description "30min - 2hr" 2>/dev/null || true
+            gh label create "effort/large" --color "D93F0B" --description "> 2hr" 2>/dev/null || true
+            gh label create "has-criteria" --color "0075CA" --description "Has testable acceptance criteria" 2>/dev/null || true
+            gh label create "needs-criteria" --color "E4E669" --description "Needs acceptance criteria defined" 2>/dev/null || true
+
             IMPORTANT:
             - Be concise. Each section should be 1-3 sentences unless detail is needed.
             - Do not speculate. If you can't determine something from the code, say so.
             - Do not start implementing the issue. Research and report only.
-            - Post exactly one comment. Do not edit the issue body or labels.
+            - Post exactly one comment. Do not edit the issue body.
 
-          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
+          claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
