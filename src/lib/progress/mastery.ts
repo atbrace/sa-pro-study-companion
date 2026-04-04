@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { db } from '@/lib/db/client';
 
 const SMOOTHING_STRENGTH = 5;
@@ -56,7 +57,7 @@ export function getTopicWindowedMastery(
  * Uses a window function to rank attempts per topic, then filters to last 20.
  * Returns Map keyed by "domainId/topicId" with TopicMasteryResult values.
  */
-export function getAllTopicWindowedMasteries(examId: string): Map<string, TopicMasteryResult> {
+export const getAllTopicWindowedMasteries = cache((examId: string): Map<string, TopicMasteryResult> => {
   const rows = db.prepare(`
     SELECT domain_id, topic_id, is_correct, rn
     FROM (
@@ -99,4 +100,4 @@ export function getAllTopicWindowedMasteries(examId: string): Map<string, TopicM
     });
   }
   return result;
-}
+});

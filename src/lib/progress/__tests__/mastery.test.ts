@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock react cache as passthrough
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react');
+  return {
+    ...(actual as object),
+    cache: (fn: Function) => fn,
+  };
+});
+
 // Use vi.hoisted for mock objects referenced in vi.mock factories
 const { mockStatement } = vi.hoisted(() => {
   const mockStatement = {

@@ -120,8 +120,10 @@ export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarch
       };
     });
 
-    const domainMastery = topicsWithProgress > 0
-      ? topicMasterySum / topicsWithProgress
+    // Coverage-aware: divide by total topics (not just studied ones)
+    // so unstudied topics count as 0%, consistent with ReadinessCard
+    const domainMastery = domain.topics.length > 0
+      ? topicMasterySum / domain.topics.length
       : 0;
 
     return {
