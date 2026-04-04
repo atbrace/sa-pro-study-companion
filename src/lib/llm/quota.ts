@@ -25,8 +25,15 @@ export function parseGeminiErrorDetails(errorBody: unknown): GeminiErrorDetails 
   }
 
   const body = errorBody as Record<string, unknown>;
-  const error = body.error as Record<string, unknown> | undefined;
-  const details = (error?.details ?? []) as Array<Record<string, unknown>>;
+
+  // SDK GoogleGenerativeAIFetchError stores details at .errorDetails directly.
+  // Raw JSON responses nest them at .error.details. Check both paths.
+  const errorObj = body.error as Record<string, unknown> | undefined;
+  const details = (
+    (body.errorDetails as Array<Record<string, unknown>>) ??
+    (errorObj?.details as Array<Record<string, unknown>>) ??
+    []
+  );
 
   if (!Array.isArray(details)) {
     return { isQuotaExhaustion: false };

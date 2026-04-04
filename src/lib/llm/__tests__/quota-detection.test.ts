@@ -97,6 +97,38 @@ describe('parseGeminiErrorDetails', () => {
     });
   });
 
+  it('detects QuotaFailure from SDK error shape (.errorDetails)', () => {
+    // GoogleGenerativeAIFetchError stores details at .errorDetails, not .error.details
+    const sdkError = {
+      message: 'Resource has been exhausted',
+      status: 429,
+      statusText: 'Too Many Requests',
+      errorDetails: [
+        {
+          '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+          violations: [
+            {
+              quotaMetric:
+                'generativelanguage.googleapis.com/generate_content_free_tier_requests',
+              quotaId:
+                'GenerateRequestsPerDayPerProjectPerModel-FreeTier',
+              quotaValue: '20',
+            },
+          ],
+        },
+        {
+          '@type': 'type.googleapis.com/google.rpc.RetryInfo',
+          retryDelay: '10s',
+        },
+      ],
+    };
+
+    const result = parseGeminiErrorDetails(sdkError);
+    expect(result.isQuotaExhaustion).toBe(true);
+    expect(result.retryAfterMs).toBe(10000);
+    expect(result.quotaMetric).toContain('free_tier_requests');
+  });
+
   it('parses fractional retryDelay', () => {
     const errorBody = {
       error: {

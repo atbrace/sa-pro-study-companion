@@ -233,7 +233,7 @@ async function* streamGeminiResult(
  * Build an LLMError from a Gemini API error, distinguishing quota exhaustion from rate limiting.
  */
 function buildGeminiError(error: unknown): LLMError {
-  if (error instanceof LLMError) throw error;
+  if (error instanceof LLMError) return error;
 
   const statusCode = extractStatusCode(error);
   const message = extractErrorMessage(error);

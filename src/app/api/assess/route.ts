@@ -243,14 +243,11 @@ export async function POST(request: NextRequest) {
         topicGroupCount: topicGroups.size,
         weakAreaCount: result.weakAreas.length,
       });
-      return NextResponse.json(
-        {
-          ...result,
-          databaseSessionId: null,
-          warning: 'Assessment results could not be saved',
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({
+        ...result,
+        databaseSessionId: null,
+        warning: 'Assessment results could not be saved',
+      });
     }
   } catch (error) {
     console.error('Assessment error:', error);
