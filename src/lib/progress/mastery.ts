@@ -34,22 +34,30 @@ export function getTopicWindowedMastery(
   domainId: string,
   topicId: string
 ): TopicMasteryResult {
-  const rows = db.prepare(`
-    SELECT is_correct
-    FROM question_attempts
-    WHERE exam_id = ? AND domain_id = ? AND topic_id = ?
-    ORDER BY attempted_at DESC
-    LIMIT 20
-  `).all(examId, domainId, topicId) as Array<{ is_correct: number }>;
+  try {
+    const rows = db.prepare(`
+      SELECT is_correct
+      FROM question_attempts
+      WHERE exam_id = ? AND domain_id = ? AND topic_id = ?
+      ORDER BY attempted_at DESC
+      LIMIT 20
+    `).all(examId, domainId, topicId) as Array<{ is_correct: number }>;
 
-  const attempts = rows.length;
-  const correct = rows.filter(r => r.is_correct === 1).length;
+    const attempts = rows.length;
+    const correct = rows.filter(r => r.is_correct === 1).length;
 
-  return {
-    mastery: calculateSmoothedMastery(correct, attempts),
-    attempts,
-    correct,
-  };
+    return {
+      mastery: calculateSmoothedMastery(correct, attempts),
+      attempts,
+      correct,
+    };
+  } catch (error) {
+    console.error(
+      `[mastery] Failed to query windowed mastery for topic=${topicId}:`,
+      error instanceof Error ? error.message : error
+    );
+    return { mastery: calculateSmoothedMastery(0, 0), attempts: 0, correct: 0 };
+  }
 }
 
 /**
@@ -58,46 +66,54 @@ export function getTopicWindowedMastery(
  * Returns Map keyed by "domainId/topicId" with TopicMasteryResult values.
  */
 export const getAllTopicWindowedMasteries = cache((examId: string): Map<string, TopicMasteryResult> => {
-  const rows = db.prepare(`
-    SELECT domain_id, topic_id, is_correct, rn
-    FROM (
-      SELECT
-        domain_id,
-        topic_id,
-        is_correct,
-        ROW_NUMBER() OVER (
-          PARTITION BY domain_id, topic_id
-          ORDER BY attempted_at DESC
-        ) as rn
-      FROM question_attempts
-      WHERE exam_id = ?
-    )
-    WHERE rn <= 20
-  `).all(examId) as Array<{
-    domain_id: string;
-    topic_id: string;
-    is_correct: number;
-    rn: number;
-  }>;
+  try {
+    const rows = db.prepare(`
+      SELECT domain_id, topic_id, is_correct, rn
+      FROM (
+        SELECT
+          domain_id,
+          topic_id,
+          is_correct,
+          ROW_NUMBER() OVER (
+            PARTITION BY domain_id, topic_id
+            ORDER BY attempted_at DESC
+          ) as rn
+        FROM question_attempts
+        WHERE exam_id = ?
+      )
+      WHERE rn <= 20
+    `).all(examId) as Array<{
+      domain_id: string;
+      topic_id: string;
+      is_correct: number;
+      rn: number;
+    }>;
 
-  // Group by topic
-  const grouped = new Map<string, { correct: number; attempts: number }>();
-  for (const row of rows) {
-    const key = `${row.domain_id}/${row.topic_id}`;
-    const existing = grouped.get(key) || { correct: 0, attempts: 0 };
-    existing.attempts++;
-    if (row.is_correct === 1) existing.correct++;
-    grouped.set(key, existing);
-  }
+    // Group by topic
+    const grouped = new Map<string, { correct: number; attempts: number }>();
+    for (const row of rows) {
+      const key = `${row.domain_id}/${row.topic_id}`;
+      const existing = grouped.get(key) || { correct: 0, attempts: 0 };
+      existing.attempts++;
+      if (row.is_correct === 1) existing.correct++;
+      grouped.set(key, existing);
+    }
 
-  // Calculate smoothed mastery for each topic
-  const result = new Map<string, TopicMasteryResult>();
-  for (const [key, stats] of grouped) {
-    result.set(key, {
-      mastery: calculateSmoothedMastery(stats.correct, stats.attempts),
-      attempts: stats.attempts,
-      correct: stats.correct,
-    });
+    // Calculate smoothed mastery for each topic
+    const result = new Map<string, TopicMasteryResult>();
+    for (const [key, stats] of grouped) {
+      result.set(key, {
+        mastery: calculateSmoothedMastery(stats.correct, stats.attempts),
+        attempts: stats.attempts,
+        correct: stats.correct,
+      });
+    }
+    return result;
+  } catch (error) {
+    console.error(
+      `[mastery] Failed to query windowed masteries for exam=${examId}:`,
+      error instanceof Error ? error.message : error
+    );
+    return new Map();
   }
-  return result;
 });

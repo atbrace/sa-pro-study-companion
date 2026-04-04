@@ -88,58 +88,65 @@ export function getSidebarHierarchy(examId: string): SidebarHierarchy {
 export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarchy {
   const hierarchy = getSidebarHierarchy(examId);
 
-  // Batch-fetch all progress data (3 queries total)
-  const topicMasteries = getAllTopicWindowedMasteries(examId);
-  const weakAreasByDomain = getWeakAreasByDomain(examId);
-  const overallMastery = calculateOverallMastery(examId);
+  try {
+    // Batch-fetch all progress data (3 queries total)
+    const topicMasteries = getAllTopicWindowedMasteries(examId);
+    const weakAreasByDomain = getWeakAreasByDomain(examId);
+    const overallMastery = calculateOverallMastery(examId);
 
-  // Enrich domains and topics with progress data
-  const enrichedDomains = hierarchy.domains.map(domain => {
-    const domainWeakTopics = weakAreasByDomain.get(domain.id) || new Set<string>();
+    // Enrich domains and topics with progress data
+    const enrichedDomains = hierarchy.domains.map(domain => {
+      const domainWeakTopics = weakAreasByDomain.get(domain.id) || new Set<string>();
 
-    // Calculate domain mastery from topic scores
-    let topicMasterySum = 0;
-    let topicsWithProgress = 0;
-    let topicsCompleted = 0;
+      let topicMasterySum = 0;
+      let topicsWithProgress = 0;
+      let topicsCompleted = 0;
 
-    const enrichedTopics = domain.topics.map(topic => {
-      const key = `${domain.id}/${topic.id}`;
-      const topicResult = topicMasteries.get(key);
-      const masteryScore = topicResult?.mastery ?? 0;
-      const isWeakArea = domainWeakTopics.has(topic.id);
+      const enrichedTopics = domain.topics.map(topic => {
+        const key = `${domain.id}/${topic.id}`;
+        const topicResult = topicMasteries.get(key);
+        const masteryScore = topicResult?.mastery ?? 0;
+        const isWeakArea = domainWeakTopics.has(topic.id);
 
-      if (topicResult && topicResult.attempts > 0) {
-        topicMasterySum += masteryScore;
-        topicsWithProgress++;
-        if (masteryScore >= 85) topicsCompleted++;
-      }
+        if (topicResult && topicResult.attempts > 0) {
+          topicMasterySum += masteryScore;
+          topicsWithProgress++;
+          if (masteryScore >= 85) topicsCompleted++;
+        }
+
+        return {
+          ...topic,
+          progress: { masteryScore, isWeakArea },
+        };
+      });
+
+      // Coverage-aware: divide by total topics (not just studied ones)
+      // so unstudied topics count as 0%, consistent with ReadinessCard
+      const domainMastery = domain.topics.length > 0
+        ? topicMasterySum / domain.topics.length
+        : 0;
 
       return {
-        ...topic,
-        progress: { masteryScore, isWeakArea },
+        ...domain,
+        topics: enrichedTopics,
+        progress: {
+          masteryScore: domainMastery,
+          topicsCompleted,
+          totalTopics: domain.topics.length,
+          weakTopicIds: [...domainWeakTopics],
+        },
       };
     });
 
-    // Coverage-aware: divide by total topics (not just studied ones)
-    // so unstudied topics count as 0%, consistent with ReadinessCard
-    const domainMastery = domain.topics.length > 0
-      ? topicMasterySum / domain.topics.length
-      : 0;
-
     return {
-      ...domain,
-      topics: enrichedTopics,
-      progress: {
-        masteryScore: domainMastery,
-        topicsCompleted,
-        totalTopics: domain.topics.length,
-        weakTopicIds: [...domainWeakTopics],
-      },
+      domains: enrichedDomains,
+      overallMastery,
     };
-  });
-
-  return {
-    domains: enrichedDomains,
-    overallMastery,
-  };
+  } catch (error) {
+    console.error(
+      `[sidebar] Failed to enrich sidebar with progress for exam=${examId}, showing sidebar without progress:`,
+      error instanceof Error ? error.message : error
+    );
+    return hierarchy;
+  }
 }
