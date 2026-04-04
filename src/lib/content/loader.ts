@@ -45,6 +45,7 @@ export function getAllDomains(examId: string): Domain[] {
       message: `Content directory does not exist for exam ${examId}`,
       filePath: contentDir,
     });
+    contentCache.set(cacheKey, []);
     return [];
   }
 
@@ -83,6 +84,7 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
       filePath: domainPath,
       context: { domainId },
     });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -96,6 +98,7 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
       filePath: metaPath,
       context: { domainId },
     });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -110,6 +113,7 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
       filePath: metaPath,
       context: { domainId },
     });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -145,6 +149,7 @@ function getTopicsForDomain(examId: string, domainId: string): Topic[] {
   const topicsPath = path.join(contentDir, domainId, 'topics');
 
   if (!fs.existsSync(topicsPath)) {
+    contentCache.set(cacheKey, []);
     return [];
   }
 
@@ -175,6 +180,7 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
   const topicPath = path.join(contentDir, domainId, 'topics', topicId);
 
   if (!fs.existsSync(topicPath)) {
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -188,6 +194,7 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
       filePath: metaPath,
       context: { domainId, topicId },
     });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -202,6 +209,7 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
       filePath: metaPath,
       context: { domainId, topicId },
     });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
@@ -244,6 +252,7 @@ export function getTopicQuestions(examId: string, domainId: string, topicId: str
   );
 
   if (!fs.existsSync(questionsPath)) {
+    contentCache.set(cacheKey, []);
     return [];
   }
 
