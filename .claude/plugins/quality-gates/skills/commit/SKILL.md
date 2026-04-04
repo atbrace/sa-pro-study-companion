@@ -145,6 +145,11 @@ paths. Do not use `git add -A` or `git add .`.
 - Otherwise, generate a concise commit message based on the diff
 - Follow the commit message style from the recent commits shown in Context
 - If an issue is linked, include the reference (e.g., `feat: add feature (#43)`)
+- If the changes appear to **fully complete** the linked issue (all acceptance
+  criteria met, or Gate 3 passed), ask the user: "This looks like it completes
+  #N — should I add `Closes #N` to the commit message?" If they confirm, add
+  `Closes #N` to the commit message body (not the subject line). GitHub will
+  auto-close the issue when pushed to the default branch.
 
 **Step 3:** Create the commit:
 ```
