@@ -53,6 +53,127 @@ describe('handleGetStudyProgress', () => {
   });
 });
 
+describe('tool handler type guards', () => {
+  describe('handleGetQuestionDetails validation', () => {
+    it('returns error when questionId is missing', () => {
+      const result = handleGetQuestionDetails({}, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('questionId');
+    });
+
+    it('returns error when questionId is a number', () => {
+      const result = handleGetQuestionDetails({ questionId: 123 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('questionId');
+    });
+
+    it('returns error when questionId is empty string', () => {
+      const result = handleGetQuestionDetails({ questionId: '' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('questionId');
+    });
+
+    it('ignores non-string domainId and topicId gracefully', () => {
+      vi.mocked(getAllDomains).mockReturnValue([]);
+      const result = handleGetQuestionDetails({ questionId: 'q-001', domainId: 42, topicId: true }, 'sap-c02');
+      // Should not crash — falls back to broad search
+      expect(result).toContain('not found');
+    });
+  });
+
+  describe('handleSearchStudyContent validation', () => {
+    it('returns error when query is missing', () => {
+      const result = handleSearchStudyContent({}, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('query');
+    });
+
+    it('returns error when query is a number', () => {
+      const result = handleSearchStudyContent({ query: 42 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('query');
+    });
+
+    it('returns error when query is whitespace-only', () => {
+      const result = handleSearchStudyContent({ query: '   ' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('query');
+    });
+  });
+
+  describe('handleGetTopicMetadata validation', () => {
+    it('returns error when domainId is missing', () => {
+      const result = handleGetTopicMetadata({ topicId: 'net' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('domainId');
+    });
+
+    it('returns error when topicId is missing', () => {
+      const result = handleGetTopicMetadata({ domainId: 'domain-1' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('topicId');
+    });
+
+    it('returns error when domainId is a number', () => {
+      const result = handleGetTopicMetadata({ domainId: 1, topicId: 'net' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('domainId');
+    });
+
+    it('returns error when topicId is a number', () => {
+      const result = handleGetTopicMetadata({ domainId: 'domain-1', topicId: 99 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('topicId');
+    });
+  });
+
+  describe('handleGetAssessmentHistory validation', () => {
+    it('returns error when limit is a string', () => {
+      const result = handleGetAssessmentHistory({ limit: 'five' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('limit');
+    });
+
+    it('returns error when limit is zero or negative', () => {
+      const result = handleGetAssessmentHistory({ limit: 0 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('limit');
+    });
+
+    it('returns error when domainId is a number', () => {
+      const result = handleGetAssessmentHistory({ domainId: 123 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('domainId');
+    });
+  });
+
+  describe('handleGetWeakAreaQuestions validation', () => {
+    it('returns error when limit is a string', () => {
+      const result = handleGetWeakAreaQuestions({ limit: 'ten' }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('limit');
+    });
+
+    it('returns error when limit is zero or negative', () => {
+      const result = handleGetWeakAreaQuestions({ limit: -1 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('limit');
+    });
+
+    it('returns error when domainId is a non-string type', () => {
+      const result = handleGetWeakAreaQuestions({ domainId: 42 }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('domainId');
+    });
+
+    it('returns error when topicId is a non-string type', () => {
+      const result = handleGetWeakAreaQuestions({ topicId: false }, 'sap-c02');
+      expect(result).toContain('Error');
+      expect(result).toContain('topicId');
+    });
+  });
+});
+
 describe('handleGetQuestionDetails', () => {
   const mockQuestion = {
     id: 'net-001',
