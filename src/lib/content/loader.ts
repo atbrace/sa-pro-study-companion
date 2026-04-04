@@ -12,6 +12,7 @@ import type {
   Question,
 } from '@/types/domain';
 import { getExamContentDir } from './exam-loader';
+import { logContentIssue } from './logger';
 
 /**
  * Module-level content cache.
@@ -38,7 +39,12 @@ export function getAllDomains(examId: string): Domain[] {
   const contentDir = getExamContentDir(examId);
 
   if (!fs.existsSync(contentDir)) {
-    console.warn('Content directory does not exist:', contentDir);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Content directory does not exist for exam ${examId}`,
+      filePath: contentDir,
+    });
     return [];
   }
 
@@ -70,18 +76,42 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
   const domainPath = path.join(contentDir, domainId);
 
   if (!fs.existsSync(domainPath)) {
-    console.warn('Domain directory does not exist:', domainPath);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Domain directory does not exist`,
+      filePath: domainPath,
+      context: { domainId },
+    });
     return null;
   }
 
   // Load domain metadata
   const metaPath = path.join(domainPath, 'meta.yaml');
   if (!fs.existsSync(metaPath)) {
-    console.warn('Domain meta.yaml does not exist:', metaPath);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Domain meta.yaml not found`,
+      filePath: metaPath,
+      context: { domainId },
+    });
     return null;
   }
 
-  const meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as DomainMeta;
+  let meta: DomainMeta;
+  try {
+    meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as DomainMeta;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse domain meta.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: metaPath,
+      context: { domainId },
+    });
+    return null;
+  }
 
   // Load domain overview
   const overviewPath = path.join(domainPath, 'overview.md');
@@ -151,10 +181,29 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
   // Load topic metadata
   const metaPath = path.join(topicPath, 'meta.yaml');
   if (!fs.existsSync(metaPath)) {
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Topic meta.yaml not found`,
+      filePath: metaPath,
+      context: { domainId, topicId },
+    });
     return null;
   }
 
-  const meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as TopicMeta;
+  let meta: TopicMeta;
+  try {
+    meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as TopicMeta;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse topic meta.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: metaPath,
+      context: { domainId, topicId },
+    });
+    return null;
+  }
 
   // Load topic content
   const contentPath = path.join(topicPath, 'content.md');
@@ -198,7 +247,21 @@ export function getTopicQuestions(examId: string, domainId: string, topicId: str
     return [];
   }
 
-  const data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
+  let data: QuestionsData;
+  try {
+    data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse questions.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: questionsPath,
+      context: { domainId, topicId },
+    });
+    const empty: Question[] = [];
+    contentCache.set(cacheKey, empty);
+    return empty;
+  }
 
   // Inject domainId and topicId into each question from the file path
   const result = (data.questions || []).map(q => ({

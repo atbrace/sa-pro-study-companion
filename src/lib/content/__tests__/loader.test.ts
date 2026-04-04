@@ -9,6 +9,7 @@ vi.mock('@/lib/content/exam-loader', () => ({
 vi.mock('fs');
 
 import fs from 'fs';
+import { getContentIssues, clearContentIssues } from '../logger';
 import {
   getAllDomains,
   getDomainById,
@@ -25,6 +26,7 @@ const mockFs = vi.mocked(fs);
 beforeEach(() => {
   vi.clearAllMocks();
   clearContentCache();
+  clearContentIssues();
 });
 
 describe('getAllDomains', () => {
@@ -492,5 +494,93 @@ describe('content caching', () => {
     const callsAfterSecond = mockFs.readFileSync.mock.calls.length;
 
     expect(callsAfterSecond).toBeGreaterThan(callsAfterFirst);
+  });
+});
+
+describe('structured logging for content issues', () => {
+  it('logs missing content directory as warn with reason=missing', () => {
+    mockFs.existsSync.mockReturnValue(false);
+
+    getAllDomains('sap-c02');
+
+    const issues = getContentIssues();
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    const dirIssue = issues.find(i => i.reason === 'missing' && i.filePath.includes('domains'));
+    expect(dirIssue).toBeDefined();
+    expect(dirIssue!.level).toBe('warn');
+  });
+
+  it('logs missing domain meta.yaml as warn with reason=missing', () => {
+    mockFs.existsSync.mockImplementation((p: fs.PathLike) => {
+      const s = p.toString();
+      if (s.endsWith('domain-1-test')) return true;
+      if (s.endsWith('meta.yaml')) return false;
+      return false;
+    });
+
+    getDomainById('sap-c02', 'domain-1-test');
+
+    const issues = getContentIssues();
+    const metaIssue = issues.find(i => i.reason === 'missing' && i.filePath.includes('meta.yaml'));
+    expect(metaIssue).toBeDefined();
+    expect(metaIssue!.level).toBe('warn');
+  });
+
+  it('logs malformed domain meta.yaml as error with reason=malformed', () => {
+    mockFs.existsSync.mockImplementation((p: fs.PathLike) => {
+      const s = p.toString();
+      if (s.endsWith('domain-1-test')) return true;
+      if (s.endsWith('meta.yaml')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue(
+      '{{ invalid yaml: [broken' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const result = getDomainById('sap-c02', 'domain-1-test');
+
+    expect(result).toBeNull();
+    const issues = getContentIssues();
+    const malformedIssue = issues.find(i => i.reason === 'malformed');
+    expect(malformedIssue).toBeDefined();
+    expect(malformedIssue!.level).toBe('error');
+    expect(malformedIssue!.filePath).toContain('meta.yaml');
+  });
+
+  it('logs malformed questions.yaml as error and returns empty array', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      '{{ broken: yaml [[' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const result = getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+
+    expect(result).toEqual([]);
+    const issues = getContentIssues();
+    const malformedIssue = issues.find(i => i.reason === 'malformed' && i.filePath.includes('questions.yaml'));
+    expect(malformedIssue).toBeDefined();
+    expect(malformedIssue!.level).toBe('error');
+    expect(malformedIssue!.context?.domainId).toBe('domain-1');
+    expect(malformedIssue!.context?.topicId).toBe('topic-1');
+  });
+
+  it('logs malformed topic meta.yaml as error and returns null', () => {
+    mockFs.existsSync.mockImplementation((p: fs.PathLike) => {
+      const s = p.toString();
+      if (s.endsWith('topic-1')) return true;
+      if (s.endsWith('meta.yaml')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue(
+      '{{ invalid yaml' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const result = getTopicById('sap-c02', 'domain-1', 'topic-1');
+
+    expect(result).toBeNull();
+    const issues = getContentIssues();
+    const malformedIssue = issues.find(i => i.reason === 'malformed');
+    expect(malformedIssue).toBeDefined();
+    expect(malformedIssue!.level).toBe('error');
   });
 });

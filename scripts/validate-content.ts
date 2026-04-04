@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 
 import { getAllDomains } from '../src/lib/content/loader';
+import { getContentIssues } from '../src/lib/content/logger';
 
 // Get examId from command line or default to sap-c02
 const examId = process.argv[2] || 'sap-c02';
@@ -80,6 +81,21 @@ try {
 
     console.log('');
   });
+
+  // Report any content loading issues (missing/malformed files)
+  const loadingIssues = getContentIssues();
+  if (loadingIssues.length > 0) {
+    console.log('--- Content Loading Issues ---');
+    for (const issue of loadingIssues) {
+      const icon = issue.level === 'error' ? '✗' : '⚠️';
+      const ctx = issue.context
+        ? ` [${Object.entries(issue.context).map(([k, v]) => `${k}=${v}`).join(', ')}]`
+        : '';
+      console.log(`  ${icon} ${issue.reason}: ${issue.message} (${issue.filePath})${ctx}`);
+      if (issue.level === 'error') hasErrors = true;
+    }
+    console.log('');
+  }
 
   if (hasErrors) {
     console.error('✗ Validation failed with errors\n');
