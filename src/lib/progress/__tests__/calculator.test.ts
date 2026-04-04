@@ -45,6 +45,7 @@ import {
   getRecentActivity,
   getReadinessEstimate,
   getProgressSummary,
+  calculateCoverageAwareDomainMastery,
 } from '../calculator';
 
 beforeEach(() => {
@@ -499,6 +500,40 @@ describe('getReadinessEstimate', () => {
 
     const result = getReadinessEstimate('sap-c02');
     expect(result.score).toBe(750);
+  });
+});
+
+describe('calculateCoverageAwareDomainMastery', () => {
+  it('divides by total topics, not just studied topics', () => {
+    const topicMasteries = new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 20, correct: 18 }],
+      ['domain-1/topic-2', { mastery: 90, attempts: 20, correct: 18 }],
+    ]);
+    const result = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 5);
+    expect(result).toBeCloseTo(36);
+  });
+
+  it('returns full mastery when all topics studied', () => {
+    const topicMasteries = new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 20, correct: 18 }],
+      ['domain-1/topic-2', { mastery: 80, attempts: 20, correct: 16 }],
+    ]);
+    const result = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 2);
+    expect(result).toBeCloseTo(85);
+  });
+
+  it('returns 0 when no topics studied', () => {
+    const topicMasteries = new Map<string, { mastery: number; attempts: number; correct: number }>();
+    const result = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 5);
+    expect(result).toBe(0);
+  });
+
+  it('handles single topic domain', () => {
+    const topicMasteries = new Map([
+      ['domain-1/topic-1', { mastery: 75, attempts: 15, correct: 11 }],
+    ]);
+    const result = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 1);
+    expect(result).toBeCloseTo(75);
   });
 });
 

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db/client";
 import { getAllDomains, getTopicById } from "@/lib/content/loader";
+import type { TopicMasteryResult } from './mastery';
 
 export interface WeakAreaDetail {
   topicId: string;
@@ -439,6 +440,28 @@ function getAllDomainProgressBatch(examId: string): DomainProgress[] {
       questionsCorrect: questionStats.correct || 0,
     };
   });
+}
+
+/**
+ * Calculate domain mastery with coverage awareness.
+ * Divides sum of topic masteries by TOTAL topics in domain (not just studied ones).
+ * Unstudied topics contribute 0, penalizing lack of breadth.
+ */
+export function calculateCoverageAwareDomainMastery(
+  topicMasteries: Map<string, TopicMasteryResult>,
+  domainId: string,
+  totalTopicsInDomain: number,
+): number {
+  if (totalTopicsInDomain === 0) return 0;
+
+  let masterySum = 0;
+  for (const [key, result] of topicMasteries) {
+    if (key.startsWith(`${domainId}/`)) {
+      masterySum += result.mastery;
+    }
+  }
+
+  return masterySum / totalTopicsInDomain;
 }
 
 /**
