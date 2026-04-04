@@ -59,6 +59,7 @@ jobs:
           ISSUE_NUMBER: ${{ matrix.issue }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
           prompt: |
             You are an issue enrichment agent for a GitHub repository. Your job is to
             research an existing issue and post a structured analysis comment that
@@ -280,6 +281,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
           prompt: |
             You are an issue enrichment agent for a GitHub repository. Your job is to
             research a newly opened issue and post a structured analysis comment that
