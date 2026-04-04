@@ -24,7 +24,7 @@ jobs:
           ISSUE_NUMBERS: ${{ inputs.issue_numbers }}
         run: |
           # Convert "22,41,43" to JSON array [22,41,43]
-          echo "issues=$(echo "$ISSUE_NUMBERS" | tr -d ' ' | jq -R 'split(",") | map(tonumber)')" >> "$GITHUB_OUTPUT"
+          echo "issues=$(echo "$ISSUE_NUMBERS" | tr -d ' ' | jq -cR 'split(",") | map(tonumber)')" >> "$GITHUB_OUTPUT"
 
   # Runs for each issue in a manual dispatch
   enrich-manual:
