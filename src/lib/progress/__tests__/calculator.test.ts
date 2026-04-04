@@ -43,9 +43,7 @@ vi.mock('../mastery', () => ({
 import { getAllTopicWindowedMasteries } from '../mastery';
 
 import {
-  calculateDomainMastery,
   calculateOverallMastery,
-  getAllTopicMasteryScores,
   getWeakAreasByDomain,
   getDomainProgress,
   getOverallProgress,
@@ -63,45 +61,22 @@ beforeEach(() => {
   mockGetTopicById.mockReturnValue(null);
 });
 
-describe('calculateDomainMastery', () => {
-  it('returns mastery percentage (avg_mastery * 100)', () => {
-    mockStatement.get.mockReturnValue({ avg_mastery: 0.85 });
-
-    const result = calculateDomainMastery('sap-c02', 'domain-1');
-    expect(result).toBe(85);
-  });
-
-  it('returns 0 when avg_mastery is null', () => {
-    mockStatement.get.mockReturnValue({ avg_mastery: null });
-
-    const result = calculateDomainMastery('sap-c02', 'domain-1');
-    expect(result).toBe(0);
-  });
-
-  it('passes examId and domainId to query', () => {
-    mockStatement.get.mockReturnValue({ avg_mastery: 0.5 });
-
-    calculateDomainMastery('sap-c02', 'domain-1');
-
-    expect(mockStatement.get).toHaveBeenCalledWith('sap-c02', 'domain-1');
-  });
-});
-
 describe('calculateOverallMastery', () => {
-  it('calculates weighted average across domains', () => {
+  it('calculates weighted average across domains using windowed mastery', () => {
     const domain1 = createDomain({
       meta: createDomainMeta({ id: 'domain-1', weight: 60 }),
+      topics: [createTopic({ meta: createTopicMeta({ id: 'topic-1' }) })],
     });
     const domain2 = createDomain({
       meta: createDomainMeta({ id: 'domain-2', weight: 40 }),
+      topics: [createTopic({ meta: createTopicMeta({ id: 'topic-2' }) })],
     });
     mockGetAllDomains.mockReturnValue([domain1, domain2]);
 
-    // getAllDomainMasteryScores query
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', avg_mastery: 0.8 },
-      { domain_id: 'domain-2', avg_mastery: 0.6 },
-    ]);
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 80, attempts: 10, correct: 8 }],
+      ['domain-2/topic-2', { mastery: 60, attempts: 10, correct: 6 }],
+    ]));
 
     const result = calculateOverallMastery('sap-c02');
     // weighted: (80 * 0.6 + 60 * 0.4) / (0.6 + 0.4) = (48 + 24) / 1.0 = 72
@@ -110,9 +85,12 @@ describe('calculateOverallMastery', () => {
 
   it('returns 0 when no domains have progress', () => {
     mockGetAllDomains.mockReturnValue([
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 50 }) }),
+      createDomain({
+        meta: createDomainMeta({ id: 'domain-1', weight: 50 }),
+        topics: [createTopic({ meta: createTopicMeta({ id: 'topic-1' }) })],
+      }),
     ]);
-    mockStatement.all.mockReturnValueOnce([]);
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map());
 
     const result = calculateOverallMastery('sap-c02');
     expect(result).toBe(0);
@@ -120,48 +98,20 @@ describe('calculateOverallMastery', () => {
 
   it('handles single domain', () => {
     mockGetAllDomains.mockReturnValue([
-      createDomain({ meta: createDomainMeta({ id: 'domain-1', weight: 100 }) }),
+      createDomain({
+        meta: createDomainMeta({ id: 'domain-1', weight: 100 }),
+        topics: [createTopic({ meta: createTopicMeta({ id: 'topic-1' }) })],
+      }),
     ]);
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', avg_mastery: 0.9 },
-    ]);
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 90, attempts: 10, correct: 9 }],
+    ]));
 
     const result = calculateOverallMastery('sap-c02');
     expect(result).toBe(90);
   });
 });
 
-describe('getAllTopicMasteryScores', () => {
-  it('returns Map keyed by "domainId/topicId" with mastery percentages', () => {
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', topic_id: 'topic-a', mastery_level: 0.85 },
-      { domain_id: 'domain-1', topic_id: 'topic-b', mastery_level: 0.6 },
-      { domain_id: 'domain-2', topic_id: 'topic-c', mastery_level: 0.4 },
-    ]);
-
-    const result = getAllTopicMasteryScores('sap-c02');
-    expect(result.size).toBe(3);
-    expect(result.get('domain-1/topic-a')).toBe(85);
-    expect(result.get('domain-1/topic-b')).toBe(60);
-    expect(result.get('domain-2/topic-c')).toBe(40);
-  });
-
-  it('returns empty Map when no progress exists', () => {
-    mockStatement.all.mockReturnValueOnce([]);
-
-    const result = getAllTopicMasteryScores('sap-c02');
-    expect(result.size).toBe(0);
-  });
-
-  it('treats null mastery_level as 0', () => {
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', topic_id: 'topic-a', mastery_level: null },
-    ]);
-
-    const result = getAllTopicMasteryScores('sap-c02');
-    expect(result.get('domain-1/topic-a')).toBe(0);
-  });
-});
 
 describe('getWeakAreasByDomain', () => {
   it('returns Map of domainId -> Set of weak topicIds', () => {
@@ -208,9 +158,7 @@ describe('getDomainProgress', () => {
     mockStatement.get
       .mockReturnValueOnce({ topics_with_progress: 2, completed_topics: 1 })
       // questionStats query
-      .mockReturnValueOnce({ attempted: 20, correct: 15 })
-      // calculateDomainMastery query
-      .mockReturnValueOnce({ avg_mastery: 0.75 });
+      .mockReturnValueOnce({ attempted: 20, correct: 15 });
 
     // weakAreas query
     mockStatement.all.mockReturnValueOnce([
@@ -219,6 +167,9 @@ describe('getDomainProgress', () => {
 
     // getTopicById for weak area validation
     mockGetTopicById.mockReturnValue(createTopic());
+
+    // getAllTopicWindowedMasteries returns empty map (masteryScore will be 0)
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map());
 
     const result = getDomainProgress('sap-c02', 'domain-1');
     expect(result).not.toBeNull();
@@ -247,8 +198,7 @@ describe('getDomainProgress', () => {
 
     mockStatement.get
       .mockReturnValueOnce({ topics_with_progress: 1, completed_topics: 0 })
-      .mockReturnValueOnce({ attempted: 5, correct: 2 })
-      .mockReturnValueOnce({ avg_mastery: 0.4 });
+      .mockReturnValueOnce({ attempted: 5, correct: 2 });
 
     mockStatement.all.mockReturnValueOnce([
       { topic_id: 'existing-topic' },
@@ -259,6 +209,8 @@ describe('getDomainProgress', () => {
     mockGetTopicById
       .mockReturnValueOnce(createTopic())
       .mockReturnValueOnce(null);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map());
 
     const result = getDomainProgress('sap-c02', 'domain-1');
     expect(result!.weakAreas).toHaveLength(1);
@@ -273,10 +225,11 @@ describe('getDomainProgress', () => {
 
     mockStatement.get
       .mockReturnValueOnce({ topics_with_progress: 0, completed_topics: 0 })
-      .mockReturnValueOnce({ attempted: 0, correct: null })
-      .mockReturnValueOnce({ avg_mastery: null });
+      .mockReturnValueOnce({ attempted: 0, correct: null });
 
     mockStatement.all.mockReturnValueOnce([]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map());
 
     const result = getDomainProgress('sap-c02', 'domain-1');
     expect(result!.questionsAttempted).toBe(0);
@@ -294,9 +247,6 @@ describe('getOverallProgress', () => {
       // studyTime query
       .mockReturnValueOnce({ total_seconds: 3600 });
 
-    // calculateOverallMastery -> getAllDomainMasteryScores
-    mockStatement.all.mockReturnValueOnce([]);
-
     const result = getOverallProgress('sap-c02');
     expect(result.questionsAttempted).toBe(50);
     expect(result.questionsCorrect).toBe(35);
@@ -309,8 +259,6 @@ describe('getOverallProgress', () => {
       .mockReturnValueOnce({ attempted: 0, correct: 0 })
       .mockReturnValueOnce({ total_seconds: 5400 });
 
-    mockStatement.all.mockReturnValueOnce([]);
-
     const result = getOverallProgress('sap-c02');
     expect(result.studyTimeMinutes).toBe(90);
   });
@@ -322,8 +270,6 @@ describe('getOverallProgress', () => {
       .mockReturnValueOnce({ attempted: 0, correct: 0 })
       .mockReturnValueOnce({ total_seconds: 0 });
 
-    mockStatement.all.mockReturnValueOnce([]);
-
     const result = getOverallProgress('sap-c02');
     expect(result.experimentsCompleted).toBe(0);
   });
@@ -334,8 +280,6 @@ describe('getOverallProgress', () => {
     mockStatement.get
       .mockReturnValueOnce({ attempted: 0, correct: 0 })
       .mockReturnValueOnce({ total_seconds: 0 });
-
-    mockStatement.all.mockReturnValueOnce([]);
 
     const result = getOverallProgress('sap-c02');
     expect(result.studyTimeMinutes).toBe(0);
@@ -685,20 +629,17 @@ describe('getProgressSummary', () => {
     });
     mockGetAllDomains.mockReturnValue([domain]);
 
+    // getAllTopicWindowedMasteries used by calculateOverallMastery, getDomainProgress batch, and getReadinessEstimate
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map());
+
     // getOverallProgress: questionStats, studyTime
     mockStatement.get
       .mockReturnValueOnce({ attempted: 10, correct: 8 })
       .mockReturnValueOnce({ total_seconds: 600 });
-    // calculateOverallMastery -> getAllDomainMasteryScores
-    mockStatement.all.mockReturnValueOnce([
-      { domain_id: 'domain-1', avg_mastery: 0.8 },
-    ]);
 
     // getAllDomainProgressBatch:
-    // getAllDomainMasteryScores for batch
+    // topicStats batch
     mockStatement.all
-      .mockReturnValueOnce([{ domain_id: 'domain-1', avg_mastery: 0.8 }])
-      // topicStats batch
       .mockReturnValueOnce([{ domain_id: 'domain-1', topics_with_progress: 1, completed_topics: 0 }])
       // questionStats batch
       .mockReturnValueOnce([{ domain_id: 'domain-1', attempted: 10, correct: 8 }])
@@ -713,9 +654,6 @@ describe('getProgressSummary', () => {
     // getReadinessEstimate: total_attempts query
     mockStatement.get
       .mockReturnValueOnce({ total_attempts: 10 });
-
-    // getAllTopicWindowedMasteries is already mocked (returns empty Map by default)
-    // With empty masteries and 10 attempts, it will compute domain breakdown
 
     const result = getProgressSummary('sap-c02');
     expect(result).toHaveProperty('overall');

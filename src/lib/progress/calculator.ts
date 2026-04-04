@@ -75,47 +75,6 @@ export interface ProgressSummary {
   readinessEstimate: ReadinessEstimate;
 }
 
-/**
- * Get all domain mastery scores in a single query (batch optimization)
- */
-function getAllDomainMasteryScores(examId: string): Map<string, number> {
-  const results = db.prepare(`
-    SELECT
-      domain_id,
-      AVG(mastery_level) as avg_mastery
-    FROM topic_progress
-    WHERE exam_id = ?
-    GROUP BY domain_id
-  `).all(examId) as Array<{ domain_id: string; avg_mastery: number | null }>;
-
-  const masteryMap = new Map<string, number>();
-  for (const result of results) {
-    masteryMap.set(result.domain_id, result.avg_mastery ? result.avg_mastery * 100 : 0);
-  }
-  return masteryMap;
-}
-
-/**
- * Get all topic mastery scores in a single query (batch optimization for sidebar)
- * Returns Map keyed by "domainId/topicId" with mastery percentage values
- */
-export function getAllTopicMasteryScores(examId: string): Map<string, number> {
-  const results = db.prepare(`
-    SELECT
-      domain_id,
-      topic_id,
-      mastery_level
-    FROM topic_progress
-    WHERE exam_id = ?
-  `).all(examId) as Array<{ domain_id: string; topic_id: string; mastery_level: number | null }>;
-
-  const masteryMap = new Map<string, number>();
-  for (const result of results) {
-    const key = `${result.domain_id}/${result.topic_id}`;
-    masteryMap.set(key, result.mastery_level ? result.mastery_level * 100 : 0);
-  }
-  return masteryMap;
-}
 
 /**
  * Get weak areas grouped by domain (batch optimization for sidebar)
@@ -138,33 +97,21 @@ export function getWeakAreasByDomain(examId: string): Map<string, Set<string>> {
 }
 
 /**
- * Calculate mastery score for a domain based on topic progress
- */
-export function calculateDomainMastery(examId: string, domainId: string): number {
-  const result = db.prepare(`
-    SELECT
-      AVG(mastery_level) as avg_mastery
-    FROM topic_progress
-    WHERE exam_id = ? AND domain_id = ?
-  `).get(examId, domainId) as { avg_mastery: number | null };
-
-  return result.avg_mastery ? result.avg_mastery * 100 : 0;
-}
-
-/**
  * Calculate overall mastery score weighted by domain exam weights
- * Uses batch query to avoid N+1 pattern
+ * Uses windowed mastery calculation for consistency
  */
 export function calculateOverallMastery(examId: string): number {
   const domains = getAllDomains(examId);
-  const masteryScores = getAllDomainMasteryScores(examId);
+  const topicMasteries = getAllTopicWindowedMasteries(examId);
 
   let weightedSum = 0;
   let totalWeight = 0;
 
   for (const domain of domains) {
-    const mastery = masteryScores.get(domain.meta.id) || 0;
-    weightedSum += mastery * (domain.meta.weight / 100);
+    const domainMastery = calculateCoverageAwareDomainMastery(
+      topicMasteries, domain.meta.id, domain.topics.length
+    );
+    weightedSum += domainMastery * (domain.meta.weight / 100);
     totalWeight += domain.meta.weight / 100;
   }
 
@@ -216,11 +163,13 @@ export const getDomainProgress = cache((examId: string, domainId: string): Domai
       return topic !== null;
     });
 
+  const topicMasteries = getAllTopicWindowedMasteries(examId);
+
   return {
     domainId: domain.meta.id,
     domainName: domain.meta.shortName,
     weight: domain.meta.weight,
-    masteryScore: calculateDomainMastery(examId, domainId),
+    masteryScore: calculateCoverageAwareDomainMastery(topicMasteries, domainId, domain.topics.length),
     topicsCompleted: topicStats.completed_topics || 0,
     totalTopics: domain.topics.length,
     weakAreas: validWeakAreas,
@@ -456,10 +405,10 @@ function getAllDomainProgressBatch(examId: string): DomainProgress[] {
   const domains = getAllDomains(examId);
   if (domains.length === 0) return [];
 
-  // Batch query 1: Get mastery scores for all domains
-  const masteryScores = getAllDomainMasteryScores(examId);
+  // Get windowed mastery for all topics (single call, cached per-request via caller)
+  const topicMasteries = getAllTopicWindowedMasteries(examId);
 
-  // Batch query 2: Get topic stats for all domains
+  // Batch query 1: Get topic stats for all domains
   const topicStatsResults = db.prepare(`
     SELECT
       domain_id,
@@ -529,7 +478,7 @@ function getAllDomainProgressBatch(examId: string): DomainProgress[] {
       domainId,
       domainName: domain.meta.shortName,
       weight: domain.meta.weight,
-      masteryScore: masteryScores.get(domainId) || 0,
+      masteryScore: calculateCoverageAwareDomainMastery(topicMasteries, domainId, domain.topics.length),
       topicsCompleted: topicStats.completed_topics || 0,
       totalTopics: domain.topics.length,
       weakAreas: weakAreasMap.get(domainId) || [],
