@@ -383,6 +383,23 @@ describe('POST /api/tutor', () => {
       expect(body.error).toContain('rate-limited');
     });
 
+    it('returns distinct message for quota exhaustion (429)', async () => {
+      mockChat.mockRejectedValue(
+        new LLMError('Quota exhausted', 'gemini', 429, false, {
+          code: 'quota_exhausted',
+        })
+      );
+
+      const req = createPOSTRequest('/api/tutor', { message: 'Hello' });
+      const res = await POST(req);
+      const body = await res.json();
+
+      expect(res.status).toBe(429);
+      expect(body.error).toContain('quota');
+      expect(body.error).not.toContain('rate-limited');
+      expect(body.errorCategory).toBe('llm_quota_exhausted');
+    });
+
     it('returns 503 for LLM service errors', async () => {
       mockChat.mockRejectedValue(new LLMError('Service down', 'claude', 500));
 

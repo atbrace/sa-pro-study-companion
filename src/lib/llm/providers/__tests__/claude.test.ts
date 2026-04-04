@@ -168,6 +168,20 @@ describe('claudeProvider', () => {
       }
     });
 
+    it('does not set quota_exhausted code for 429 (Anthropic has no quota concept)', async () => {
+      // Anthropic 429s are always transient rate limits — no daily quota like Gemini.
+      // All 429s should remain retryable with no error code set.
+      mockCreate.mockRejectedValue(new Anthropic.APIError(429, undefined, 'Too many requests', undefined));
+
+      try {
+        await claudeProvider.chat([{ role: 'user', content: 'test' }], defaultOptions);
+      } catch (error) {
+        const llmError = error as LLMError;
+        expect(llmError.code).toBeUndefined();
+        expect(llmError.isRetryable).toBe(true);
+      }
+    });
+
     it('wraps auth errors as non-retryable', async () => {
       mockCreate.mockRejectedValue(new Anthropic.APIError(401, undefined, 'Invalid API key', undefined));
 

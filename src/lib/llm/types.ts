@@ -46,16 +46,32 @@ export type LLMChatResponse =
 /** Provider names */
 export type ProviderName = 'claude' | 'gemini';
 
+/** Error codes for distinguishing error subtypes within the same HTTP status */
+export type LLMErrorCode = 'quota_exhausted' | 'rate_limited';
+
+/** Optional extended fields for LLMError */
+export interface LLMErrorOptions {
+  code?: LLMErrorCode;
+  /** Suggested retry delay from the provider (e.g., Gemini RetryInfo) */
+  retryAfterMs?: number;
+}
+
 /** Consistent error class for LLM operations */
 export class LLMError extends Error {
+  public code?: LLMErrorCode;
+  public retryAfterMs?: number;
+
   constructor(
     message: string,
     public provider: ProviderName,
     public statusCode?: number,
-    public isRetryable: boolean = false
+    public isRetryable: boolean = false,
+    options?: LLMErrorOptions
   ) {
     super(message);
     this.name = 'LLMError';
+    this.code = options?.code;
+    this.retryAfterMs = options?.retryAfterMs;
   }
 }
 
