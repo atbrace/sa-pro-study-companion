@@ -1,7 +1,7 @@
 import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
+import { getAllTopicWindowedMasteries } from '@/lib/progress/mastery';
 import {
-  getAllTopicMasteryScores,
   getWeakAreasByDomain,
   calculateOverallMastery,
 } from '@/lib/progress/calculator';
@@ -89,7 +89,7 @@ export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarch
   const hierarchy = getSidebarHierarchy(examId);
 
   // Batch-fetch all progress data (3 queries total)
-  const topicMasteryScores = getAllTopicMasteryScores(examId);
+  const topicMasteries = getAllTopicWindowedMasteries(examId);
   const weakAreasByDomain = getWeakAreasByDomain(examId);
   const overallMastery = calculateOverallMastery(examId);
 
@@ -104,10 +104,11 @@ export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarch
 
     const enrichedTopics = domain.topics.map(topic => {
       const key = `${domain.id}/${topic.id}`;
-      const masteryScore = topicMasteryScores.get(key) ?? 0;
+      const topicResult = topicMasteries.get(key);
+      const masteryScore = topicResult?.mastery ?? 0;
       const isWeakArea = domainWeakTopics.has(topic.id);
 
-      if (topicMasteryScores.has(key)) {
+      if (topicResult && topicResult.attempts > 0) {
         topicMasterySum += masteryScore;
         topicsWithProgress++;
         if (masteryScore >= 85) topicsCompleted++;
