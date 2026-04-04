@@ -17,12 +17,14 @@ import {
   getRandomDomainQuestions,
   getDomainQuestionCount,
   getContentStats,
+  clearContentCache,
 } from '../loader';
 
 const mockFs = vi.mocked(fs);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearContentCache();
 });
 
 describe('getAllDomains', () => {
@@ -386,5 +388,109 @@ describe('getContentStats', () => {
     expect(stats.totalTopics).toBe(0);
     expect(stats.totalQuestions).toBe(0);
     expect(stats.domains).toEqual([]);
+  });
+});
+
+describe('content caching', () => {
+  it('getAllDomains returns cached result on second call without re-reading fs', () => {
+    mockFs.existsSync.mockImplementation((p: fs.PathLike) => {
+      const s = p.toString();
+      if (s === '/mock-content/domains') return true;
+      if (s.endsWith('domain-1-test')) return true;
+      if (s.endsWith('meta.yaml')) return true;
+      if (s.endsWith('overview.md')) return false;
+      if (s.endsWith('topics')) return false;
+      return false;
+    });
+
+    mockFs.readdirSync.mockReturnValue(
+      ['domain-1-test'] as unknown as ReturnType<typeof fs.readdirSync>
+    );
+    mockFs.statSync.mockReturnValue({ isDirectory: () => true } as fs.Stats);
+    mockFs.readFileSync.mockReturnValue(
+      'id: domain-1-test\nname: Test\nshortName: Test\nweight: 25\ndescription: d\ncolor: c\nicon: i\nexamTasks: []\ntopics: []\nkeyServices: []\nawsDocLinks: []' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const first = getAllDomains('sap-c02');
+    const readCallsAfterFirst = mockFs.readFileSync.mock.calls.length;
+
+    const second = getAllDomains('sap-c02');
+    const readCallsAfterSecond = mockFs.readFileSync.mock.calls.length;
+
+    expect(first).toEqual(second);
+    expect(readCallsAfterSecond).toBe(readCallsAfterFirst);
+  });
+
+  it('getDomainById returns cached result on second call without re-reading fs', () => {
+    mockFs.existsSync.mockImplementation((p: fs.PathLike) => {
+      const s = p.toString();
+      if (s.endsWith('domain-1-test')) return true;
+      if (s.endsWith('meta.yaml')) return true;
+      if (s.endsWith('overview.md')) return false;
+      if (s.endsWith('topics')) return false;
+      return false;
+    });
+
+    mockFs.readFileSync.mockReturnValue(
+      'id: domain-1-test\nname: Test\nshortName: Test\nweight: 25\ndescription: d\ncolor: c\nicon: i\nexamTasks: []\ntopics: []\nkeyServices: []\nawsDocLinks: []' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const first = getDomainById('sap-c02', 'domain-1-test');
+    const readCallsAfterFirst = mockFs.readFileSync.mock.calls.length;
+
+    const second = getDomainById('sap-c02', 'domain-1-test');
+    const readCallsAfterSecond = mockFs.readFileSync.mock.calls.length;
+
+    expect(first).toEqual(second);
+    expect(readCallsAfterSecond).toBe(readCallsAfterFirst);
+  });
+
+  it('getTopicQuestions returns cached result on second call without re-reading fs', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      'questions:\n  - id: q1\n    type: single\n    text: Q?\n    options: []\n    correctAnswer: A\n    explanation: E\n    services: []\n    concepts: []' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    const first = getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+    const readCallsAfterFirst = mockFs.readFileSync.mock.calls.length;
+
+    const second = getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+    const readCallsAfterSecond = mockFs.readFileSync.mock.calls.length;
+
+    expect(first).toEqual(second);
+    expect(readCallsAfterSecond).toBe(readCallsAfterFirst);
+  });
+
+  it('clearContentCache causes next call to re-read from fs', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      'questions:\n  - id: q1\n    type: single\n    text: Q?\n    options: []\n    correctAnswer: A\n    explanation: E\n    services: []\n    concepts: []' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+    const readCallsAfterFirst = mockFs.readFileSync.mock.calls.length;
+
+    clearContentCache();
+
+    getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+    const readCallsAfterClear = mockFs.readFileSync.mock.calls.length;
+
+    expect(readCallsAfterClear).toBeGreaterThan(readCallsAfterFirst);
+  });
+
+  it('caches are isolated by examId', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      'questions:\n  - id: q1\n    type: single\n    text: Q?\n    options: []\n    correctAnswer: A\n    explanation: E\n    services: []\n    concepts: []' as unknown as ReturnType<typeof fs.readFileSync>
+    );
+
+    getTopicQuestions('sap-c02', 'domain-1', 'topic-1');
+    const callsAfterFirst = mockFs.readFileSync.mock.calls.length;
+
+    // Different examId should trigger a new read
+    getTopicQuestions('mla-c01', 'domain-1', 'topic-1');
+    const callsAfterSecond = mockFs.readFileSync.mock.calls.length;
+
+    expect(callsAfterSecond).toBeGreaterThan(callsAfterFirst);
   });
 });

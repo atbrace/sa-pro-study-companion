@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
 import type {
@@ -7,11 +6,26 @@ import type {
 } from '@/types/sidebar';
 
 /**
+ * Module-level cache for sidebar hierarchy, keyed by examId.
+ * Replaces React.cache() (request-scoped) with cross-request caching.
+ * Content is static at runtime, so no TTL needed.
+ */
+const sidebarCache = new Map<string, SidebarHierarchy>();
+
+/** Clear sidebar cache. Exported for testing. */
+export function clearSidebarCache(): void {
+  sidebarCache.clear();
+}
+
+/**
  * Load the full content hierarchy for sidebar navigation
  * Returns domains, topics, and sections in a lightweight format
- * Uses React.cache() to deduplicate requests within the same render pass
  */
-export const getSidebarHierarchy = cache((examId: string): SidebarHierarchy => {
+export function getSidebarHierarchy(examId: string): SidebarHierarchy {
+  if (sidebarCache.has(examId)) {
+    return sidebarCache.get(examId)!;
+  }
+
   const domains = getAllDomains(examId);
 
   const hierarchy: SidebarHierarchy = {
@@ -56,5 +70,6 @@ export const getSidebarHierarchy = cache((examId: string): SidebarHierarchy => {
     })),
   };
 
+  sidebarCache.set(examId, hierarchy);
   return hierarchy;
-});
+}

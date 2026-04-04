@@ -14,9 +14,27 @@ import type {
 import { getExamContentDir } from './exam-loader';
 
 /**
+ * Module-level content cache.
+ * Content is static at runtime (changes only on git pull / server restart),
+ * so an infinite-TTL Map is appropriate. Keys are composite strings built
+ * from function name + arguments.
+ */
+const contentCache = new Map<string, unknown>();
+
+/** Clear all cached content. Exported for testing. */
+export function clearContentCache(): void {
+  contentCache.clear();
+}
+
+/**
  * Get all available domains for an exam
  */
 export function getAllDomains(examId: string): Domain[] {
+  const cacheKey = `allDomains:${examId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Domain[];
+  }
+
   const contentDir = getExamContentDir(examId);
 
   if (!fs.existsSync(contentDir)) {
@@ -26,7 +44,7 @@ export function getAllDomains(examId: string): Domain[] {
 
   const domainDirs = fs.readdirSync(contentDir);
 
-  return domainDirs
+  const result = domainDirs
     .filter(dir => {
       const fullPath = path.join(contentDir, dir);
       return fs.statSync(fullPath).isDirectory() && dir.startsWith('domain-');
@@ -34,12 +52,20 @@ export function getAllDomains(examId: string): Domain[] {
     .map(dir => getDomainById(examId, dir))
     .filter((d): d is Domain => d !== null)
     .sort((a, b) => a.meta.id.localeCompare(b.meta.id));
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get a specific domain by ID
  */
 export function getDomainById(examId: string, domainId: string): Domain | null {
+  const cacheKey = `domain:${examId}:${domainId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Domain | null;
+  }
+
   const contentDir = getExamContentDir(examId);
   const domainPath = path.join(contentDir, domainId);
 
@@ -66,17 +92,25 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
   // Load all topics for this domain
   const topics = getTopicsForDomain(examId, domainId);
 
-  return {
+  const result: Domain | null = {
     meta,
     overview,
     topics,
   };
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get all topics for a domain
  */
 function getTopicsForDomain(examId: string, domainId: string): Topic[] {
+  const cacheKey = `topics:${examId}:${domainId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Topic[];
+  }
+
   const contentDir = getExamContentDir(examId);
   const topicsPath = path.join(contentDir, domainId, 'topics');
 
@@ -86,19 +120,27 @@ function getTopicsForDomain(examId: string, domainId: string): Topic[] {
 
   const topicDirs = fs.readdirSync(topicsPath);
 
-  return topicDirs
+  const result = topicDirs
     .filter(dir => {
       const fullPath = path.join(topicsPath, dir);
       return fs.statSync(fullPath).isDirectory();
     })
     .map(dir => getTopicById(examId, domainId, dir))
     .filter((t): t is Topic => t !== null);
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get a specific topic by domain and topic ID
  */
 export function getTopicById(examId: string, domainId: string, topicId: string): Topic | null {
+  const cacheKey = `topic:${examId}:${domainId}:${topicId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Topic | null;
+  }
+
   const contentDir = getExamContentDir(examId);
   const topicPath = path.join(contentDir, domainId, 'topics', topicId);
 
@@ -123,11 +165,14 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
   // Load questions
   const questions = getTopicQuestions(examId, domainId, topicId);
 
-  return {
+  const result: Topic | null = {
     meta,
     content,
     questions,
   };
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
@@ -135,6 +180,11 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
  * Injects domainId and topicId into each question for tracking purposes
  */
 export function getTopicQuestions(examId: string, domainId: string, topicId: string): Question[] {
+  const cacheKey = `questions:${examId}:${domainId}:${topicId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Question[];
+  }
+
   const contentDir = getExamContentDir(examId);
   const questionsPath = path.join(
     contentDir,
@@ -151,11 +201,14 @@ export function getTopicQuestions(examId: string, domainId: string, topicId: str
   const data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
 
   // Inject domainId and topicId into each question from the file path
-  return (data.questions || []).map(q => ({
+  const result = (data.questions || []).map(q => ({
     ...q,
     domainId,
     topicId,
   }));
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
