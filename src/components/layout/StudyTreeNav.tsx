@@ -1,11 +1,14 @@
 'use client';
 
+import { useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, ChevronDown, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, LocateFixed } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import type { SidebarHierarchy, SidebarDomain, SidebarTopic } from '@/types/sidebar';
 import { useSidebarState } from '@/hooks/useSidebarState';
+import { getDomainColorHex, getMasteryDotColorClass } from '@/lib/utils/colors';
 import { clsx } from 'clsx';
 
 interface StudyTreeNavProps {
@@ -16,23 +19,52 @@ interface StudyTreeNavProps {
 
 export function StudyTreeNav({ hierarchy, examId, onNavigate }: StudyTreeNavProps) {
   const pathname = usePathname();
+  const activeItemRef = useRef<HTMLAnchorElement | null>(null);
+  const setActiveItemRef = useCallback((el: HTMLAnchorElement | null) => {
+    activeItemRef.current = el;
+  }, []);
   const { isStudyExpanded, expandedDomains, expandedTopics, toggleStudy, toggleDomain, toggleTopic } =
     useSidebarState(pathname || '');
 
+  const isOnStudyPage = (pathname || '').includes(`/${examId}/study/`);
+  const showScrollButton = !isStudyExpanded && isOnStudyPage;
+
+  const handleScrollToCurrent = () => {
+    // First expand the study section, then scroll after a brief delay for DOM update
+    if (!isStudyExpanded) {
+      toggleStudy();
+    }
+    setTimeout(() => {
+      activeItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  };
+
   return (
     <Collapsible open={isStudyExpanded} onOpenChange={toggleStudy}>
-      <CollapsibleTrigger
-        className="flex w-full items-center gap-2 rounded-lg p-2 text-base font-medium hover:bg-muted transition-colors"
-        aria-label={isStudyExpanded ? "Collapse study content" : "Expand study content"}
-      >
-        {isStudyExpanded ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronRight className="h-4 w-4" />
+      <div className="flex items-center">
+        <CollapsibleTrigger
+          className="flex flex-1 items-center gap-2 rounded-lg p-2 text-base font-medium hover:bg-muted transition-colors"
+          aria-label={isStudyExpanded ? "Collapse study content" : "Expand study content"}
+        >
+          {isStudyExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+          <BookOpen className="h-5 w-5" />
+          <span>Study</span>
+        </CollapsibleTrigger>
+        {showScrollButton && (
+          <button
+            onClick={handleScrollToCurrent}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Scroll to current section"
+            title="Scroll to current section"
+          >
+            <LocateFixed className="h-4 w-4" />
+          </button>
         )}
-        <BookOpen className="h-5 w-5" />
-        <span>Study</span>
-      </CollapsibleTrigger>
+      </div>
       <CollapsibleContent className="space-y-1">
         {hierarchy.domains.map(domain => (
           <DomainTreeItem
@@ -45,6 +77,7 @@ export function StudyTreeNav({ hierarchy, examId, onNavigate }: StudyTreeNavProp
             onToggleTopic={toggleTopic}
             currentPath={pathname || ''}
             onNavigate={onNavigate}
+            setActiveItemRef={setActiveItemRef}
           />
         ))}
       </CollapsibleContent>
@@ -61,6 +94,7 @@ interface DomainTreeItemProps {
   onToggleTopic: (domainId: string, topicId: string) => void;
   currentPath: string;
   onNavigate?: () => void;
+  setActiveItemRef: (el: HTMLAnchorElement | null) => void;
 }
 
 function DomainTreeItem({
@@ -72,16 +106,23 @@ function DomainTreeItem({
   onToggleTopic,
   currentPath,
   onNavigate,
+  setActiveItemRef,
 }: DomainTreeItemProps) {
   const isOnDomain = currentPath.startsWith(`/${examId}/study/${domain.id}`);
+  const progress = domain.progress;
+  const masteryScore = progress?.masteryScore ?? 0;
+  const domainColorHex = getDomainColorHex(domain.color);
 
   return (
-    <div className="pl-4">
+    <div
+      className="pl-4 border-l-2"
+      style={{ borderLeftColor: domainColorHex }}
+    >
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger
           className={clsx(
             'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium transition-colors',
-            isOnDomain && 'text-foreground',
+            isOnDomain && 'bg-primary/10 text-foreground font-semibold',
             !isOnDomain && 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
           aria-label={isExpanded ? `Collapse ${domain.shortName}` : `Expand ${domain.shortName}`}
@@ -93,6 +134,11 @@ function DomainTreeItem({
           )}
           <span className="truncate">{domain.shortName}</span>
         </CollapsibleTrigger>
+        {masteryScore > 0 && (
+          <div className="px-2 pb-1">
+            <ProgressIndicator value={masteryScore} className="h-1 rounded-full" />
+          </div>
+        )}
         <CollapsibleContent className="space-y-0.5 mt-0.5">
           {domain.topics.map(topic => (
             <TopicTreeItem
@@ -104,6 +150,7 @@ function DomainTreeItem({
               onToggle={() => onToggleTopic(domain.id, topic.id)}
               currentPath={currentPath}
               onNavigate={onNavigate}
+              setActiveItemRef={setActiveItemRef}
             />
           ))}
         </CollapsibleContent>
@@ -120,6 +167,7 @@ interface TopicTreeItemProps {
   onToggle: () => void;
   currentPath: string;
   onNavigate?: () => void;
+  setActiveItemRef: (el: HTMLAnchorElement | null) => void;
 }
 
 function TopicTreeItem({
@@ -130,8 +178,11 @@ function TopicTreeItem({
   onToggle,
   currentPath,
   onNavigate,
+  setActiveItemRef,
 }: TopicTreeItemProps) {
   const isOnTopic = currentPath.startsWith(`/${examId}/study/${domainId}/${topic.id}`);
+  const progress = topic.progress;
+  const masteryScore = progress?.masteryScore ?? 0;
 
   return (
     <div className="pl-4">
@@ -139,7 +190,7 @@ function TopicTreeItem({
         <CollapsibleTrigger
           className={clsx(
             'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
-            isOnTopic && 'text-foreground',
+            isOnTopic && 'bg-primary/10 text-foreground font-semibold',
             !isOnTopic && 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
           aria-label={isExpanded ? `Collapse ${topic.shortName}` : `Expand ${topic.shortName}`}
@@ -149,6 +200,10 @@ function TopicTreeItem({
           ) : (
             <ChevronRight className="h-3 w-3 flex-shrink-0" />
           )}
+          <span
+            className={clsx('h-2 w-2 rounded-full flex-shrink-0', getMasteryDotColorClass(masteryScore))}
+            aria-hidden="true"
+          />
           <span className="truncate">{topic.shortName}</span>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-0.5 mt-0.5">
@@ -161,6 +216,7 @@ function TopicTreeItem({
               topicId={topic.id}
               currentPath={currentPath}
               onNavigate={onNavigate}
+              setActiveItemRef={setActiveItemRef}
             />
           ))}
         </CollapsibleContent>
@@ -176,15 +232,17 @@ interface SectionLinkProps {
   topicId: string;
   currentPath: string;
   onNavigate?: () => void;
+  setActiveItemRef: (el: HTMLAnchorElement | null) => void;
 }
 
-function SectionLink({ section, examId, domainId, topicId, currentPath, onNavigate }: SectionLinkProps) {
+function SectionLink({ section, examId, domainId, topicId, currentPath, onNavigate, setActiveItemRef }: SectionLinkProps) {
   const href = `/${examId}/study/${domainId}/${topicId}/${section.id}`;
   const isActive = currentPath === href;
 
   return (
     <Link
       href={href}
+      ref={isActive ? setActiveItemRef : undefined}
       onClick={onNavigate}
       className={clsx(
         'flex items-center gap-2 rounded-lg px-2 py-1.5 pl-8 text-xs transition-colors',

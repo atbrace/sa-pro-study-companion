@@ -66,6 +66,48 @@ function getAllDomainMasteryScores(examId: string): Map<string, number> {
 }
 
 /**
+ * Get all topic mastery scores in a single query (batch optimization for sidebar)
+ * Returns Map keyed by "domainId/topicId" with mastery percentage values
+ */
+export function getAllTopicMasteryScores(examId: string): Map<string, number> {
+  const results = db.prepare(`
+    SELECT
+      domain_id,
+      topic_id,
+      mastery_level
+    FROM topic_progress
+    WHERE exam_id = ?
+  `).all(examId) as Array<{ domain_id: string; topic_id: string; mastery_level: number | null }>;
+
+  const masteryMap = new Map<string, number>();
+  for (const result of results) {
+    const key = `${result.domain_id}/${result.topic_id}`;
+    masteryMap.set(key, result.mastery_level ? result.mastery_level * 100 : 0);
+  }
+  return masteryMap;
+}
+
+/**
+ * Get weak areas grouped by domain (batch optimization for sidebar)
+ * Returns Map of domainId -> Set of topicIds that are flagged as weak
+ */
+export function getWeakAreasByDomain(examId: string): Map<string, Set<string>> {
+  const results = db.prepare(`
+    SELECT domain_id, topic_id
+    FROM weak_areas
+    WHERE exam_id = ? AND resolved = 0
+  `).all(examId) as Array<{ domain_id: string; topic_id: string }>;
+
+  const weakMap = new Map<string, Set<string>>();
+  for (const result of results) {
+    const existing = weakMap.get(result.domain_id) || new Set<string>();
+    existing.add(result.topic_id);
+    weakMap.set(result.domain_id, existing);
+  }
+  return weakMap;
+}
+
+/**
  * Calculate mastery score for a domain based on topic progress
  */
 export function calculateDomainMastery(examId: string, domainId: string): number {

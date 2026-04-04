@@ -1,5 +1,10 @@
 import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
+import {
+  getAllTopicMasteryScores,
+  getWeakAreasByDomain,
+  calculateOverallMastery,
+} from '@/lib/progress/calculator';
 import type {
   SidebarSection,
   SidebarHierarchy,
@@ -72,4 +77,66 @@ export function getSidebarHierarchy(examId: string): SidebarHierarchy {
 
   sidebarCache.set(examId, hierarchy);
   return hierarchy;
+}
+
+/**
+ * Load sidebar hierarchy enriched with progress data from the database.
+ * Combines content structure with mastery scores and weak area flags.
+ * Uses batch queries to avoid N+1 - only 3 DB queries total regardless of domain/topic count.
+ * Not cached — progress data is dynamic and should be re-queried each request.
+ */
+export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarchy {
+  const hierarchy = getSidebarHierarchy(examId);
+
+  // Batch-fetch all progress data (3 queries total)
+  const topicMasteryScores = getAllTopicMasteryScores(examId);
+  const weakAreasByDomain = getWeakAreasByDomain(examId);
+  const overallMastery = calculateOverallMastery(examId);
+
+  // Enrich domains and topics with progress data
+  const enrichedDomains = hierarchy.domains.map(domain => {
+    const domainWeakTopics = weakAreasByDomain.get(domain.id) || new Set<string>();
+
+    // Calculate domain mastery from topic scores
+    let topicMasterySum = 0;
+    let topicsWithProgress = 0;
+    let topicsCompleted = 0;
+
+    const enrichedTopics = domain.topics.map(topic => {
+      const key = `${domain.id}/${topic.id}`;
+      const masteryScore = topicMasteryScores.get(key) ?? 0;
+      const isWeakArea = domainWeakTopics.has(topic.id);
+
+      if (topicMasteryScores.has(key)) {
+        topicMasterySum += masteryScore;
+        topicsWithProgress++;
+        if (masteryScore >= 85) topicsCompleted++;
+      }
+
+      return {
+        ...topic,
+        progress: { masteryScore, isWeakArea },
+      };
+    });
+
+    const domainMastery = topicsWithProgress > 0
+      ? topicMasterySum / topicsWithProgress
+      : 0;
+
+    return {
+      ...domain,
+      topics: enrichedTopics,
+      progress: {
+        masteryScore: domainMastery,
+        topicsCompleted,
+        totalTopics: domain.topics.length,
+        weakTopicIds: [...domainWeakTopics],
+      },
+    };
+  });
+
+  return {
+    domains: enrichedDomains,
+    overallMastery,
+  };
 }

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ExamProvider } from '@/contexts/ExamContext';
 import { getExamById, validateExamId } from '@/lib/content/exam-loader';
-import { getSidebarHierarchy } from '@/lib/content/sidebar';
+import { getSidebarHierarchyWithProgress } from '@/lib/content/sidebar';
 
 interface ExamLayoutProps {
   children: React.ReactNode;
@@ -23,8 +23,8 @@ export default async function ExamLayout({ children, params }: ExamLayoutProps) 
     notFound();
   }
 
-  // Load sidebar hierarchy for this exam
-  const sidebarHierarchy = getSidebarHierarchy(examId);
+  // Load sidebar hierarchy enriched with progress data for this exam
+  const sidebarHierarchy = getSidebarHierarchyWithProgress(examId);
 
   return (
     <ExamProvider examId={examId} config={examConfig}>
