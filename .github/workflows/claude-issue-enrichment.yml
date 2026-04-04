@@ -218,6 +218,36 @@ jobs:
 
           claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
 
+      - name: Verify enrichment completed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUM: ${{ matrix.issue }}
+        run: |
+          # Check issue is accessible
+          if ! gh issue view "$ISSUE_NUM" --json state >/dev/null 2>&1; then
+            echo "::error::Issue #${ISSUE_NUM} is not accessible (deleted, locked, or private)"
+            exit 1
+          fi
+
+          # Check enrichment comment was posted
+          has_comment=$(gh issue view "$ISSUE_NUM" --json comments \
+            --jq '[.comments[].body | test("Issue Enrichment Report")] | any')
+
+          if [ "$has_comment" != "true" ]; then
+            echo "::error::Enrichment comment was not posted to issue #${ISSUE_NUM}"
+            exit 1
+          fi
+
+          # Check effort label was applied (warning only, not blocking)
+          has_effort=$(gh issue view "$ISSUE_NUM" --json labels \
+            --jq '[.labels[].name | test("^effort/")] | any')
+
+          if [ "$has_effort" != "true" ]; then
+            echo "::warning::Effort label was not applied to issue #${ISSUE_NUM}"
+          fi
+
+          echo "✓ Enrichment verified for issue #${ISSUE_NUM}"
+
   # Runs automatically when a new issue is opened
   enrich-single:
     if: github.event_name == 'issues' && !contains(github.event.issue.labels.*.name, 'skip-enrichment')
@@ -408,3 +438,27 @@ jobs:
             - Post exactly one comment. Do not edit the issue body.
 
           claude_args: '--allowed-tools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh label:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search:*)"'
+
+      - name: Verify enrichment completed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+        run: |
+          # Check enrichment comment was posted
+          has_comment=$(gh issue view "$ISSUE_NUM" --json comments \
+            --jq '[.comments[].body | test("Issue Enrichment Report")] | any')
+
+          if [ "$has_comment" != "true" ]; then
+            echo "::error::Enrichment comment was not posted to issue #${ISSUE_NUM}"
+            exit 1
+          fi
+
+          # Check effort label was applied (warning only, not blocking)
+          has_effort=$(gh issue view "$ISSUE_NUM" --json labels \
+            --jq '[.labels[].name | test("^effort/")] | any')
+
+          if [ "$has_effort" != "true" ]; then
+            echo "::warning::Effort label was not applied to issue #${ISSUE_NUM}"
+          fi
+
+          echo "✓ Enrichment verified for issue #${ISSUE_NUM}"

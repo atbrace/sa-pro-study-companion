@@ -1,0 +1,32 @@
+name: Enrichment Retry
+
+on:
+  workflow_run:
+    workflows: ["Issue Enrichment"]
+    types: [completed]
+
+jobs:
+  retry-failed:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Check retry eligibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          # Get the attempt number for this run
+          attempts=$(gh run view "$RUN_ID" --json attempts --jq '.attempts')
+          echo "Run $RUN_ID is on attempt $attempts"
+
+          if [ "$attempts" -ge 2 ]; then
+            echo "::warning::Run $RUN_ID has already been retried ($attempts attempts). Not retrying again."
+            echo "Manual intervention needed — check the Actions tab for details."
+            exit 0
+          fi
+
+          echo "Retrying failed jobs for run $RUN_ID (attempt $attempts)..."
+          gh run rerun "$RUN_ID" --failed
+          echo "✓ Retry triggered"
