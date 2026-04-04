@@ -42,6 +42,7 @@ type ErrorCategory =
   | 'validation'
   | 'conversation_corrupt'
   | 'llm_rate_limit'
+  | 'llm_quota_exhausted'
   | 'llm_auth'
   | 'llm_provider'
   | 'llm_unknown'
@@ -51,6 +52,7 @@ type ErrorCategory =
 
 function categorizeError(error: unknown): ErrorCategory {
   if (error instanceof LLMError) {
+    if (error.code === 'quota_exhausted') return 'llm_quota_exhausted';
     if (error.statusCode === 429) return 'llm_rate_limit';
     if (error.statusCode === 401) return 'llm_auth';
     if (error.statusCode) return 'llm_provider';
@@ -178,7 +180,9 @@ function executeTool(toolCall: LLMToolCall, examId: string): LLMToolResult {
 
 function getClientErrorMessage(error: LLMError): string {
   const providerLabel = error.provider === 'gemini' ? 'Gemini' : 'Claude';
-  if (error.statusCode === 429) {
+  if (error.code === 'quota_exhausted') {
+    return `${providerLabel} daily quota exhausted. Try again tomorrow or switch providers in .env.local.`;
+  } else if (error.statusCode === 429) {
     return `${providerLabel} is rate-limited. Please wait a moment and try again.`;
   } else if (error.statusCode === 503 || error.statusCode === 529) {
     return `${providerLabel} is experiencing high demand. Your request was retried but the service is still busy. Please try again shortly.`;

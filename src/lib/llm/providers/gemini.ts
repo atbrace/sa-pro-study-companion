@@ -18,6 +18,7 @@ import type {
 } from '../types';
 import { LLMError } from '../types';
 import { withRetry } from '../retry';
+import { parseGeminiErrorDetails } from '../quota';
 
 // Cache the client instance to avoid re-instantiation overhead
 let cachedClient: GoogleGenerativeAI | null = null;
@@ -224,12 +225,42 @@ async function* streamGeminiResult(
     }
   } catch (error) {
     // Convert stream-iteration errors to LLMError for proper categorization
-    if (error instanceof LLMError) throw error;
-    const statusCode = extractStatusCode(error);
-    const message = extractErrorMessage(error);
-    const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
-    throw new LLMError(message, 'gemini', statusCode, isRetryable);
+    throw buildGeminiError(error);
   }
+}
+
+/**
+ * Build an LLMError from a Gemini API error, distinguishing quota exhaustion from rate limiting.
+ */
+function buildGeminiError(error: unknown): LLMError {
+  if (error instanceof LLMError) return error;
+
+  const statusCode = extractStatusCode(error);
+  const message = extractErrorMessage(error);
+
+  if (statusCode === 401 || statusCode === 403) {
+    return new LLMError('Invalid API key', 'gemini', statusCode, false);
+  }
+
+  if (statusCode === 429) {
+    const details = parseGeminiErrorDetails(error);
+    if (details.isQuotaExhaustion) {
+      return new LLMError(
+        `Gemini daily quota exhausted${details.quotaMetric ? ` (${details.quotaMetric})` : ''}`,
+        'gemini',
+        429,
+        false,
+        { code: 'quota_exhausted', retryAfterMs: details.retryAfterMs }
+      );
+    }
+    return new LLMError(message, 'gemini', 429, true, {
+      code: 'rate_limited',
+      retryAfterMs: details.retryAfterMs,
+    });
+  }
+
+  const isRetryable = statusCode !== undefined && statusCode >= 500 && statusCode <= 599;
+  return new LLMError(message, 'gemini', statusCode, isRetryable);
 }
 
 export const geminiProvider: LLMProvider = {
@@ -260,14 +291,7 @@ export const geminiProvider: LLMProvider = {
         const result = await chat.sendMessage(lastMessage.content);
         return parseGeminiResponse(result.response);
       } catch (error: unknown) {
-        if (error instanceof LLMError) throw error;
-        const statusCode = extractStatusCode(error);
-        const message = extractErrorMessage(error);
-        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
-        if (statusCode === 401 || statusCode === 403) {
-          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
-        }
-        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+        throw buildGeminiError(error);
       }
     });
   },
@@ -308,14 +332,7 @@ export const geminiProvider: LLMProvider = {
         const result = await chat.sendMessage(functionResponses);
         return parseGeminiResponse(result.response);
       } catch (error: unknown) {
-        if (error instanceof LLMError) throw error;
-        const statusCode = extractStatusCode(error);
-        const message = extractErrorMessage(error);
-        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
-        if (statusCode === 401 || statusCode === 403) {
-          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
-        }
-        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+        throw buildGeminiError(error);
       }
     });
   },
@@ -353,14 +370,7 @@ export const geminiProvider: LLMProvider = {
         }
         return collected;
       } catch (error: unknown) {
-        if (error instanceof LLMError) throw error;
-        const statusCode = extractStatusCode(error);
-        const message = extractErrorMessage(error);
-        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
-        if (statusCode === 401 || statusCode === 403) {
-          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
-        }
-        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+        throw buildGeminiError(error);
       }
     });
     yield* chunks;
@@ -407,17 +417,10 @@ export const geminiProvider: LLMProvider = {
         }
         return collected;
       } catch (error: unknown) {
-        if (error instanceof LLMError) throw error;
-        const statusCode = extractStatusCode(error);
-        const message = extractErrorMessage(error);
-        const isRetryable = statusCode === 429 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599);
-        if (statusCode === 401 || statusCode === 403) {
-          throw new LLMError('Invalid API key', 'gemini', statusCode, false);
-        }
-        throw new LLMError(message, 'gemini', statusCode, isRetryable);
+        throw buildGeminiError(error);
       }
     });
-    yield* streamGeminiResult(result);
+    yield* chunks;
   },
 };
 

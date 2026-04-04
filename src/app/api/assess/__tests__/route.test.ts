@@ -272,10 +272,11 @@ describe('POST /api/assess', () => {
   });
 
   describe('error handling', () => {
-    it('returns 500 when transaction throws', async () => {
+    it('returns computed results with warning when transaction fails', async () => {
       const questions = [createQuestion({ id: 'q1', domainId: 'domain-1', topicId: 'topic-1' })];
       mockGetTopicQuestions.mockReturnValue(questions);
-      mockCreateAssessmentResult.mockReturnValue(createMockAssessmentResult());
+      const expectedResult = createMockAssessmentResult({ score: 75 });
+      mockCreateAssessmentResult.mockReturnValue(expectedResult);
 
       mockTransaction.mockImplementation(() => () => {
         throw new Error('DB transaction failed');
@@ -289,7 +290,46 @@ describe('POST /api/assess', () => {
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(500);
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.score).toBe(75);
+      expect(body.correctCount).toBe(expectedResult.correctCount);
+      expect(body.totalCount).toBe(expectedResult.totalCount);
+      expect(body.results).toHaveLength(expectedResult.results.length);
+      expect(body.warning).toBe('Assessment results could not be saved');
+      expect(body.databaseSessionId).toBeNull();
+    });
+
+    it('logs transaction failure context', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const questions = [createQuestion({ id: 'q1', domainId: 'domain-1', topicId: 'topic-1' })];
+      mockGetTopicQuestions.mockReturnValue(questions);
+      mockCreateAssessmentResult.mockReturnValue(createMockAssessmentResult());
+
+      mockTransaction.mockImplementation(() => () => {
+        throw new Error('SQLITE_BUSY: database is locked');
+      });
+
+      const req = createPOSTRequest('/api/assess', {
+        domainId: 'domain-1',
+        topicId: 'topic-1',
+        sessionId: 's1',
+        answers: [{ questionId: 'q1', selectedAnswer: 'A', timeSeconds: 30 }],
+      });
+
+      await POST(req);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Assessment transaction failed:',
+        expect.objectContaining({
+          error: 'SQLITE_BUSY: database is locked',
+          examId: 'sap-c02',
+          domainId: 'domain-1',
+          topicId: 'topic-1',
+        })
+      );
+      consoleSpy.mockRestore();
     });
 
     it('returns 500 when content loader throws', async () => {

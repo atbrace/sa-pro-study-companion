@@ -86,6 +86,19 @@ describe('withRetry', () => {
     expect(fn).toHaveBeenCalledTimes(3); // Initial + 2 retries
   });
 
+  it('does not retry quota exhaustion errors (429 with isRetryable=false)', async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValue(
+        new LLMError('Quota exhausted', 'gemini', 429, false, {
+          code: 'quota_exhausted',
+        })
+      );
+
+    await expect(withRetry(fn)).rejects.toThrow('Quota exhausted');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('does not retry non-LLMError exceptions', async () => {
     const fn = vi.fn().mockRejectedValue(new Error('Network error'));
 

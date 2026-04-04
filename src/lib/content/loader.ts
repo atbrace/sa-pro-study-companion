@@ -12,21 +12,46 @@ import type {
   Question,
 } from '@/types/domain';
 import { getExamContentDir } from './exam-loader';
+import { logContentIssue } from './logger';
+
+/**
+ * Module-level content cache.
+ * Content is static at runtime (changes only on git pull / server restart),
+ * so an infinite-TTL Map is appropriate. Keys are composite strings built
+ * from function name + arguments.
+ */
+const contentCache = new Map<string, unknown>();
+
+/** Clear all cached content. Exported for testing. */
+export function clearContentCache(): void {
+  contentCache.clear();
+}
 
 /**
  * Get all available domains for an exam
  */
 export function getAllDomains(examId: string): Domain[] {
+  const cacheKey = `allDomains:${examId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Domain[];
+  }
+
   const contentDir = getExamContentDir(examId);
 
   if (!fs.existsSync(contentDir)) {
-    console.warn('Content directory does not exist:', contentDir);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Content directory does not exist for exam ${examId}`,
+      filePath: contentDir,
+    });
+    contentCache.set(cacheKey, []);
     return [];
   }
 
   const domainDirs = fs.readdirSync(contentDir);
 
-  return domainDirs
+  const result = domainDirs
     .filter(dir => {
       const fullPath = path.join(contentDir, dir);
       return fs.statSync(fullPath).isDirectory() && dir.startsWith('domain-');
@@ -34,28 +59,63 @@ export function getAllDomains(examId: string): Domain[] {
     .map(dir => getDomainById(examId, dir))
     .filter((d): d is Domain => d !== null)
     .sort((a, b) => a.meta.id.localeCompare(b.meta.id));
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get a specific domain by ID
  */
 export function getDomainById(examId: string, domainId: string): Domain | null {
+  const cacheKey = `domain:${examId}:${domainId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Domain | null;
+  }
+
   const contentDir = getExamContentDir(examId);
   const domainPath = path.join(contentDir, domainId);
 
   if (!fs.existsSync(domainPath)) {
-    console.warn('Domain directory does not exist:', domainPath);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Domain directory does not exist`,
+      filePath: domainPath,
+      context: { domainId },
+    });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
   // Load domain metadata
   const metaPath = path.join(domainPath, 'meta.yaml');
   if (!fs.existsSync(metaPath)) {
-    console.warn('Domain meta.yaml does not exist:', metaPath);
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Domain meta.yaml not found`,
+      filePath: metaPath,
+      context: { domainId },
+    });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
-  const meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as DomainMeta;
+  let meta: DomainMeta;
+  try {
+    meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as DomainMeta;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse domain meta.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: metaPath,
+      context: { domainId },
+    });
+    contentCache.set(cacheKey, null);
+    return null;
+  }
 
   // Load domain overview
   const overviewPath = path.join(domainPath, 'overview.md');
@@ -66,53 +126,92 @@ export function getDomainById(examId: string, domainId: string): Domain | null {
   // Load all topics for this domain
   const topics = getTopicsForDomain(examId, domainId);
 
-  return {
+  const result: Domain | null = {
     meta,
     overview,
     topics,
   };
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get all topics for a domain
  */
 function getTopicsForDomain(examId: string, domainId: string): Topic[] {
+  const cacheKey = `topics:${examId}:${domainId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Topic[];
+  }
+
   const contentDir = getExamContentDir(examId);
   const topicsPath = path.join(contentDir, domainId, 'topics');
 
   if (!fs.existsSync(topicsPath)) {
+    contentCache.set(cacheKey, []);
     return [];
   }
 
   const topicDirs = fs.readdirSync(topicsPath);
 
-  return topicDirs
+  const result = topicDirs
     .filter(dir => {
       const fullPath = path.join(topicsPath, dir);
       return fs.statSync(fullPath).isDirectory();
     })
     .map(dir => getTopicById(examId, domainId, dir))
     .filter((t): t is Topic => t !== null);
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
  * Get a specific topic by domain and topic ID
  */
 export function getTopicById(examId: string, domainId: string, topicId: string): Topic | null {
+  const cacheKey = `topic:${examId}:${domainId}:${topicId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Topic | null;
+  }
+
   const contentDir = getExamContentDir(examId);
   const topicPath = path.join(contentDir, domainId, 'topics', topicId);
 
   if (!fs.existsSync(topicPath)) {
+    contentCache.set(cacheKey, null);
     return null;
   }
 
   // Load topic metadata
   const metaPath = path.join(topicPath, 'meta.yaml');
   if (!fs.existsSync(metaPath)) {
+    logContentIssue({
+      level: 'warn',
+      reason: 'missing',
+      message: `Topic meta.yaml not found`,
+      filePath: metaPath,
+      context: { domainId, topicId },
+    });
+    contentCache.set(cacheKey, null);
     return null;
   }
 
-  const meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as TopicMeta;
+  let meta: TopicMeta;
+  try {
+    meta = yaml.load(fs.readFileSync(metaPath, 'utf8')) as TopicMeta;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse topic meta.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: metaPath,
+      context: { domainId, topicId },
+    });
+    contentCache.set(cacheKey, null);
+    return null;
+  }
 
   // Load topic content
   const contentPath = path.join(topicPath, 'content.md');
@@ -123,11 +222,14 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
   // Load questions
   const questions = getTopicQuestions(examId, domainId, topicId);
 
-  return {
+  const result: Topic | null = {
     meta,
     content,
     questions,
   };
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**
@@ -135,6 +237,11 @@ export function getTopicById(examId: string, domainId: string, topicId: string):
  * Injects domainId and topicId into each question for tracking purposes
  */
 export function getTopicQuestions(examId: string, domainId: string, topicId: string): Question[] {
+  const cacheKey = `questions:${examId}:${domainId}:${topicId}`;
+  if (contentCache.has(cacheKey)) {
+    return contentCache.get(cacheKey) as Question[];
+  }
+
   const contentDir = getExamContentDir(examId);
   const questionsPath = path.join(
     contentDir,
@@ -145,17 +252,35 @@ export function getTopicQuestions(examId: string, domainId: string, topicId: str
   );
 
   if (!fs.existsSync(questionsPath)) {
+    contentCache.set(cacheKey, []);
     return [];
   }
 
-  const data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
+  let data: QuestionsData;
+  try {
+    data = yaml.load(fs.readFileSync(questionsPath, 'utf8')) as QuestionsData;
+  } catch (e) {
+    logContentIssue({
+      level: 'error',
+      reason: 'malformed',
+      message: `Failed to parse questions.yaml: ${e instanceof Error ? e.message : String(e)}`,
+      filePath: questionsPath,
+      context: { domainId, topicId },
+    });
+    const empty: Question[] = [];
+    contentCache.set(cacheKey, empty);
+    return empty;
+  }
 
   // Inject domainId and topicId into each question from the file path
-  return (data.questions || []).map(q => ({
+  const result = (data.questions || []).map(q => ({
     ...q,
     domainId,
     topicId,
   }));
+
+  contentCache.set(cacheKey, result);
+  return result;
 }
 
 /**

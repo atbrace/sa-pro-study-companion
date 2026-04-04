@@ -226,6 +226,12 @@ export function handleGetTopicMetadata(params: Record<string, unknown>, examId: 
  */
 export function handleGetAssessmentHistory(params: Record<string, unknown>, examId: string): string {
   try {
+    if (params.domainId !== undefined && typeof params.domainId !== 'string') {
+      return 'Error: domainId must be a string';
+    }
+    if (params.limit !== undefined && (typeof params.limit !== 'number' || params.limit < 1)) {
+      return 'Error: limit must be a positive number';
+    }
     const domainId = typeof params.domainId === 'string' ? params.domainId : undefined;
     const limit = typeof params.limit === 'number' ? params.limit : 3;
 
@@ -305,6 +311,15 @@ export function handleGetAssessmentHistory(params: Record<string, unknown>, exam
  */
 export function handleGetWeakAreaQuestions(params: Record<string, unknown>, examId: string): string {
   try {
+    if (params.domainId !== undefined && typeof params.domainId !== 'string') {
+      return 'Error: domainId must be a string';
+    }
+    if (params.topicId !== undefined && typeof params.topicId !== 'string') {
+      return 'Error: topicId must be a string';
+    }
+    if (params.limit !== undefined && (typeof params.limit !== 'number' || params.limit < 1)) {
+      return 'Error: limit must be a positive number';
+    }
     const domainId = typeof params.domainId === 'string' ? params.domainId : undefined;
     const topicId = typeof params.topicId === 'string' ? params.topicId : undefined;
     const limit = typeof params.limit === 'number' ? params.limit : 10;
