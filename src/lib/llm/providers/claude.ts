@@ -154,7 +154,8 @@ export const claudeProvider: LLMProvider = {
           // Anthropic 429s are always transient rate limits (requests/min or tokens/min).
           // Unlike Gemini, Anthropic has no daily quota concept — billing is usage-based
           // with no hard request caps. All 429s are safe to retry with backoff.
-          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          const status = error.status;
+          const isRetryable = status === 429 || (status !== undefined && status >= 500 && status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }
@@ -188,7 +189,8 @@ export const claudeProvider: LLMProvider = {
         return parseClaudeResponse(response);
       } catch (error: unknown) {
         if (error instanceof Anthropic.APIError) {
-          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          const status = error.status;
+          const isRetryable = status === 429 || (status !== undefined && status >= 500 && status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }
@@ -223,7 +225,8 @@ export const claudeProvider: LLMProvider = {
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
         if (error instanceof Anthropic.APIError) {
-          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          const status = error.status;
+          const isRetryable = status === 429 || (status !== undefined && status >= 500 && status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }
@@ -261,7 +264,8 @@ export const claudeProvider: LLMProvider = {
       } catch (error: unknown) {
         if (error instanceof LLMError) throw error;
         if (error instanceof Anthropic.APIError) {
-          const isRetryable = error.status === 429 || (error.status >= 500 && error.status <= 599);
+          const status = error.status;
+          const isRetryable = status === 429 || (status !== undefined && status >= 500 && status <= 599);
           if (error.status === 401) {
             throw new LLMError('Invalid API key', 'claude', 401, false);
           }

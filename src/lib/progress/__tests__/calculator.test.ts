@@ -38,6 +38,8 @@ vi.mock('@/lib/content/loader', () => ({
 import {
   calculateDomainMastery,
   calculateOverallMastery,
+  getAllTopicMasteryScores,
+  getWeakAreasByDomain,
   getDomainProgress,
   getOverallProgress,
   getRecentActivity,
@@ -118,6 +120,71 @@ describe('calculateOverallMastery', () => {
 
     const result = calculateOverallMastery('sap-c02');
     expect(result).toBe(90);
+  });
+});
+
+describe('getAllTopicMasteryScores', () => {
+  it('returns Map keyed by "domainId/topicId" with mastery percentages', () => {
+    mockStatement.all.mockReturnValueOnce([
+      { domain_id: 'domain-1', topic_id: 'topic-a', mastery_level: 0.85 },
+      { domain_id: 'domain-1', topic_id: 'topic-b', mastery_level: 0.6 },
+      { domain_id: 'domain-2', topic_id: 'topic-c', mastery_level: 0.4 },
+    ]);
+
+    const result = getAllTopicMasteryScores('sap-c02');
+    expect(result.size).toBe(3);
+    expect(result.get('domain-1/topic-a')).toBe(85);
+    expect(result.get('domain-1/topic-b')).toBe(60);
+    expect(result.get('domain-2/topic-c')).toBe(40);
+  });
+
+  it('returns empty Map when no progress exists', () => {
+    mockStatement.all.mockReturnValueOnce([]);
+
+    const result = getAllTopicMasteryScores('sap-c02');
+    expect(result.size).toBe(0);
+  });
+
+  it('treats null mastery_level as 0', () => {
+    mockStatement.all.mockReturnValueOnce([
+      { domain_id: 'domain-1', topic_id: 'topic-a', mastery_level: null },
+    ]);
+
+    const result = getAllTopicMasteryScores('sap-c02');
+    expect(result.get('domain-1/topic-a')).toBe(0);
+  });
+});
+
+describe('getWeakAreasByDomain', () => {
+  it('returns Map of domainId -> Set of weak topicIds', () => {
+    mockStatement.all.mockReturnValueOnce([
+      { domain_id: 'domain-1', topic_id: 'topic-a' },
+      { domain_id: 'domain-1', topic_id: 'topic-b' },
+      { domain_id: 'domain-2', topic_id: 'topic-c' },
+    ]);
+
+    const result = getWeakAreasByDomain('sap-c02');
+    expect(result.size).toBe(2);
+    expect(result.get('domain-1')?.has('topic-a')).toBe(true);
+    expect(result.get('domain-1')?.has('topic-b')).toBe(true);
+    expect(result.get('domain-2')?.has('topic-c')).toBe(true);
+  });
+
+  it('returns empty Map when no weak areas exist', () => {
+    mockStatement.all.mockReturnValueOnce([]);
+
+    const result = getWeakAreasByDomain('sap-c02');
+    expect(result.size).toBe(0);
+  });
+
+  it('deduplicates topic IDs within a domain', () => {
+    mockStatement.all.mockReturnValueOnce([
+      { domain_id: 'domain-1', topic_id: 'topic-a' },
+      { domain_id: 'domain-1', topic_id: 'topic-a' },
+    ]);
+
+    const result = getWeakAreasByDomain('sap-c02');
+    expect(result.get('domain-1')?.size).toBe(1);
   });
 });
 
