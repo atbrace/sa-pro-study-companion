@@ -619,6 +619,22 @@ describe('calculateCoverageAwareDomainMastery', () => {
     const result = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 1);
     expect(result).toBeCloseTo(75);
   });
+
+  it('does not cross-contaminate when domain IDs share a prefix', () => {
+    const topicMasteries = new Map([
+      ['domain-1/topic-1', { mastery: 80, attempts: 20, correct: 16 }],
+      ['domain-10/topic-1', { mastery: 60, attempts: 10, correct: 6 }],
+      ['domain-10/topic-2', { mastery: 40, attempts: 10, correct: 4 }],
+    ]);
+
+    // domain-1 should only include its own topic (mastery 80), not domain-10's topics
+    const result1 = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-1', 1);
+    expect(result1).toBeCloseTo(80);
+
+    // domain-10 should only include its own topics, not domain-1's
+    const result10 = calculateCoverageAwareDomainMastery(topicMasteries, 'domain-10', 2);
+    expect(result10).toBeCloseTo(50); // (60 + 40) / 2
+  });
 });
 
 describe('getProgressSummary', () => {
