@@ -112,7 +112,6 @@ describe('calculateOverallMastery', () => {
   });
 });
 
-
 describe('getWeakAreasByDomain', () => {
   it('returns Map of domainId -> Set of weak topicIds', () => {
     mockStatement.all.mockReturnValueOnce([
