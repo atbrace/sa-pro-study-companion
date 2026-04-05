@@ -37,8 +37,9 @@ export function ReadinessCard({ estimate, examId }: ReadinessCardProps) {
     );
   }
 
-  const config = LEVEL_CONFIG[estimate.level];
-  const gaugePercent = Math.min(estimate.overallMastery, 100);
+  const config = LEVEL_CONFIG[estimate.level] ?? LEVEL_CONFIG['building'];
+  const mastery = isNaN(estimate.overallMastery) ? 0 : estimate.overallMastery;
+  const gaugePercent = Math.min(mastery, 100);
   const circumference = 2 * Math.PI * 15.5;
   const strokeDasharray = `${(gaugePercent / 100) * circumference} ${circumference}`;
 
