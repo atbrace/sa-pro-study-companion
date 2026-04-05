@@ -585,6 +585,111 @@ describe('getReadinessEstimate', () => {
     expect(result.score).toBe(0);
     expect(result.domainBreakdown).toEqual([]);
   });
+
+  // --- Boundary tests ---
+
+  it('returns real estimate at exactly 5 attempts (minimum data threshold)', () => {
+    setupTotalAttempts(5);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 70, attempts: 5, correct: 3 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    // Should NOT return empty state — 5 attempts meets the >= 5 threshold
+    expect(result.domainBreakdown).toHaveLength(1);
+    expect(result.overallMastery).toBe(70);
+    expect(result.level).toBe('approaching');
+  });
+
+  it('returns empty state at exactly 4 attempts (below minimum threshold)', () => {
+    setupTotalAttempts(4);
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.domainBreakdown).toEqual([]);
+    expect(result.score).toBe(0);
+  });
+
+  it('returns approaching at exactly 65% mastery (lower boundary)', () => {
+    setupTotalAttempts(20);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 65, attempts: 20, correct: 13 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('approaching');
+    expect(result.overallMastery).toBe(65);
+  });
+
+  it('returns building at 64.9% mastery (just below approaching)', () => {
+    setupTotalAttempts(20);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 64.9, attempts: 20, correct: 13 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('building');
+  });
+
+  it('returns ready at exactly 85% mastery (lower boundary)', () => {
+    setupTotalAttempts(20);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 85, attempts: 20, correct: 17 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('ready');
+    expect(result.overallMastery).toBe(85);
+  });
+
+  it('returns approaching at 84.9% mastery (just below ready)', () => {
+    setupTotalAttempts(20);
+
+    const topic1 = createTopic({ meta: createTopicMeta({ id: 'topic-1', shortName: 'T1' }) });
+    const domain = createDomain({
+      meta: createDomainMeta({ id: 'domain-1', shortName: 'D1', weight: 100 }),
+      topics: [topic1],
+    });
+    mockGetAllDomains.mockReturnValue([domain]);
+
+    vi.mocked(getAllTopicWindowedMasteries).mockReturnValue(new Map([
+      ['domain-1/topic-1', { mastery: 84.9, attempts: 20, correct: 17 }],
+    ]));
+
+    const result = getReadinessEstimate('sap-c02');
+    expect(result.level).toBe('approaching');
+  });
 });
 
 describe('calculateCoverageAwareDomainMastery', () => {
