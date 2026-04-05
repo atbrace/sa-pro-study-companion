@@ -502,7 +502,8 @@ export function calculateCoverageAwareDomainMastery(
 
   let masterySum = 0;
   for (const [key, result] of topicMasteries) {
-    if (key.startsWith(`${domainId}/`)) {
+    const [keyDomain] = key.split("/");
+    if (keyDomain === domainId) {
       masterySum += result.mastery;
     }
   }
