@@ -37,8 +37,10 @@ export function ReadinessCard({ estimate, examId }: ReadinessCardProps) {
     );
   }
 
-  const config = LEVEL_CONFIG[estimate.level];
-  const gaugePercent = Math.min(estimate.overallMastery, 100);
+  const config = LEVEL_CONFIG[estimate.level] ?? LEVEL_CONFIG['building'];
+  const mastery = isNaN(estimate.overallMastery) ? 0 : estimate.overallMastery;
+  const score = isNaN(estimate.score) ? 0 : estimate.score;
+  const gaugePercent = Math.min(mastery, 100);
   const circumference = 2 * Math.PI * 15.5;
   const strokeDasharray = `${(gaugePercent / 100) * circumference} ${circumference}`;
 
@@ -62,7 +64,7 @@ export function ReadinessCard({ estimate, examId }: ReadinessCardProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={clsx('text-3xl font-bold', config.color)}>
-              {estimate.score}
+              {score}
             </span>
             <span className="text-xs text-muted-foreground">/ 1000</span>
           </div>
