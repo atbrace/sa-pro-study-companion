@@ -1,15 +1,21 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    environmentMatchGlobs: [
+      ['src/**/*.test.tsx', 'jsdom'],
+    ],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: [
       '**/node_modules/**',
       '**/subsection-extractor.test.ts', // Failing tests for unimplemented feature
     ],
+    setupFiles: ['src/test/setup.ts'],
   },
   resolve: {
     alias: {
