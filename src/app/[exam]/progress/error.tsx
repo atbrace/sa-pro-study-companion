@@ -16,6 +16,10 @@ export default function ProgressError({
     console.error('Progress page error:', error);
   }, [error]);
 
+  const isDbError = error.message?.includes('no such table') ||
+    error.message?.includes('no such column') ||
+    error.message?.includes('SQLITE_ERROR');
+
   return (
     <div className="container py-8 max-w-6xl mx-auto">
       <div className="mb-8">
@@ -34,18 +38,22 @@ export default function ProgressError({
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p className="text-sm text-muted-foreground">
-            There was a problem loading your progress. This usually means the
-            database needs to be initialized or migrated.
+            There was a problem loading your progress.
+            {isDbError
+              ? ' This usually means the database needs to be initialized or migrated.'
+              : ' An unexpected error occurred.'}
           </p>
-          <div className="rounded-md bg-muted p-3 text-left">
-            <div className="flex items-center gap-2 mb-1">
-              <Terminal className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">
-                Suggested fix
-              </span>
+          {isDbError && (
+            <div className="rounded-md bg-muted p-3 text-left">
+              <div className="flex items-center gap-2 mb-1">
+                <Terminal className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  Suggested fix
+                </span>
+              </div>
+              <code className="text-sm font-mono">pnpm db:migrate</code>
             </div>
-            <code className="text-sm font-mono">pnpm db:migrate</code>
-          </div>
+          )}
         </CardContent>
         <CardFooter className="justify-center">
           <Button onClick={reset}>
