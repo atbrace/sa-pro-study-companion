@@ -19,7 +19,7 @@ describe('GET /api/progress', () => {
       overall: { masteryScore: 75, questionsAttempted: 50, questionsCorrect: 38, studyTimeMinutes: 120, experimentsCompleted: 0 },
       domains: [],
       recentActivity: [],
-      readinessEstimate: { score: 750, confidence: 'medium', recommendation: 'Keep studying' },
+      readinessEstimate: { score: 750, level: 'approaching', overallMastery: 75, domainBreakdown: [], focusAreas: [], totalAttempts: 50 },
     };
     mockGetProgressSummary.mockReturnValue(summary);
 
@@ -28,7 +28,7 @@ describe('GET /api/progress', () => {
     const body = await res.json();
 
     expect(body.overall.masteryScore).toBe(75);
-    expect(body.readinessEstimate.confidence).toBe('medium');
+    expect(body.readinessEstimate.level).toBe('approaching');
   });
 
   it('defaults exam to sap-c02', async () => {
