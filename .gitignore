@@ -7,6 +7,7 @@ SKILL.md
 SPEC.md
 TESTING.md
 docs/plans/
+scripts/enrichment-read-gate.sh
 
 # Dependencies
 node_modules/

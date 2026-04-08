@@ -96,11 +96,22 @@ jobs:
 
             ### 3. Duplicate & Overlap Detection
 
-            Run `gh issue list --state open --json number,title,body,labels` and read
-            the results. Check for:
+            Extract 2-3 key terms from the issue title and search for related issues:
+            ```
+            gh search issues "<key terms>" --repo ${{ github.repository }} --state open --json number,title,url --limit 10
+            ```
+
+            Also check for issues touching similar code areas:
+            ```
+            gh search issues "<primary file or component name>" --repo ${{ github.repository }} --state open --json number,title,url --limit 5
+            ```
+
+            From the results, check for:
             - Exact duplicates (same problem/feature)
             - Semantic overlap (issues that would touch the same code or solve related problems)
             - Dependency relationships (this issue blocks or is blocked by another)
+
+            Do NOT fetch the full issue list. Use targeted searches only.
 
             ### 4. Acceptance Criteria Assessment
 
@@ -320,11 +331,22 @@ jobs:
 
             ### 3. Duplicate & Overlap Detection
 
-            Run `gh issue list --state open --json number,title,body,labels` and read
-            the results. Check for:
+            Extract 2-3 key terms from the issue title and search for related issues:
+            ```
+            gh search issues "<key terms>" --repo ${{ github.repository }} --state open --json number,title,url --limit 10
+            ```
+
+            Also check for issues touching similar code areas:
+            ```
+            gh search issues "<primary file or component name>" --repo ${{ github.repository }} --state open --json number,title,url --limit 5
+            ```
+
+            From the results, check for:
             - Exact duplicates (same problem/feature)
             - Semantic overlap (issues that would touch the same code or solve related problems)
             - Dependency relationships (this issue blocks or is blocked by another)
+
+            Do NOT fetch the full issue list. Use targeted searches only.
 
             ### 4. Acceptance Criteria Assessment
 
