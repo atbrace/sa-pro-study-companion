@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   experimental: {
+    instrumentationHook: true,
     serverActions: {
       bodySizeLimit: '2mb',
     },
