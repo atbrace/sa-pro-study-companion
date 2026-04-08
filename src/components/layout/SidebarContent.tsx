@@ -9,7 +9,9 @@ import {
   FlaskConical,
   TrendingUp,
   GraduationCap,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Github,
+  Bug
 } from 'lucide-react';
 import { StudyTreeNav } from './StudyTreeNav';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -137,6 +139,26 @@ export function SidebarContent({ sidebarHierarchy, examId, onNavigate }: Sidebar
             Switch Exam
           </Link>
           <ThemeToggle />
+        </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <a
+            href="https://github.com/atbrace/sa-pro-study-companion"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Github className="h-3 w-3" />
+            GitHub
+          </a>
+          <a
+            href={`https://github.com/atbrace/sa-pro-study-companion/issues/new?title=${encodeURIComponent(`[Bug] Issue on: ${pathname}`)}&body=${encodeURIComponent(`**Page:** ${pathname}\n**Exam:** ${config.shortName}\n\n**Description:**\n\n`)}&labels=bug`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Bug className="h-3 w-3" />
+            Report Issue
+          </a>
         </div>
       </div>
     </>
