@@ -3,6 +3,7 @@
  * Tailwind cannot handle dynamic class names (e.g., `border-${color}-500`),
  * so we map domain color strings to hex values for use with style={{ }}.
  */
+import { MASTERY_THRESHOLD, APPROACHING_THRESHOLD } from '@/lib/constants';
 
 const DOMAIN_COLOR_HEX: Record<string, string> = {
   blue: '#3b82f6',
@@ -25,8 +26,8 @@ export function getDomainColorHex(color: string): string {
  * Uses Tailwind classes since these are static (known at build time).
  */
 export function getMasteryDotColorClass(score: number): string {
-  if (score >= 85) return 'bg-green-500';
-  if (score >= 60) return 'bg-amber-500';
+  if (score >= MASTERY_THRESHOLD) return 'bg-green-500';
+  if (score >= APPROACHING_THRESHOLD) return 'bg-amber-500';
   if (score > 0) return 'bg-red-500';
   return 'bg-muted-foreground/30';
 }

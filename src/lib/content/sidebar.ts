@@ -1,3 +1,4 @@
+import { MASTERY_THRESHOLD } from '@/lib/constants';
 import { getAllDomains } from './loader';
 import { parseTopicSections } from './parser';
 import { getAllTopicWindowedMasteries } from '@/lib/progress/mastery';
@@ -111,7 +112,7 @@ export function getSidebarHierarchyWithProgress(examId: string): SidebarHierarch
         if (topicResult && topicResult.attempts > 0) {
           topicMasterySum += masteryScore;
           topicsWithProgress++;
-          if (masteryScore >= 85) topicsCompleted++;
+          if (masteryScore >= MASTERY_THRESHOLD) topicsCompleted++;
         }
 
         return {

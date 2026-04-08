@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db/client";
 import { getAllDomains, getTopicById } from "@/lib/content/loader";
+import { MASTERY_THRESHOLD, MASTERY_THRESHOLD_DECIMAL, READINESS_APPROACHING_THRESHOLD } from "@/lib/constants";
 import { getAllTopicWindowedMasteries } from './mastery';
 import type { TopicMasteryResult } from './mastery';
 
@@ -132,7 +133,7 @@ export const getDomainProgress = cache((examId: string, domainId: string): Domai
   const topicStats = db.prepare(`
     SELECT
       COUNT(*) as topics_with_progress,
-      SUM(CASE WHEN mastery_level >= 0.85 THEN 1 ELSE 0 END) as completed_topics
+      SUM(CASE WHEN mastery_level >= ${MASTERY_THRESHOLD_DECIMAL} THEN 1 ELSE 0 END) as completed_topics
     FROM topic_progress
     WHERE exam_id = ? AND domain_id = ?
   `).get(examId, domainId) as { topics_with_progress: number; completed_topics: number };
@@ -336,7 +337,7 @@ export const getReadinessEstimate = cache((examId: string): ReadinessEstimate =>
       }
 
       // Topics below 85% are weak (including unstudied ones)
-      if (mastery < 85) {
+      if (mastery < MASTERY_THRESHOLD) {
         weakTopics.push({
           topicId: topic.meta.id,
           topicName: topic.meta.shortName,
@@ -378,9 +379,9 @@ export const getReadinessEstimate = cache((examId: string): ReadinessEstimate =>
 
   // Determine level
   let level: 'ready' | 'approaching' | 'building';
-  if (overallMastery >= 85) {
+  if (overallMastery >= MASTERY_THRESHOLD) {
     level = 'ready';
-  } else if (overallMastery >= 65) {
+  } else if (overallMastery >= READINESS_APPROACHING_THRESHOLD) {
     level = 'approaching';
   } else {
     level = 'building';
@@ -413,7 +414,7 @@ function getAllDomainProgressBatch(examId: string): DomainProgress[] {
     SELECT
       domain_id,
       COUNT(*) as topics_with_progress,
-      SUM(CASE WHEN mastery_level >= 0.85 THEN 1 ELSE 0 END) as completed_topics
+      SUM(CASE WHEN mastery_level >= ${MASTERY_THRESHOLD_DECIMAL} THEN 1 ELSE 0 END) as completed_topics
     FROM topic_progress
     WHERE exam_id = ?
     GROUP BY domain_id
