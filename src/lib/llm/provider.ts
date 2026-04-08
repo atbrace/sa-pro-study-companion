@@ -1,6 +1,7 @@
 import type { LLMProvider, ProviderName } from './types';
 import { claudeProvider } from './providers/claude';
 import { geminiProvider } from './providers/gemini';
+import { validateLLMEnv } from '../env';
 
 const providers: Record<ProviderName, LLMProvider> = {
   claude: claudeProvider,
@@ -12,20 +13,10 @@ let cachedProvider: LLMProvider | null = null;
 export function getProvider(): LLMProvider {
   if (cachedProvider) return cachedProvider;
 
-  const name = (process.env.LLM_PROVIDER || 'claude') as ProviderName;
+  const { provider: name, errors } = validateLLMEnv();
 
-  if (!providers[name]) {
-    throw new Error(
-      `Unknown LLM provider: ${name}. Valid options: ${Object.keys(providers).join(', ')}`
-    );
-  }
-
-  // Validate required env vars
-  if (name === 'claude' && !process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY required when LLM_PROVIDER=claude');
-  }
-  if (name === 'gemini' && !process.env.GOOGLE_AI_API_KEY) {
-    throw new Error('GOOGLE_AI_API_KEY required when LLM_PROVIDER=gemini');
+  if (errors.length > 0) {
+    throw new Error(errors[0]);
   }
 
   cachedProvider = providers[name];

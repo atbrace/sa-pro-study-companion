@@ -9,7 +9,9 @@ import {
   FlaskConical,
   TrendingUp,
   GraduationCap,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Github,
+  Bug
 } from 'lucide-react';
 import { StudyTreeNav } from './StudyTreeNav';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -53,6 +55,10 @@ export function SidebarContent({ sidebarHierarchy, examId, onNavigate }: Sidebar
       icon: TrendingUp,
     },
   ];
+
+  const repoUrl = 'https://github.com/atbrace/sa-pro-study-companion';
+  const issueBody = `**Page:** ${pathname}\n**Exam:** ${config.shortName}\n\n**Description:**\n<!-- Describe the issue here -->`;
+  const issueUrl = `${repoUrl}/issues/new?title=&body=${encodeURIComponent(issueBody)}&labels=bug`;
 
   return (
     <>
@@ -137,6 +143,29 @@ export function SidebarContent({ sidebarHierarchy, examId, onNavigate }: Sidebar
             Switch Exam
           </Link>
           <ThemeToggle />
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            title="View on GitHub"
+          >
+            <Github className="h-3.5 w-3.5" />
+            GitHub
+          </a>
+          <span className="text-muted-foreground/40">|</span>
+          <a
+            href={issueUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            title="Report an issue"
+          >
+            <Bug className="h-3.5 w-3.5" />
+            Report Issue
+          </a>
         </div>
       </div>
     </>

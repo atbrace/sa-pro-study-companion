@@ -37,7 +37,7 @@ describe('provider factory', () => {
       const { getProvider, resetProvider } = await import('../provider');
       resetProvider();
 
-      expect(() => getProvider()).toThrow('ANTHROPIC_API_KEY required');
+      expect(() => getProvider()).toThrow('ANTHROPIC_API_KEY is required when LLM_PROVIDER=claude');
     });
 
     it('throws on missing GOOGLE_AI_API_KEY for gemini', async () => {
@@ -47,7 +47,7 @@ describe('provider factory', () => {
       const { getProvider, resetProvider } = await import('../provider');
       resetProvider();
 
-      expect(() => getProvider()).toThrow('GOOGLE_AI_API_KEY required');
+      expect(() => getProvider()).toThrow('GOOGLE_AI_API_KEY is required when LLM_PROVIDER=gemini');
     });
 
     it('throws on unknown provider', async () => {
@@ -56,7 +56,7 @@ describe('provider factory', () => {
       const { getProvider, resetProvider } = await import('../provider');
       resetProvider();
 
-      expect(() => getProvider()).toThrow('Unknown LLM provider: unknown');
+      expect(() => getProvider()).toThrow('Unknown LLM_PROVIDER: "unknown"');
     });
 
     it('caches provider instance', async () => {
