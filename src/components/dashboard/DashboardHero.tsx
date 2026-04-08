@@ -1,3 +1,4 @@
+import { MASTERY_THRESHOLD } from "@/lib/constants";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +31,7 @@ function getCTA(examId: string, overall: OverallProgress, domains: DomainProgres
   }
 
   // Exam ready - 85%+ mastery
-  if (overall.masteryScore >= 85) {
+  if (overall.masteryScore >= MASTERY_THRESHOLD) {
     return {
       text: "Review Your Progress",
       href: `/${examId}/progress`,

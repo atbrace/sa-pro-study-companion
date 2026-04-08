@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { QuestionCard } from '@/components/assess/QuestionCard';
 import { Clock, CheckCircle, XCircle, Target } from 'lucide-react';
 import type { Question } from '@/types/domain';
+import { MASTERY_THRESHOLD, APPROACHING_THRESHOLD } from '@/lib/constants';
 import type { QuestionAnswer, AssessmentResult } from '@/types/assessment';
 
 interface AssessmentClientProps {
@@ -153,8 +154,8 @@ export function AssessmentClient({ examId, domainId, topicId, questions }: Asses
 
               <ProgressIndicator value={result.score} className="h-3 w-full max-w-md" />
 
-              <Badge variant={result.score >= 85 ? 'default' : result.score >= 60 ? 'secondary' : 'destructive'} className="text-base px-4 py-2">
-                {result.score >= 85 ? 'Excellent!' : result.score >= 60 ? 'Good Progress' : 'Needs Review'}
+              <Badge variant={result.score >= MASTERY_THRESHOLD ? 'default' : result.score >= APPROACHING_THRESHOLD ? 'secondary' : 'destructive'} className="text-base px-4 py-2">
+                {result.score >= MASTERY_THRESHOLD ? 'Excellent!' : result.score >= APPROACHING_THRESHOLD ? 'Good Progress' : 'Needs Review'}
               </Badge>
             </div>
           </CardContent>
