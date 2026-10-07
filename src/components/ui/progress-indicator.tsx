@@ -1,5 +1,6 @@
 "use client"
 
+import { MASTERY_THRESHOLD, APPROACHING_THRESHOLD } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 
@@ -16,8 +17,8 @@ interface ProgressIndicatorProps {
  */
 export function ProgressIndicator({ value, className }: ProgressIndicatorProps) {
   const indicatorColorClass =
-    value >= 85 ? 'bg-green-600' :
-    value >= 60 ? 'bg-amber-500' :
+    value >= MASTERY_THRESHOLD ? 'bg-green-600' :
+    value >= APPROACHING_THRESHOLD ? 'bg-amber-500' :
     'bg-red-600';
 
   return (

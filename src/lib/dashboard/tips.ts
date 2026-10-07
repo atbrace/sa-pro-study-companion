@@ -1,3 +1,5 @@
+import { EXAM_PREP_THRESHOLD } from '@/lib/constants';
+
 export interface Tip {
   id: string;
   category: "onboarding" | "assessment" | "study" | "feature" | "exam-prep";
@@ -136,7 +138,7 @@ function getTipCategory(state: UserState): Tip["category"] {
     return "onboarding";
   }
 
-  if (state.masteryScore >= 75) {
+  if (state.masteryScore >= EXAM_PREP_THRESHOLD) {
     return "exam-prep";
   }
 

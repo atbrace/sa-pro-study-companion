@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import type { ReadinessEstimate, DomainReadiness } from '@/lib/progress/calculator';
+import { MASTERY_THRESHOLD, APPROACHING_THRESHOLD } from '@/lib/constants';
 import { clsx } from 'clsx';
 
 interface ReadinessCardProps {
@@ -116,7 +117,7 @@ export function ReadinessCard({ estimate, examId }: ReadinessCardProps) {
 function DomainBar({ domain }: { domain: DomainReadiness }) {
   const [expanded, setExpanded] = useState(false);
   const masteryRounded = Math.round(domain.mastery);
-  const colorClass = masteryRounded >= 85 ? 'text-green-600' : masteryRounded >= 60 ? 'text-amber-600' : 'text-red-600';
+  const colorClass = masteryRounded >= MASTERY_THRESHOLD ? 'text-green-600' : masteryRounded >= APPROACHING_THRESHOLD ? 'text-amber-600' : 'text-red-600';
   const hasWeakTopics = domain.weakTopics.length > 0;
 
   return (

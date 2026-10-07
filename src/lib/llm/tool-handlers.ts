@@ -1,3 +1,4 @@
+import { MASTERY_THRESHOLD } from '@/lib/constants';
 import { getTutorProgressContext } from '@/lib/progress/tutor-context';
 import { getAllDomains, getTopicById, getTopicQuestions } from '@/lib/content/loader';
 import { getLabMeta } from '@/lib/content/experiments';
@@ -466,7 +467,7 @@ export function handleSuggestNextStudyTopic(_params: Record<string, unknown>, ex
         }
 
         // Skip mastered topics
-        if (mastery >= 85) continue;
+        if (mastery >= MASTERY_THRESHOLD) continue;
 
         const finalScore = Math.round(baseScore * weightMultiplier);
 
